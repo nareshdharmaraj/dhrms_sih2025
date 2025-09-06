@@ -1,0 +1,62 @@
+name: dhrms_sih
+description: "Digital Health Record Management System - MyHealth App for Migrant Workers"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  
+  # State Management
+  provider: ^6.1.2
+  
+  # Navigation
+  go_router: ^14.2.7
+  
+  # Local Storage
+  shared_preferences: ^2.2.3
+  
+  # Network & Data
+  http: ^1.2.2
+  
+  # UI Components
+  google_fonts: ^6.2.1
+  
+  # Charts and Data Visualization
+  fl_chart: ^0.68.0
+  
+  # Camera and Image
+  image_picker: ^1.1.2
+  
+  # QR Code
+  qr_flutter: ^4.1.0
+  
+  # Location and Maps
+  geolocator: ^12.0.0
+  
+  # Date and Time
+  intl: ^0.19.0
+  
+  # Biometric Authentication
+  local_auth: ^2.2.0
+  
+  # File handling
+  path_provider: ^2.1.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/data/
