@@ -168,7 +168,7 @@ class _EmergencySosScreenState extends State<EmergencySosScreen>
         ],
       ),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(AppDimensions.paddingLarge),
           child: Column(
             children: [

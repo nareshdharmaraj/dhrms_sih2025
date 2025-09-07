@@ -2,12 +2,14 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/models/user_model.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/services/api_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   UserModel? _currentUser;
   bool _isLoggedIn = false;
   String _selectedRole = '';
   bool _isLoading = false;
+  final ApiService _apiService = ApiService();
 
   // Getters
   UserModel? get currentUser => _currentUser;
@@ -15,58 +17,9 @@ class AuthProvider extends ChangeNotifier {
   String get selectedRole => _selectedRole;
   bool get isLoading => _isLoading;
 
-  // Mock credentials for demonstration
-  final List<UserModel> _mockUsers = [
-    UserModel(
-      id: 'user_001',
-      role: AppConstants.roleNormalUser,
-      username: 'migrant001',
-      password: 'password123',
-      profile: const UserProfile(
-        name: 'Rajesh Kumar',
-        aadhaarLast4: '2345',
-        uniqueHealthId: 'RAJESH2345',
-        phone: '+91-9876543210',
-        address: 'Construction Site, Kochi, Kerala',
-        employer: 'ABC Construction Pvt Ltd',
-        emergencyContact: '+91-9876543211',
-        bloodGroup: 'B+',
-        dateOfBirth: '1985-05-15',
-        occupation: 'Construction Worker',
-      ),
-    ),
-    UserModel(
-      id: 'hospital_001',
-      role: AppConstants.roleHospital,
-      username: 'medical.officer',
-      password: 'hospital@123',
-      profile: const UserProfile(
-        name: 'Dr. Sarah Joseph',
-        hospitalName: 'Kochi General Hospital',
-        hospitalId: 'KGH001',
-        licenseNumber: 'KER-DOC-12345',
-        department: 'General Medicine',
-        phone: '+91-484-2345678',
-        email: 'sarah.joseph@kochigeneral.in',
-        specialization: 'Internal Medicine',
-      ),
-    ),
-    UserModel(
-      id: 'regional_001',
-      role: AppConstants.roleRegionalOfficer,
-      username: 'regional.admin',
-      password: 'regional@123',
-      profile: const UserProfile(
-        name: 'K. R. Nair',
-        designation: 'Regional Health Officer',
-        region: 'Ernakulam District',
-        employeeId: 'RHO-ERN-001',
-        phone: '+91-484-1234567',
-        email: 'kr.nair@health.kerala.gov.in',
-        officeAddress: 'District Health Office, Ernakulam',
-      ),
-    ),
-  ];
+  // Authentication token management
+  String? _authToken;
+  String? get authToken => _authToken;
 
   // Initialize auth state from stored preferences
   Future<void> initializeAuth() async {
@@ -78,13 +31,22 @@ class AuthProvider extends ChangeNotifier {
 
       _isLoggedIn = prefs.getBool(AppConstants.keyIsLoggedIn) ?? false;
       _selectedRole = prefs.getString(AppConstants.keyUserRole) ?? '';
+      _authToken = prefs.getString('auth_token');
 
-      if (_isLoggedIn) {
+      if (_isLoggedIn && _authToken != null) {
+        // Try to restore user session
         final userId = prefs.getString(AppConstants.keyUserId);
         if (userId != null) {
-          _currentUser = _mockUsers.firstWhere(
-            (user) => user.id == userId,
-            orElse: () => _mockUsers.first,
+          // For now, create a basic user model until we implement user profile API
+          _currentUser = UserModel(
+            id: userId,
+            role: _selectedRole,
+            username: prefs.getString('username') ?? '',
+            password: '', // Don't store password
+            profile: const UserProfile(
+              name: 'User', // Will be loaded from API
+              phone: '', // Will be loaded from API
+            ),
           );
         }
       }
@@ -92,6 +54,7 @@ class AuthProvider extends ChangeNotifier {
       debugPrint('Error initializing auth: $e');
       _isLoggedIn = false;
       _currentUser = null;
+      _authToken = null;
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -110,36 +73,88 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Simulate API call delay
-      await Future.delayed(const Duration(seconds: 1));
+      // Map frontend roles to backend roles
+      String backendRole = _mapFrontendRoleToBackend(role);
 
-      // Find user with matching credentials
-      final user = _mockUsers.firstWhere(
-        (user) =>
-            user.username == username &&
-            user.password == password &&
-            user.role == role,
-        orElse: () => throw Exception('Invalid credentials'),
+      // Call authentication API
+      final response = await _apiService.authenticate(
+        username,
+        password,
+        backendRole,
       );
 
-      // Save login state
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(AppConstants.keyIsLoggedIn, true);
-      await prefs.setString(AppConstants.keyUserRole, role);
-      await prefs.setString(AppConstants.keyUserId, user.id);
+      if (response['success'] == true) {
+        _authToken = response['token'];
+        final userData = response['user'];
 
-      _currentUser = user;
-      _isLoggedIn = true;
-      _selectedRole = role;
+        // Create user model from API response
+        _currentUser = UserModel(
+          id: userData['id'] ?? userData['_id'],
+          role: role,
+          username: username,
+          password: '', // Don't store password
+          profile: UserProfile(
+            name: userData['name'] ?? 'Unknown User',
+            phone: userData['phone'] ?? '',
+            email: userData['email'],
+            // Add other fields based on role
+            hospitalName: role == AppConstants.roleHospital
+                ? userData['hospitalName']
+                : null,
+            department: role == AppConstants.roleHospital
+                ? userData['department']
+                : null,
+            specialization: userData['specialization'],
+            licenseNumber: userData['licenseNumber'],
+            region: role == AppConstants.roleRegionalOfficer
+                ? userData['region']
+                : null,
+            designation: role == AppConstants.roleRegionalOfficer
+                ? userData['designation']
+                : null,
+            aadhaarLast4: userData['aadhaarLast4'],
+            uniqueHealthId: userData['uniqueHealthId'],
+            bloodGroup: userData['bloodGroup'],
+            address: userData['address'],
+          ),
+        );
 
-      _isLoading = false;
-      notifyListeners();
-      return true;
+        // Save login state
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool(AppConstants.keyIsLoggedIn, true);
+        await prefs.setString(AppConstants.keyUserRole, role);
+        await prefs.setString(AppConstants.keyUserId, _currentUser!.id);
+        await prefs.setString('auth_token', _authToken!);
+        await prefs.setString('username', username);
+
+        _isLoggedIn = true;
+        _selectedRole = role;
+
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      } else {
+        throw Exception(response['message'] ?? 'Login failed');
+      }
     } catch (e) {
       _isLoading = false;
       notifyListeners();
       debugPrint('Login error: $e');
       return false;
+    }
+  }
+
+  // Map frontend roles to backend roles
+  String _mapFrontendRoleToBackend(String frontendRole) {
+    switch (frontendRole) {
+      case AppConstants.roleNormalUser:
+        return 'user';
+      case AppConstants.roleHospital:
+        return 'hospital';
+      case AppConstants.roleRegionalOfficer:
+        return 'regional';
+      default:
+        return frontendRole;
     }
   }
 
@@ -153,10 +168,13 @@ class AuthProvider extends ChangeNotifier {
       await prefs.remove(AppConstants.keyIsLoggedIn);
       await prefs.remove(AppConstants.keyUserRole);
       await prefs.remove(AppConstants.keyUserId);
+      await prefs.remove('auth_token');
+      await prefs.remove('username');
 
       _currentUser = null;
       _isLoggedIn = false;
       _selectedRole = '';
+      _authToken = null;
     } catch (e) {
       debugPrint('Logout error: $e');
     } finally {
@@ -173,7 +191,7 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Simulate API call
+      // TODO: Implement API call to update user profile
       await Future.delayed(const Duration(seconds: 1));
 
       _currentUser = _currentUser!.copyWith(profile: updatedProfile);
@@ -189,21 +207,20 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // Get available users for a role (for demo purposes)
-  List<UserModel> getUsersForRole(String role) {
-    return _mockUsers.where((user) => user.role == role).toList();
-  }
-
   // Validate login credentials without logging in
-  bool validateCredentials(String username, String password, String role) {
+  Future<bool> validateCredentials(
+    String username,
+    String password,
+    String role,
+  ) async {
     try {
-      _mockUsers.firstWhere(
-        (user) =>
-            user.username == username &&
-            user.password == password &&
-            user.role == role,
+      String backendRole = _mapFrontendRoleToBackend(role);
+      final response = await _apiService.authenticate(
+        username,
+        password,
+        backendRole,
       );
-      return true;
+      return response['success'] == true;
     } catch (e) {
       return false;
     }
