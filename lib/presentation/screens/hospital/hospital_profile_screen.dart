@@ -621,7 +621,7 @@ class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: AppColors.hospitalRole,
+            activeThumbColor: AppColors.hospitalRole,
           ),
         ],
       ),

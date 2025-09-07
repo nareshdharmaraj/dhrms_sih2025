@@ -196,14 +196,17 @@ class VitalSigns {
 
   bool get hasAbnormalVitals {
     if (heartRate != null && (heartRate! < 60 || heartRate! > 100)) return true;
-    if (systolicBP != null && (systolicBP! < 90 || systolicBP! > 140))
+    if (systolicBP != null && (systolicBP! < 90 || systolicBP! > 140)) {
       return true;
-    if (diastolicBP != null && (diastolicBP! < 60 || diastolicBP! > 90))
+    }
+    if (diastolicBP != null && (diastolicBP! < 60 || diastolicBP! > 90)) {
       return true;
+    }
     if (oxygenSaturation != null && oxygenSaturation! < 95) return true;
     if (bodyTemperature != null &&
-        (bodyTemperature! < 36.1 || bodyTemperature! > 37.2))
+        (bodyTemperature! < 36.1 || bodyTemperature! > 37.2)) {
       return true;
+    }
     return false;
   }
 }

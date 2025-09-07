@@ -395,7 +395,7 @@ class _NearbyHospitalsScreenState extends State<NearbyHospitalsScreen>
         ),
         const SizedBox(height: 16),
         // Alert List
-        ..._proximityAlerts.map((alert) => _buildAlertCard(alert)).toList(),
+        ..._proximityAlerts.map((alert) => _buildAlertCard(alert)),
       ],
     );
   }

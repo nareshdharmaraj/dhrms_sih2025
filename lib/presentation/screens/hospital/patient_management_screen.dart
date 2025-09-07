@@ -247,7 +247,7 @@ class _PatientManagementScreenState extends State<PatientManagementScreen>
                   children: [
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        value: _selectedFilter,
+                        initialValue: _selectedFilter,
                         decoration: InputDecoration(
                           labelText: 'Filter by Status',
                           border: OutlineInputBorder(
@@ -652,7 +652,7 @@ class _PatientManagementScreenState extends State<PatientManagementScreen>
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
         ),
-        child: Container(
+        child: SizedBox(
           width: MediaQuery.of(context).size.width * 0.9,
           height: MediaQuery.of(context).size.height * 0.8,
           child: DefaultTabController(

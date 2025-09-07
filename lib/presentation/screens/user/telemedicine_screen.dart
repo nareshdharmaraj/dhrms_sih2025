@@ -813,7 +813,7 @@ class _TelemedicineScreenState extends State<TelemedicineScreen>
     } else if (difference == 1) {
       return 'Yesterday';
     } else {
-      return '${difference} days ago';
+      return '$difference days ago';
     }
   }
 }

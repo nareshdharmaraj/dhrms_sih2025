@@ -14,7 +14,7 @@ class UserHealthRecordsScreen extends StatefulWidget {
 class _UserHealthRecordsScreenState extends State<UserHealthRecordsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  bool _isLoading = false;
+  final bool _isLoading = false;
 
   // Mock data for demonstration
   final List<SimpleHealthRecord> _allRecords = [

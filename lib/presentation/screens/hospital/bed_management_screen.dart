@@ -212,7 +212,7 @@ class _BedManagementScreenState extends State<BedManagementScreen>
             children: [
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: _selectedDepartment,
+                  initialValue: _selectedDepartment,
                   decoration: InputDecoration(
                     labelText: 'Department',
                     border: OutlineInputBorder(
@@ -241,7 +241,7 @@ class _BedManagementScreenState extends State<BedManagementScreen>
               const SizedBox(width: AppDimensions.paddingMedium),
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: _selectedStatus,
+                  initialValue: _selectedStatus,
                   decoration: InputDecoration(
                     labelText: 'Status',
                     border: OutlineInputBorder(
@@ -767,7 +767,7 @@ class _BedManagementScreenState extends State<BedManagementScreen>
                 ),
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );

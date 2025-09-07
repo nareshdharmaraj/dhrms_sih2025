@@ -183,7 +183,7 @@ class _ProximityAlertsScreenState extends State<ProximityAlertsScreen>
           if (_allAlerts.isEmpty)
             _buildNoAlertsCard()
           else
-            ..._allAlerts.map((alert) => _buildAlertCard(alert)).toList(),
+            ..._allAlerts.map((alert) => _buildAlertCard(alert)),
         ],
       ),
     );
@@ -261,7 +261,7 @@ class _ProximityAlertsScreenState extends State<ProximityAlertsScreen>
         else
           ..._highRiskAlerts
               .map((alert) => _buildAlertCard(alert, isHighRisk: true))
-              .toList(),
+              ,
       ],
     );
   }
@@ -346,7 +346,7 @@ class _ProximityAlertsScreenState extends State<ProximityAlertsScreen>
                     .map(
                       (entry) => _buildDiseaseStatRow(entry.key, entry.value),
                     )
-                    .toList(),
+                    ,
               ],
             ),
           ),
@@ -388,7 +388,7 @@ class _ProximityAlertsScreenState extends State<ProximityAlertsScreen>
                         ),
                       ),
                     )
-                    .toList(),
+                    ,
               ],
             ),
           ),
