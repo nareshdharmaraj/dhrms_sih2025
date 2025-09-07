@@ -1,53 +1,51 @@
-const jwt = require('jsonwebtoken');
 const Hospital = require('../models/Hospital');
 const Doctor = require('../models/Doctor');
 const Patient = require('../models/Patient');
 
-// General authentication middleware
+// General authentication middleware (simplified - no JWT)
 const authenticate = async (req, res, next) => {
   try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+    const userId = req.header('X-User-ID');
+    const userRole = req.header('X-User-Role');
     
-    if (!token) {
+    if (!userId || !userRole) {
       return res.status(401).json({
         status: 'error',
-        message: 'Access denied. No token provided.'
+        message: 'Access denied. User ID and Role required.'
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
+    req.user = { id: userId, role: userRole };
     next();
   } catch (error) {
     return res.status(401).json({
       status: 'error',
-      message: 'Invalid token.'
+      message: 'Invalid authentication.'
     });
   }
 };
 
-// Hospital authentication middleware
+// Hospital authentication middleware (simplified)
 const authenticateHospital = async (req, res, next) => {
   try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+    const userId = req.header('X-User-ID');
+    const userRole = req.header('X-User-Role');
     
-    if (!token) {
+    if (!userId || !userRole) {
       return res.status(401).json({
         status: 'error',
-        message: 'Access denied. No token provided.'
+        message: 'Access denied. User ID and Role required.'
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
-    if (decoded.role !== 'hospital') {
+    if (userRole !== 'hospital') {
       return res.status(403).json({
         status: 'error',
         message: 'Access denied. Hospital authentication required.'
       });
     }
 
-    const hospital = await Hospital.findById(decoded.id);
+    const hospital = await Hospital.findById(userId);
     if (!hospital || !hospital.credentials.isActive) {
       return res.status(401).json({
         status: 'error',
@@ -55,39 +53,38 @@ const authenticateHospital = async (req, res, next) => {
       });
     }
 
-    req.user = decoded;
+    req.user = { id: userId, role: userRole };
     req.hospital = hospital;
     next();
   } catch (error) {
     return res.status(401).json({
       status: 'error',
-      message: 'Invalid token.'
+      message: 'Invalid authentication.'
     });
   }
 };
 
-// Doctor authentication middleware
+// Doctor authentication middleware (simplified)
 const authenticateDoctor = async (req, res, next) => {
   try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+    const userId = req.header('X-User-ID');
+    const userRole = req.header('X-User-Role');
     
-    if (!token) {
+    if (!userId || !userRole) {
       return res.status(401).json({
         status: 'error',
-        message: 'Access denied. No token provided.'
+        message: 'Access denied. User ID and Role required.'
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
-    if (decoded.role !== 'doctor') {
+    if (userRole !== 'doctor') {
       return res.status(403).json({
         status: 'error',
         message: 'Access denied. Doctor authentication required.'
       });
     }
 
-    const doctor = await Doctor.findById(decoded.id).populate('hospital');
+    const doctor = await Doctor.findById(userId).populate('hospital');
     if (!doctor || !doctor.credentials.isActive) {
       return res.status(401).json({
         status: 'error',
@@ -95,39 +92,38 @@ const authenticateDoctor = async (req, res, next) => {
       });
     }
 
-    req.user = decoded;
+    req.user = { id: userId, role: userRole };
     req.doctor = doctor;
     next();
   } catch (error) {
     return res.status(401).json({
       status: 'error',
-      message: 'Invalid token.'
+      message: 'Invalid authentication.'
     });
   }
 };
 
-// Patient authentication middleware
+// Patient authentication middleware (simplified)
 const authenticatePatient = async (req, res, next) => {
   try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+    const userId = req.header('X-User-ID');
+    const userRole = req.header('X-User-Role');
     
-    if (!token) {
+    if (!userId || !userRole) {
       return res.status(401).json({
         status: 'error',
-        message: 'Access denied. No token provided.'
+        message: 'Access denied. User ID and Role required.'
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
-    if (decoded.role !== 'patient') {
+    if (userRole !== 'patient') {
       return res.status(403).json({
         status: 'error',
         message: 'Access denied. Patient authentication required.'
       });
     }
 
-    const patient = await Patient.findById(decoded.id);
+    const patient = await Patient.findById(userId);
     if (!patient || !patient.credentials.isActive) {
       return res.status(401).json({
         status: 'error',
@@ -135,13 +131,13 @@ const authenticatePatient = async (req, res, next) => {
       });
     }
 
-    req.user = decoded;
+    req.user = { id: userId, role: userRole };
     req.patient = patient;
     next();
   } catch (error) {
     return res.status(401).json({
       status: 'error',
-      message: 'Invalid token.'
+      message: 'Invalid authentication.'
     });
   }
 };

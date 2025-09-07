@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
 
 const hospitalSchema = new mongoose.Schema({
   hospitalId: {
@@ -115,17 +114,15 @@ const hospitalSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Pre-save middleware to hash password
+// Pre-save middleware (password hashing removed - plaintext)
 hospitalSchema.pre('save', async function(next) {
-  if (!this.isModified('credentials.password')) return next();
-  
-  this.credentials.password = await bcrypt.hash(this.credentials.password, 12);
+  // Skip password hashing - store as plaintext
   next();
 });
 
-// Method to check password
+// Method to check password (plaintext comparison)
 hospitalSchema.methods.comparePassword = async function(password) {
-  return await bcrypt.compare(password, this.credentials.password);
+  return password === this.credentials.password;
 };
 
 // Generate hospital ID

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_styles.dart';
 import 'login_screen.dart';
+import 'account_creation_screen.dart';
 
 class RoleSelectionScreen extends StatelessWidget {
   const RoleSelectionScreen({super.key});
@@ -90,7 +91,6 @@ class RoleSelectionScreen extends StatelessWidget {
               Expanded(
                 flex: 3,
                 child: Container(
-                  padding: const EdgeInsets.all(AppDimensions.paddingLarge),
                   decoration: const BoxDecoration(
                     color: AppColors.white,
                     borderRadius: BorderRadius.only(
@@ -98,79 +98,93 @@ class RoleSelectionScreen extends StatelessWidget {
                       topRight: Radius.circular(AppDimensions.radiusLarge * 2),
                     ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const SizedBox(height: AppDimensions.marginMedium),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(AppDimensions.paddingLarge),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: AppDimensions.marginMedium),
 
-                      // Title
-                      Text(
-                        'Select Your Role',
-                        style: AppTextStyles.headline3.copyWith(
-                          color: AppColors.grey900,
-                          fontWeight: FontWeight.bold,
+                        // Title
+                        Text(
+                          'Select Your Role',
+                          style: AppTextStyles.headline3.copyWith(
+                            color: const Color.fromARGB(255, 6, 4, 4),
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: AppDimensions.marginSmall),
+                        const SizedBox(height: AppDimensions.marginSmall),
 
-                      Text(
-                        'Choose your role to access the appropriate dashboard',
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.grey600,
+                        Text(
+                          'Choose your role to access the appropriate dashboard',
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: const Color.fromARGB(255, 2, 2, 2),
+                          ),
+                          textAlign: TextAlign.center,
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: AppDimensions.marginLarge),
+                        const SizedBox(height: AppDimensions.marginLarge),
 
-                      // Role Cards
-                      Expanded(
-                        child: Column(
-                          children: [
-                            // Normal User Card
-                            _RoleCard(
-                              icon: Icons.person,
-                              title: 'Migrant Worker',
-                              subtitle:
-                                  'Access your health records, monitor vitals, and get medical assistance',
-                              color: AppColors.userRole,
-                              onTap: () => _navigateToLogin(
-                                context,
-                                AppConstants.roleNormalUser,
-                              ),
-                            ),
-                            const SizedBox(height: AppDimensions.marginMedium),
-
-                            // Hospital Card
-                            _RoleCard(
-                              icon: Icons.local_hospital,
-                              title: 'Hospital/Medical Staff',
-                              subtitle:
-                                  'Manage patient records, update medical data, and track health status',
-                              color: AppColors.hospitalRole,
-                              onTap: () => _navigateToLogin(
-                                context,
-                                AppConstants.roleHospital,
-                              ),
-                            ),
-                            const SizedBox(height: AppDimensions.marginMedium),
-
-                            // Regional Officer Card
-                            _RoleCard(
-                              icon: Icons.admin_panel_settings,
-                              title: 'Regional Health Officer',
-                              subtitle:
-                                  'Monitor regional health data, manage outbreaks, and oversee operations',
-                              color: AppColors.regionalOfficerRole,
-                              onTap: () => _navigateToLogin(
-                                context,
-                                AppConstants.roleRegionalOfficer,
-                              ),
-                            ),
-                          ],
+                        // Role Cards
+                        // Normal User Card
+                        _RoleCard(
+                          icon: Icons.person,
+                          title: 'Migrant Worker',
+                          subtitle:
+                              'Access your health records, monitor vitals, and get medical assistance',
+                          color: AppColors.userRole,
+                          onTap: () => _navigateToLogin(
+                            context,
+                            AppConstants.roleNormalUser,
+                          ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: AppDimensions.marginMedium),
+
+                        // Hospital Card
+                        _RoleCard(
+                          icon: Icons.local_hospital,
+                          title: 'Hospital/Medical Staff',
+                          subtitle:
+                              'Manage patient records, update medical data, and track health status',
+                          color: AppColors.hospitalRole,
+                          onTap: () => _navigateToLogin(
+                            context,
+                            AppConstants.roleHospital,
+                          ),
+                        ),
+                        const SizedBox(height: AppDimensions.marginMedium),
+
+                        // Regional Officer Card
+                        _RoleCard(
+                          icon: Icons.admin_panel_settings,
+                          title: 'Regional Health Officer',
+                          subtitle:
+                              'Monitor regional health data, manage outbreaks, and oversee operations',
+                          color: AppColors.regionalOfficerRole,
+                          onTap: () => _navigateToLogin(
+                            context,
+                            AppConstants.roleRegionalOfficer,
+                          ),
+                        ),
+                        const SizedBox(height: AppDimensions.marginLarge),
+                        
+                        // Create Account Button
+                        OutlinedButton.icon(
+                          onPressed: () => _navigateToAccountCreation(context),
+                          icon: Icon(Icons.person_add, color: AppColors.primaryBlue),
+                          label: Text(
+                            'Create New Account',
+                            style: TextStyle(color: AppColors.primaryBlue),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            side: BorderSide(color: AppColors.primaryBlue),
+                            backgroundColor: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: AppDimensions.marginMedium),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -185,6 +199,13 @@ class RoleSelectionScreen extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => LoginScreen(userRole: role)),
+    );
+  }
+
+  void _navigateToAccountCreation(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const AccountCreationScreen()),
     );
   }
 }
@@ -211,7 +232,7 @@ class _RoleCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppDimensions.radiusLarge),
         child: Container(
-          padding: const EdgeInsets.all(AppDimensions.paddingLarge),
+          padding: const EdgeInsets.all(AppDimensions.paddingMedium),
           decoration: BoxDecoration(
             border: Border.all(color: color.withOpacity(0.3)),
             borderRadius: BorderRadius.circular(AppDimensions.radiusLarge),
@@ -221,15 +242,15 @@ class _RoleCard extends StatelessWidget {
             children: [
               // Icon
               Container(
-                width: 60,
-                height: 60,
+                width: 50,
+                height: 50,
                 decoration: BoxDecoration(
                   color: color,
                   borderRadius: BorderRadius.circular(
                     AppDimensions.radiusMedium,
                   ),
                 ),
-                child: Icon(icon, color: AppColors.white, size: 30),
+                child: Icon(icon, color: AppColors.white, size: 24),
               ),
               const SizedBox(width: AppDimensions.marginMedium),
 
@@ -237,6 +258,7 @@ class _RoleCard extends StatelessWidget {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       title,
@@ -251,7 +273,7 @@ class _RoleCard extends StatelessWidget {
                       style: AppTextStyles.bodySmall.copyWith(
                         color: AppColors.grey600,
                       ),
-                      maxLines: 2,
+                      maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
@@ -259,7 +281,7 @@ class _RoleCard extends StatelessWidget {
               ),
 
               // Arrow
-              Icon(Icons.arrow_forward_ios, color: color, size: 20),
+              Icon(Icons.arrow_forward_ios, color: color, size: 18),
             ],
           ),
         ),

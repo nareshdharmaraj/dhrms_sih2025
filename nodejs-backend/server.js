@@ -9,9 +9,12 @@ require('dotenv').config();
 
 // Import routes
 const authRoutes = require('./routes/auth');
+const debugLogin = require('./debugLogin');
 const hospitalRoutes = require('./routes/hospitals');
 const doctorRoutes = require('./routes/doctors');
 const patientRoutes = require('./routes/patients');
+const appointmentRoutes = require('./routes/appointments');
+const medicalRecordRoutes = require('./routes/medical-records');
 const prescriptionRoutes = require('./routes/prescriptions');
 const healthRoutes = require('./routes/health');
 const dashboardRoutes = require('./routes/dashboard');
@@ -19,6 +22,11 @@ const emergencyRoutes = require('./routes/emergency');
 const telemedicineRoutes = require('./routes/telemedicine');
 const wearableRoutes = require('./routes/wearable');
 const analyticsRoutes = require('./routes/analytics');
+const qrCodeRoutes = require('./routes/qr-codes');
+const smartwatchRoutes = require('./routes/smartwatch');
+const aiHealthbotRoutes = require('./routes/ai-healthbot');
+const insuranceRoutes = require('./routes/insurance');
+const gamificationRoutes = require('./routes/gamification');
 
 // Import middleware
 const errorHandler = require('./middleware/errorHandler');
@@ -40,7 +48,7 @@ app.use('/api/', limiter);
 
 // CORS configuration
 const corsOptions = {
-  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
+  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000', 'http://localhost:8080', 'http://localhost:8081', 'file://'],
   credentials: true,
   optionsSuccessStatus: 200
 };
@@ -91,9 +99,12 @@ app.get('/health', (req, res) => {
 // API Routes
 const apiVersion = process.env.API_VERSION || 'v1';
 app.use(`/api/${apiVersion}/auth`, authRoutes);
+app.use(`/api/${apiVersion}/auth`, debugLogin);
 app.use(`/api/${apiVersion}/hospitals`, hospitalRoutes);
 app.use(`/api/${apiVersion}/doctors`, doctorRoutes);
 app.use(`/api/${apiVersion}/patients`, patientRoutes);
+app.use(`/api/${apiVersion}/appointments`, appointmentRoutes);
+app.use(`/api/${apiVersion}/medical-records`, medicalRecordRoutes);
 app.use(`/api/${apiVersion}/prescriptions`, prescriptionRoutes);
 app.use(`/api/${apiVersion}/health`, healthRoutes);
 app.use(`/api/${apiVersion}/dashboard`, dashboardRoutes);
@@ -101,6 +112,11 @@ app.use(`/api/${apiVersion}/emergency`, emergencyRoutes);
 app.use(`/api/${apiVersion}/telemedicine`, telemedicineRoutes);
 app.use(`/api/${apiVersion}/wearable`, wearableRoutes);
 app.use(`/api/${apiVersion}/analytics`, analyticsRoutes);
+app.use(`/api/${apiVersion}/qr-codes`, qrCodeRoutes);
+app.use(`/api/${apiVersion}/smartwatch`, smartwatchRoutes);
+app.use(`/api/${apiVersion}/ai`, aiHealthbotRoutes);
+app.use(`/api/${apiVersion}/insurance`, insuranceRoutes);
+app.use(`/api/${apiVersion}/gamification`, gamificationRoutes);
 
 // Default route
 app.get('/', (req, res) => {
@@ -120,7 +136,9 @@ app.get('/', (req, res) => {
       emergency: `/api/${apiVersion}/emergency`,
       telemedicine: `/api/${apiVersion}/telemedicine`,
       wearable: `/api/${apiVersion}/wearable`,
-      analytics: `/api/${apiVersion}/analytics`
+      analytics: `/api/${apiVersion}/analytics`,
+      qrCodes: `/api/${apiVersion}/qr-codes`,
+      smartwatch: `/api/${apiVersion}/smartwatch`
     }
   });
 });

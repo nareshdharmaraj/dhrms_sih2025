@@ -783,4 +783,352 @@ router.post('/create-sample', async (req, res) => {
   }
 });
 
+// @route   GET /api/v1/patients/:id/appointments
+// @desc    Get patient's appointments
+// @access  Private (Patient/Doctor)
+router.get('/:id/appointments', authenticate, [
+  query('status').optional().isIn(['pending', 'confirmed', 'in-progress', 'completed', 'cancelled', 'no-show', 'rescheduled']),
+  query('upcoming').optional().isBoolean(),
+  query('page').optional().isInt({ min: 1 }),
+  query('limit').optional().isInt({ min: 1, max: 50 })
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    const patientId = req.params.id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // Find patient
+    let patient;
+    if (patientId.length === 24) {
+      patient = await Patient.findById(patientId);
+    } else {
+      patient = await Patient.findOne({
+        $or: [
+          { patientId: patientId },
+          { uhi: patientId.toUpperCase() }
+        ]
+      });
+    }
+
+    if (!patient) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Patient not found'
+      });
+    }
+
+    // Check authorization
+    if (req.user.userType === 'patient' && req.user.id !== patient._id.toString()) {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Access denied'
+      });
+    }
+
+    // Build query
+    let query = { patient: patient._id };
+
+    if (req.query.status) {
+      query.status = req.query.status;
+    }
+
+    if (req.query.upcoming === 'true') {
+      query['scheduling.timeSlot.startTime'] = { $gte: new Date() };
+      query.status = { $in: ['pending', 'confirmed'] };
+    }
+
+    const [appointments, total] = await Promise.all([
+      require('../models/Appointment').find(query)
+        .sort({ 'scheduling.timeSlot.startTime': -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate('doctor', 'doctorId personalInfo.firstName personalInfo.lastName specialization')
+        .populate('hospital', 'hospitalId name contactInfo'),
+      require('../models/Appointment').countDocuments(query)
+    ]);
+
+    res.json({
+      status: 'success',
+      data: {
+        appointments,
+        pagination: {
+          currentPage: page,
+          totalPages: Math.ceil(total / limit),
+          totalAppointments: total,
+          hasNext: page < Math.ceil(total / limit),
+          hasPrev: page > 1
+        }
+      }
+    });
+
+  } catch (error) {
+    logger.error('Get patient appointments error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Error fetching patient appointments'
+    });
+  }
+});
+
+// @route   GET /api/v1/patients/:id/medical-records
+// @desc    Get patient's medical records
+// @access  Private (Patient/Doctor)
+router.get('/:id/medical-records', authenticate, [
+  query('page').optional().isInt({ min: 1 }),
+  query('limit').optional().isInt({ min: 1, max: 50 }),
+  query('specialty').optional().isString(),
+  query('condition').optional().isString(),
+  query('dateFrom').optional().isISO8601(),
+  query('dateTo').optional().isISO8601()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    const patientId = req.params.id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // Find patient
+    let patient;
+    if (patientId.length === 24) {
+      patient = await Patient.findById(patientId);
+    } else {
+      patient = await Patient.findOne({
+        $or: [
+          { patientId: patientId },
+          { uhi: patientId.toUpperCase() }
+        ]
+      });
+    }
+
+    if (!patient) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Patient not found'
+      });
+    }
+
+    // Check authorization
+    if (req.user.userType === 'patient' && req.user.id !== patient._id.toString()) {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Access denied'
+      });
+    }
+
+    // Build query
+    let query = { 
+      patient: patient._id,
+      'recordStatus.status': { $in: ['completed', 'verified'] }
+    };
+
+    if (req.query.specialty) {
+      query['visitInfo.specialty'] = new RegExp(req.query.specialty, 'i');
+    }
+
+    if (req.query.condition) {
+      query.$or = [
+        { 'diagnosis.primary.condition': new RegExp(req.query.condition, 'i') },
+        { 'diagnosis.secondary.condition': new RegExp(req.query.condition, 'i') }
+      ];
+    }
+
+    if (req.query.dateFrom || req.query.dateTo) {
+      query['visitInfo.visitDate'] = {};
+      if (req.query.dateFrom) {
+        query['visitInfo.visitDate'].$gte = new Date(req.query.dateFrom);
+      }
+      if (req.query.dateTo) {
+        query['visitInfo.visitDate'].$lte = new Date(req.query.dateTo);
+      }
+    }
+
+    const [medicalRecords, total] = await Promise.all([
+      require('../models/MedicalRecord').find(query)
+        .sort({ 'visitInfo.visitDate': -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate('doctor', 'doctorId personalInfo.firstName personalInfo.lastName specialization')
+        .populate('hospital', 'hospitalId name'),
+      require('../models/MedicalRecord').countDocuments(query)
+    ]);
+
+    res.json({
+      status: 'success',
+      data: {
+        medicalRecords,
+        pagination: {
+          currentPage: page,
+          totalPages: Math.ceil(total / limit),
+          totalRecords: total,
+          hasNext: page < Math.ceil(total / limit),
+          hasPrev: page > 1
+        }
+      }
+    });
+
+  } catch (error) {
+    logger.error('Get patient medical records error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Error fetching patient medical records'
+    });
+  }
+});
+
+// @route   GET /api/v1/patients/:id/dashboard
+// @desc    Get patient dashboard data
+// @access  Private (Patient)
+router.get('/:id/dashboard', authenticatePatient, async (req, res) => {
+  try {
+    const patientId = req.params.id;
+
+    // Find patient
+    let patient;
+    if (patientId.length === 24) {
+      patient = await Patient.findById(patientId);
+    } else {
+      patient = await Patient.findOne({
+        $or: [
+          { patientId: patientId },
+          { uhi: patientId.toUpperCase() }
+        ]
+      });
+    }
+
+    if (!patient) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Patient not found'
+      });
+    }
+
+    // Check authorization
+    if (req.user.id !== patient._id.toString()) {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Access denied'
+      });
+    }
+
+    const now = new Date();
+    const todayStart = new Date(now.setHours(0, 0, 0, 0));
+    const todayEnd = new Date(now.setHours(23, 59, 59, 999));
+
+    // Get dashboard statistics
+    const [
+      upcomingAppointments,
+      todayAppointments,
+      recentMedicalRecords,
+      activePrescriptions,
+      appointmentStats
+    ] = await Promise.all([
+      // Upcoming appointments
+      require('../models/Appointment').find({
+        patient: patient._id,
+        status: { $in: ['pending', 'confirmed'] },
+        'scheduling.timeSlot.startTime': { $gte: new Date() }
+      })
+      .sort({ 'scheduling.timeSlot.startTime': 1 })
+      .limit(5)
+      .populate('doctor', 'personalInfo.firstName personalInfo.lastName specialization')
+      .populate('hospital', 'name'),
+
+      // Today's appointments
+      require('../models/Appointment').find({
+        patient: patient._id,
+        'scheduling.timeSlot.startTime': {
+          $gte: todayStart,
+          $lte: todayEnd
+        }
+      })
+      .populate('doctor', 'personalInfo.firstName personalInfo.lastName specialization'),
+
+      // Recent medical records
+      require('../models/MedicalRecord').find({
+        patient: patient._id,
+        'recordStatus.status': { $in: ['completed', 'verified'] }
+      })
+      .sort({ 'visitInfo.visitDate': -1 })
+      .limit(3)
+      .populate('doctor', 'personalInfo.firstName personalInfo.lastName specialization')
+      .populate('hospital', 'name'),
+
+      // Active prescriptions
+      Prescription.find({
+        patient: patient._id,
+        status: 'active',
+        'validity.endDate': { $gte: new Date() }
+      })
+      .populate('doctor', 'personalInfo.firstName personalInfo.lastName')
+      .limit(5),
+
+      // Appointment statistics
+      require('../models/Appointment').aggregate([
+        { $match: { patient: patient._id } },
+        {
+          $group: {
+            _id: '$status',
+            count: { $sum: 1 }
+          }
+        }
+      ])
+    ]);
+
+    res.json({
+      status: 'success',
+      data: {
+        patient: {
+          id: patient._id,
+          patientId: patient.patientId,
+          uhi: patient.uhi,
+          name: patient.fullName,
+          lastVisit: recentMedicalRecords[0]?.visitInfo?.visitDate || null
+        },
+        upcomingAppointments: upcomingAppointments.length,
+        todayAppointments: todayAppointments.length,
+        totalMedicalRecords: recentMedicalRecords.length,
+        activePrescriptions: activePrescriptions.length,
+        recentActivity: {
+          appointments: upcomingAppointments.slice(0, 3),
+          medicalRecords: recentMedicalRecords,
+          prescriptions: activePrescriptions.slice(0, 3)
+        },
+        statistics: {
+          appointments: appointmentStats.reduce((acc, stat) => {
+            acc[stat._id] = stat.count;
+            return acc;
+          }, {}),
+          totalAppointments: appointmentStats.reduce((total, stat) => total + stat.count, 0)
+        }
+      }
+    });
+
+  } catch (error) {
+    logger.error('Get patient dashboard error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Error fetching patient dashboard data'
+    });
+  }
+});
+
 module.exports = router;

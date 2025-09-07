@@ -85,8 +85,8 @@
         <div class="credentials">
             <h3>📋 Test Credentials</h3>
             <p><strong>Patient:</strong> rajesh_kumar_90 / patient123</p>
-            <p><strong>Doctor:</strong> dr.sharma_cardio / doctor123</p>
-            <p><strong>Hospital Admin:</strong> apollo_admin / hospital123</p>
+            <p><strong>Doctor:</strong> dr_rajesh_sharma / doctor123</p>
+            <p><strong>Hospital Admin:</strong> apollo_admin / apollo123</p>
         </div>
 
         <form id="loginForm">
@@ -103,7 +103,7 @@
                 <select id="role" required>
                     <option value="user">Patient</option>
                     <option value="doctor">Doctor</option>
-                    <option value="hospital_admin">Hospital Admin</option>
+                    <option value="hospital">Hospital Admin</option>
                 </select>
             </div>
             <button type="submit">🔐 Test Login</button>
@@ -126,7 +126,7 @@
                 resultDiv.className = 'result';
                 resultDiv.innerHTML = '⏳ Testing authentication...';
                 
-                const response = await fetch('http://localhost:5000/api/v1/auth/login', {
+                const response = await fetch('http://localhost:5000/api/v1/auth/debug-login', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -174,11 +174,11 @@
                 usernameField.value = 'rajesh_kumar_90';
                 passwordField.value = 'patient123';
             } else if (role === 'doctor') {
-                usernameField.value = 'dr.sharma_cardio';
+                usernameField.value = 'dr_rajesh_sharma';
                 passwordField.value = 'doctor123';
-            } else if (role === 'hospital_admin') {
+            } else if (role === 'hospital') {
                 usernameField.value = 'apollo_admin';
-                passwordField.value = 'hospital123';
+                passwordField.value = 'apollo123';
             }
         });
     </script>
