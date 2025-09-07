@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_styles.dart';
+import '../../../screens/patient_registration_screen.dart';
+import '../../../screens/doctor_management_screen.dart';
 import 'bed_management_screen.dart';
 import 'patient_management_screen.dart';
 import 'hospital_profile_screen.dart';
+import '../doctor/doctor_login_screen.dart';
 
 class HospitalDashboardScreen extends StatefulWidget {
   const HospitalDashboardScreen({super.key});
@@ -181,15 +184,26 @@ class _HospitalHomeTab extends StatelessWidget {
             GridView.count(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
+              crossAxisCount: 3,
               crossAxisSpacing: AppDimensions.marginMedium,
               mainAxisSpacing: AppDimensions.marginMedium,
-              childAspectRatio: 1.2,
+              childAspectRatio: 0.9,
               children: [
+                _QuickActionCard(
+                  icon: Icons.person_add,
+                  title: 'Register Patient',
+                  color: AppColors.primaryBlue,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PatientRegistrationScreen(),
+                    ),
+                  ),
+                ),
                 _QuickActionCard(
                   icon: Icons.bed,
                   title: 'Bed Management',
-                  color: AppColors.primaryBlue,
+                  color: AppColors.hospitalRole,
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -198,27 +212,33 @@ class _HospitalHomeTab extends StatelessWidget {
                   ),
                 ),
                 _QuickActionCard(
-                  icon: Icons.people,
-                  title: 'Patient Management',
-                  color: AppColors.hospitalRole,
+                  icon: Icons.people_alt,
+                  title: 'Manage Doctors',
+                  color: AppColors.primaryGreen,
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const PatientManagementScreen(),
+                      builder: (context) => const DoctorManagementScreen(),
                     ),
                   ),
                 ),
                 _QuickActionCard(
-                  icon: Icons.qr_code_scanner,
-                  title: 'Scan QR',
-                  color: AppColors.primaryGreen,
-                  onTap: () => _scanQRCode(),
+                  icon: Icons.login,
+                  title: 'Doctor Login',
+                  color: AppColors.primaryBlue,
+                  onTap: () => _navigateToDoctorLogin(context),
                 ),
                 _QuickActionCard(
                   icon: Icons.analytics,
                   title: 'Hospital Analytics',
                   color: AppColors.primaryOrange,
                   onTap: () => _showAnalytics(),
+                ),
+                _QuickActionCard(
+                  icon: Icons.medical_services,
+                  title: 'Emergency',
+                  color: AppColors.error,
+                  onTap: () => _showEmergencyActions(context),
                 ),
               ],
             ),
@@ -253,14 +273,136 @@ class _HospitalHomeTab extends StatelessWidget {
     );
   }
 
-  void _scanQRCode() {
-    // QR Code scanning functionality
-    // This would integrate with camera to scan patient QR codes
-  }
-
   void _showAnalytics() {
     // Show hospital analytics
     // This would display comprehensive hospital statistics and reports
+  }
+
+  void _navigateToDoctorLogin(BuildContext context) {
+    // Mock hospital doctors data
+    final List<Map<String, dynamic>> hospitalDoctors = [
+      {
+        'doctorId': 'DOC001',
+        'name': 'Dr. Rajesh Kumar',
+        'specialization': 'Cardiology',
+        'email': 'rajesh.kumar@hospital.com',
+        'phone': '+91 9876543210',
+        'experience': '15 years',
+        'qualification': 'MD Cardiology',
+        'schedule': 'Mon-Fri 9:00 AM - 5:00 PM',
+        'patients': 45,
+        'status': 'Active',
+        'joinDate': '2020-01-15',
+      },
+      {
+        'doctorId': 'DOC002',
+        'name': 'Dr. Priya Sharma',
+        'specialization': 'Pediatrics',
+        'email': 'priya.sharma@hospital.com',
+        'phone': '+91 9876543211',
+        'experience': '10 years',
+        'qualification': 'MD Pediatrics',
+        'schedule': 'Mon-Sat 8:00 AM - 4:00 PM',
+        'patients': 38,
+        'status': 'Active',
+        'joinDate': '2021-03-20',
+      },
+      {
+        'doctorId': 'DOC003',
+        'name': 'Dr. Amit Patel',
+        'specialization': 'Orthopedics',
+        'email': 'amit.patel@hospital.com',
+        'phone': '+91 9876543212',
+        'experience': '12 years',
+        'qualification': 'MS Orthopedics',
+        'schedule': 'Tue-Sat 10:00 AM - 6:00 PM',
+        'patients': 32,
+        'status': 'Active',
+        'joinDate': '2020-08-10',
+      },
+      {
+        'doctorId': 'DOC004',
+        'name': 'Dr. Neha Singh',
+        'specialization': 'Dermatology',
+        'email': 'neha.singh@hospital.com',
+        'phone': '+91 9876543213',
+        'experience': '8 years',
+        'qualification': 'MD Dermatology',
+        'schedule': 'Mon-Fri 11:00 AM - 7:00 PM',
+        'patients': 29,
+        'status': 'Active',
+        'joinDate': '2022-01-05',
+      },
+      {
+        'doctorId': 'DOC005',
+        'name': 'Dr. Suresh Menon',
+        'specialization': 'General Medicine',
+        'email': 'suresh.menon@hospital.com',
+        'phone': '+91 9876543214',
+        'experience': '20 years',
+        'qualification': 'MBBS, MD Internal Medicine',
+        'schedule': 'Mon-Sat 7:00 AM - 3:00 PM',
+        'patients': 52,
+        'status': 'Active',
+        'joinDate': '2018-05-15',
+      },
+    ];
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            DoctorLoginScreen(hospitalDoctors: hospitalDoctors),
+      ),
+    );
+  }
+
+  void _showEmergencyActions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(AppDimensions.paddingLarge),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Emergency Actions',
+              style: AppTextStyles.headline6.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: AppDimensions.marginLarge),
+            ListTile(
+              leading: const Icon(Icons.local_hospital, color: AppColors.error),
+              title: const Text('Emergency Room Status'),
+              subtitle: const Text('View current ER capacity and patients'),
+              onTap: () {
+                Navigator.pop(context);
+                // Navigate to ER status
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.phone, color: AppColors.error),
+              title: const Text('Emergency Contacts'),
+              subtitle: const Text('Quick access to emergency numbers'),
+              onTap: () {
+                Navigator.pop(context);
+                // Show emergency contacts
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.warning, color: AppColors.warning),
+              title: const Text('Hospital Alert System'),
+              subtitle: const Text('Send hospital-wide alerts'),
+              onTap: () {
+                Navigator.pop(context);
+                // Open alert system
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

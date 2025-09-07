@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_styles.dart';
+import '../../../core/services/api_service.dart';
 
 class PatientManagementScreen extends StatefulWidget {
   const PatientManagementScreen({super.key});
@@ -14,6 +15,8 @@ class _PatientManagementScreenState extends State<PatientManagementScreen>
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
   String _selectedFilter = 'All Patients';
+  bool _isLoading = false;
+  String? _errorMessage;
 
   final List<String> _filterOptions = [
     'All Patients',
@@ -24,126 +27,15 @@ class _PatientManagementScreenState extends State<PatientManagementScreen>
     'Critical',
   ];
 
-  // Mock patient data
-  final List<Map<String, dynamic>> _patients = [
-    {
-      'id': 'P12345',
-      'name': 'John Doe',
-      'age': 45,
-      'gender': 'Male',
-      'phone': '+91 98765 43210',
-      'email': 'john.doe@email.com',
-      'address': '123 Main St, Kochi',
-      'bloodGroup': 'O+',
-      'status': 'Admitted',
-      'admissionDate': '2024-01-15',
-      'department': 'ICU',
-      'bedNumber': 'ICU-001',
-      'condition': 'Critical',
-      'doctor': 'Dr. Sarah Joseph',
-      'emergencyContact': 'Jane Doe (+91 87654 32109)',
-      'allergies': ['Penicillin', 'Shellfish'],
-      'medicalHistory': ['Diabetes', 'Hypertension'],
-      'insurance': 'Apollo Health Insurance',
-      'lastVisit': '2024-01-19',
-      'nextAppointment': '2024-01-22',
-      'vitals': {
-        'bp': '140/90',
-        'heartRate': '85 bpm',
-        'temperature': '98.6°F',
-        'oxygen': '95%',
-      },
-    },
-    {
-      'id': 'P67890',
-      'name': 'Baby Sarah',
-      'age': 2,
-      'gender': 'Female',
-      'phone': '+91 76543 21098',
-      'email': 'mother.sarah@email.com',
-      'address': '456 Oak Ave, Kochi',
-      'bloodGroup': 'A+',
-      'status': 'Admitted',
-      'admissionDate': '2024-01-18',
-      'department': 'Pediatrics',
-      'bedNumber': 'PD-021',
-      'condition': 'Stable',
-      'doctor': 'Dr. Priya Nair',
-      'emergencyContact': 'Mother (+91 76543 21098)',
-      'allergies': [],
-      'medicalHistory': ['Premature birth'],
-      'insurance': 'Family Health Plan',
-      'lastVisit': '2024-01-19',
-      'nextAppointment': '2024-01-21',
-      'vitals': {
-        'bp': 'Normal',
-        'heartRate': '120 bpm',
-        'temperature': '99.1°F',
-        'oxygen': '98%',
-      },
-    },
-    {
-      'id': 'P98765',
-      'name': 'Amit Patel',
-      'age': 52,
-      'gender': 'Male',
-      'phone': '+91 98765 43210',
-      'email': 'amit.patel@email.com',
-      'address': '789 Pine St, Kochi',
-      'bloodGroup': 'B+',
-      'status': 'Outpatient',
-      'admissionDate': null,
-      'department': 'Cardiology',
-      'bedNumber': null,
-      'condition': 'Stable',
-      'doctor': 'Dr. Rajesh Kumar',
-      'emergencyContact': 'Wife (+91 87654 32109)',
-      'allergies': ['Aspirin'],
-      'medicalHistory': ['Heart Disease', 'High Cholesterol'],
-      'insurance': 'Star Health Insurance',
-      'lastVisit': '2024-01-18',
-      'nextAppointment': '2024-01-25',
-      'vitals': {
-        'bp': '130/85',
-        'heartRate': '72 bpm',
-        'temperature': '98.4°F',
-        'oxygen': '97%',
-      },
-    },
-    {
-      'id': 'P54321',
-      'name': 'Sunita Devi',
-      'age': 38,
-      'gender': 'Female',
-      'phone': '+91 87654 32109',
-      'email': 'sunita.devi@email.com',
-      'address': '321 Elm St, Kochi',
-      'bloodGroup': 'AB+',
-      'status': 'Emergency',
-      'admissionDate': '2024-01-20',
-      'department': 'Emergency',
-      'bedNumber': 'EM-008',
-      'condition': 'Critical',
-      'doctor': 'Dr. Emergency Team',
-      'emergencyContact': 'Husband (+91 76543 21098)',
-      'allergies': [],
-      'medicalHistory': ['Asthma'],
-      'insurance': 'Government Health Scheme',
-      'lastVisit': '2024-01-20',
-      'nextAppointment': 'TBD',
-      'vitals': {
-        'bp': '160/100',
-        'heartRate': '110 bpm',
-        'temperature': '102.3°F',
-        'oxygen': '89%',
-      },
-    },
-  ];
+  // Real patient data from database
+  List<Map<String, dynamic>> _patients = [];
+  List<Map<String, dynamic>> _filteredPatients = [];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _loadPatients();
   }
 
   @override
@@ -153,7 +45,95 @@ class _PatientManagementScreenState extends State<PatientManagementScreen>
     super.dispose();
   }
 
-  List<Map<String, dynamic>> get _filteredPatients {
+  Future<void> _loadPatients() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final patients = await ApiService.getPatients();
+      setState(() {
+        _patients = patients
+            .map((patient) => _transformPatientData(patient))
+            .toList();
+        _filteredPatients = _getFilteredPatients();
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = ApiService.getErrorMessage(e);
+        _isLoading = false;
+      });
+      _showErrorSnackBar(
+        'Failed to load patients: ${ApiService.getErrorMessage(e)}',
+      );
+    }
+  }
+
+  Map<String, dynamic> _transformPatientData(Map<String, dynamic> apiData) {
+    // Transform API data to match UI expectations
+    return {
+      'id': apiData['patientId'] ?? apiData['_id'] ?? '',
+      'name':
+          '${apiData['personalInfo']?['firstName'] ?? ''} ${apiData['personalInfo']?['lastName'] ?? ''}'
+              .trim(),
+      'age': _calculateAge(apiData['personalInfo']?['dateOfBirth']),
+      'gender': apiData['personalInfo']?['gender'] ?? '',
+      'phone': apiData['personalInfo']?['phone'] ?? '',
+      'email': apiData['personalInfo']?['email'] ?? '',
+      'address': _formatAddress(apiData['address']),
+      'bloodGroup': apiData['medicalInfo']?['bloodGroup'] ?? '',
+      'status': apiData['medicalInfo']?['status'] ?? 'Outpatient',
+      'admissionDate': apiData['medicalInfo']?['admissionDate'],
+      'department': apiData['medicalInfo']?['department'] ?? 'General',
+      'bedNumber': apiData['medicalInfo']?['bedNumber'],
+      'condition': apiData['medicalInfo']?['condition'] ?? 'Stable',
+      'doctor': apiData['medicalInfo']?['assignedDoctor'] ?? 'TBD',
+      'emergencyContact': _formatEmergencyContact(
+        apiData['medicalInfo']?['emergencyContact'],
+      ),
+      'allergies': apiData['medicalHistory']?['allergies'] ?? [],
+      'medicalHistory': apiData['medicalHistory']?['chronicConditions'] ?? [],
+      'insurance': apiData['medicalInfo']?['insurance'] ?? 'Not specified',
+      'lastVisit': apiData['medicalHistory']?['lastConsultation'],
+      'nextAppointment': apiData['medicalInfo']?['nextAppointment'],
+      'vitals': apiData['medicalInfo']?['vitals'] ?? {},
+    };
+  }
+
+  int _calculateAge(dynamic dateOfBirth) {
+    if (dateOfBirth == null) return 0;
+    try {
+      DateTime dob = DateTime.parse(dateOfBirth.toString());
+      return DateTime.now().difference(dob).inDays ~/ 365;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  String _formatAddress(dynamic address) {
+    if (address == null) return '';
+    if (address is String) return address;
+    if (address is Map) {
+      final current = address['current'] ?? address;
+      return '${current['street'] ?? ''}, ${current['city'] ?? ''}'
+          .replaceAll(RegExp(r'^,|,$'), '')
+          .trim();
+    }
+    return '';
+  }
+
+  String _formatEmergencyContact(dynamic contact) {
+    if (contact == null) return '';
+    if (contact is String) return contact;
+    if (contact is Map) {
+      return '${contact['name'] ?? ''} (${contact['phone'] ?? ''})';
+    }
+    return '';
+  }
+
+  List<Map<String, dynamic>> _getFilteredPatients() {
     return _patients.where((patient) {
       bool matchesFilter =
           _selectedFilter == 'All Patients' ||
@@ -168,6 +148,20 @@ class _PatientManagementScreenState extends State<PatientManagementScreen>
           );
       return matchesFilter && matchesSearch;
     }).toList();
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppColors.error,
+        action: SnackBarAction(
+          label: 'Retry',
+          onPressed: _loadPatients,
+          textColor: AppColors.white,
+        ),
+      ),
+    );
   }
 
   @override
@@ -240,7 +234,9 @@ class _PatientManagementScreenState extends State<PatientManagementScreen>
                       vertical: 12,
                     ),
                   ),
-                  onChanged: (value) => setState(() {}),
+                  onChanged: (value) => setState(() {
+                    _filteredPatients = _getFilteredPatients();
+                  }),
                 ),
                 const SizedBox(height: AppDimensions.paddingMedium),
                 Row(
@@ -269,6 +265,7 @@ class _PatientManagementScreenState extends State<PatientManagementScreen>
                         onChanged: (value) {
                           setState(() {
                             _selectedFilter = value!;
+                            _filteredPatients = _getFilteredPatients();
                           });
                         },
                       ),
@@ -362,6 +359,39 @@ class _PatientManagementScreenState extends State<PatientManagementScreen>
   }
 
   Widget _buildPatientList(List<Map<String, dynamic>> patients) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_errorMessage != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 64, color: AppColors.error),
+            const SizedBox(height: AppDimensions.paddingMedium),
+            Text(
+              'Error loading patients',
+              style: AppTextStyles.bodyLarge.copyWith(color: AppColors.error),
+            ),
+            const SizedBox(height: AppDimensions.paddingSmall),
+            Text(
+              _errorMessage!,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.grey600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppDimensions.paddingMedium),
+            ElevatedButton(
+              onPressed: _loadPatients,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
     if (patients.isEmpty) {
       return Center(
         child: Column(
@@ -373,18 +403,28 @@ class _PatientManagementScreenState extends State<PatientManagementScreen>
               'No patients found',
               style: AppTextStyles.bodyLarge.copyWith(color: AppColors.grey600),
             ),
+            const SizedBox(height: AppDimensions.paddingSmall),
+            Text(
+              'Try adjusting your search or filter criteria',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.grey500,
+              ),
+            ),
           ],
         ),
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(AppDimensions.paddingMedium),
-      itemCount: patients.length,
-      itemBuilder: (context, index) {
-        final patient = patients[index];
-        return _buildPatientCard(patient);
-      },
+    return RefreshIndicator(
+      onRefresh: _loadPatients,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(AppDimensions.paddingMedium),
+        itemCount: patients.length,
+        itemBuilder: (context, index) {
+          final patient = patients[index];
+          return _buildPatientCard(patient);
+        },
+      ),
     );
   }
 

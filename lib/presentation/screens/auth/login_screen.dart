@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_styles.dart';
+import '../../providers/auth_provider.dart';
 import '../user/user_dashboard_screen.dart';
 import '../hospital/hospital_dashboard_screen.dart';
 import '../regional_officer/regional_dashboard_screen.dart';
@@ -20,22 +22,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _isPasswordVisible = false;
-
-  // Mock credentials for demo
-  final Map<String, Map<String, String>> _mockCredentials = {
-    AppConstants.roleNormalUser: {
-      'migrant001': 'password123',
-      'migrant002': 'password123',
-    },
-    AppConstants.roleHospital: {
-      'medical.officer': 'hospital@123',
-      'admin.hospital': 'hospital@123',
-    },
-    AppConstants.roleRegionalOfficer: {
-      'regional.admin': 'regional@123',
-      'district.officer': 'regional@123',
-    },
-  };
 
   @override
   void dispose() {
@@ -83,14 +69,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  List<String> _getDemoCredentials() {
-    final credentials = _mockCredentials[widget.userRole];
-    if (credentials != null) {
-      return credentials.keys.toList();
-    }
-    return [];
-  }
-
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -98,23 +76,28 @@ class _LoginScreenState extends State<LoginScreen> {
       _isLoading = true;
     });
 
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 1));
+    try {
+      final username = _usernameController.text.trim();
+      final password = _passwordController.text;
 
-    final username = _usernameController.text.trim();
-    final password = _passwordController.text;
-    final credentials = _mockCredentials[widget.userRole];
-
-    if (credentials != null &&
-        credentials.containsKey(username) &&
-        credentials[username] == password) {
-      // Login successful
-      _navigateToDashboard();
-    } else {
-      // Login failed
-      _showErrorDialog(
-        'Invalid credentials. Please check your username and password.',
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final success = await authProvider.login(
+        username,
+        password,
+        widget.userRole,
       );
+
+      if (success) {
+        // Login successful
+        _navigateToDashboard();
+      } else {
+        // Login failed
+        _showErrorDialog(
+          'Invalid credentials. Please check your username and password.',
+        );
+      }
+    } catch (e) {
+      _showErrorDialog('Login failed: ${e.toString()}');
     }
 
     setState(() {
@@ -162,34 +145,20 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _showDemoCredentials() {
-    final credentials = _getDemoCredentials();
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Demo Credentials for ${_getRoleDisplayName()}'),
-        content: Column(
+        title: Text('${_getRoleDisplayName()} Login'),
+        content: const Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('You can use any of these demo accounts:'),
-            const SizedBox(height: 12),
-            ...credentials.map(
-              (username) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Username: $username',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      'Password: ${_mockCredentials[widget.userRole]![username]}',
-                    ),
-                    const Divider(),
-                  ],
-                ),
-              ),
+            Text(
+              'Please enter your registered credentials to access the system.',
+            ),
+            SizedBox(height: 12),
+            Text(
+              'If you don\'t have an account, please contact your administrator.',
             ),
           ],
         ),
