@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
 import '../../../core/constants/app_styles.dart';
+// Ensure dotenv is loaded before using the API key
+// Removed didChangeDependencies method as dotenv should be loaded in main.dart
 
 class AIHealthBotScreen extends StatefulWidget {
   const AIHealthBotScreen({super.key});
@@ -11,7 +16,7 @@ class AIHealthBotScreen extends StatefulWidget {
 class _AIHealthBotScreenState extends State<AIHealthBotScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  List<ChatMessage> _messages = [];
+  final List<ChatMessage> _messages = [];
   bool _isTyping = false;
 
   @override
@@ -30,9 +35,14 @@ class _AIHealthBotScreenState extends State<AIHealthBotScreen> {
   }
 
   void _addBotMessage(String message) {
+    final formattedMessage = _formatBotMessage(message);
     setState(() {
       _messages.add(
-        ChatMessage(message: message, isBot: true, timestamp: DateTime.now()),
+        ChatMessage(
+          message: formattedMessage,
+          isBot: true,
+          timestamp: DateTime.now(),
+        ),
       );
     });
     _scrollToBottom();
@@ -59,7 +69,7 @@ class _AIHealthBotScreenState extends State<AIHealthBotScreen> {
     });
   }
 
-  void _sendMessage() {
+  void _sendMessage() async {
     if (_messageController.text.trim().isEmpty) return;
 
     final userMessage = _messageController.text.trim();
@@ -70,32 +80,147 @@ class _AIHealthBotScreenState extends State<AIHealthBotScreen> {
       _isTyping = true;
     });
 
-    // Simulate AI response
-    Future.delayed(const Duration(seconds: 2), () {
+    try {
+      final botReply = await _fetchGroqResponse(userMessage);
       setState(() {
         _isTyping = false;
       });
-      _addBotMessage(_generateBotResponse(userMessage));
-    });
+      _addBotMessage(botReply);
+    } catch (e) {
+      setState(() {
+        _isTyping = false;
+      });
+      _addBotMessage(
+        "Sorry, I'm having trouble connecting to the AI service. Please try again later.",
+      );
+    }
   }
 
-  String _generateBotResponse(String userMessage) {
-    final message = userMessage.toLowerCase();
+  String _formatBotMessage(String message) {
+    // Clean and format the message from LLM
+    String formatted = message
+        .replaceAll('**', '') // Remove bold markdown
+        .replaceAll('*', '') // Remove italic markdown
+        .replaceAll('###', '') // Remove header markdown
+        .replaceAll('##', '') // Remove header markdown
+        .replaceAll('#', '') // Remove header markdown
+        .trim();
 
-    if (message.contains('headache') || message.contains('head')) {
-      return "I understand you're experiencing headaches. This could be due to various factors like stress, dehydration, or lack of sleep. I recommend:\n\n• Stay hydrated\n• Get adequate rest\n• Practice relaxation techniques\n• If symptoms persist, consult a doctor";
-    } else if (message.contains('fever') || message.contains('temperature')) {
-      return "Fever can indicate your body is fighting an infection. Here's what you can do:\n\n• Rest and stay hydrated\n• Monitor your temperature\n• Take fever reducers if needed\n• Seek medical attention if fever exceeds 103°F (39.4°C)";
-    } else if (message.contains('cough') || message.contains('cold')) {
-      return "For cough and cold symptoms, try these remedies:\n\n• Stay hydrated with warm fluids\n• Use a humidifier\n• Get plenty of rest\n• Gargle with salt water\n• If symptoms worsen or persist beyond a week, see a doctor";
-    } else if (message.contains('exercise') || message.contains('workout')) {
-      return "Regular exercise is great for your health! Here are some tips:\n\n• Start with 30 minutes of moderate activity daily\n• Include both cardio and strength training\n• Stay hydrated during workouts\n• Listen to your body and rest when needed";
-    } else if (message.contains('diet') || message.contains('nutrition')) {
-      return "A balanced diet is essential for good health:\n\n• Include fruits and vegetables in every meal\n• Choose whole grains over refined ones\n• Limit processed foods and sugar\n• Stay hydrated with plenty of water\n• Consider consulting a nutritionist for personalized advice";
-    } else if (message.contains('stress') || message.contains('anxiety')) {
-      return "Managing stress is important for overall health:\n\n• Practice deep breathing exercises\n• Try meditation or mindfulness\n• Maintain a regular sleep schedule\n• Stay physically active\n• Consider talking to a mental health professional";
-    } else {
-      return "Thank you for your question. While I can provide general health information, I recommend consulting with a healthcare professional for personalized medical advice. Is there anything specific about your health you'd like to know more about?";
+    // Check if the message contains a table (has | characters)
+    if (formatted.contains('|')) {
+      return _formatTableSimple(formatted);
+    }
+
+    // Split into lines and format as bullet points where appropriate
+    List<String> lines = formatted.split('\n');
+    List<String> formattedLines = [];
+
+    for (String line in lines) {
+      line = line.trim();
+      if (line.isEmpty) continue;
+
+      // If line starts with -, make it a proper bullet point
+      if (line.startsWith('-')) {
+        formattedLines.add('• ${line.substring(1).trim()}');
+      } else if (line.startsWith('•')) {
+        formattedLines.add(line);
+      } else {
+        formattedLines.add(line);
+      }
+    }
+
+    return formattedLines.join('\n');
+  }
+
+  String _formatTableSimple(String tableText) {
+    List<String> lines = tableText.split('\n');
+    List<String> formattedLines = [];
+    bool inTable = false;
+
+    for (String line in lines) {
+      line = line.trim();
+      if (line.isEmpty) {
+        if (inTable) {
+          formattedLines.add('');
+          inTable = false;
+        }
+        continue;
+      }
+
+      if (line.contains('|')) {
+        inTable = true;
+        // Clean up the table row
+        List<String> cells = line
+            .split('|')
+            .map((cell) => cell.trim())
+            .where((cell) => cell.isNotEmpty)
+            .toList();
+
+        if (cells.isNotEmpty) {
+          // Format as a clean list with bullets
+          String formattedRow = cells.join(' • ');
+          formattedLines.add('▪ $formattedRow');
+        }
+      } else {
+        if (inTable) {
+          formattedLines.add('');
+          inTable = false;
+        }
+        formattedLines.add(line);
+      }
+    }
+
+    return formattedLines.join('\n');
+  }
+
+  Future<String> _fetchGroqResponse(String userMessage) async {
+    final groqApiKey = dotenv.env['GROQ_API_KEY'];
+    const groqApiUrl = 'https://api.groq.com/openai/v1/chat/completions';
+    const model = 'llama-3.3-70b-versatile';
+
+    if (groqApiKey == null || groqApiKey.isEmpty) {
+      return "API key not found. Please check your .env configuration.";
+    }
+
+    final headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $groqApiKey',
+    };
+
+    final body = {
+      'model': model,
+      'messages': [
+        {
+          'role': 'system',
+          'content':
+              "You are an AI health assistant. Only answer questions that are strictly related to health, medicine, wellness, symptoms, diseases, treatments, or healthcare. If the user's question is not related to these topics, reply: 'I can only answer medical or health-related questions. Is there anything else?' Never answer non-medical questions.",
+        },
+        {'role': 'user', 'content': userMessage},
+      ],
+      'temperature': 1,
+      'max_completion_tokens': 1024,
+      'top_p': 1,
+      'stream': false,
+      'stop': null,
+    };
+
+    try {
+      final uri = Uri.parse(groqApiUrl);
+      final response = await http.post(
+        uri,
+        headers: headers,
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final reply = data['choices'][0]['message']['content'] as String?;
+        return reply ?? "Sorry, I couldn't generate a response.";
+      } else {
+        return "Groq API error: ${response.statusCode}. Please try again later.";
+      }
+    } catch (e) {
+      return "Network error: ${e.toString()}";
     }
   }
 
@@ -189,12 +314,7 @@ class _AIHealthBotScreenState extends State<AIHealthBotScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    message.message,
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: message.isBot ? AppColors.grey800 : Colors.white,
-                    ),
-                  ),
+                  AnimatedText(text: message.message, isBot: message.isBot),
                   const SizedBox(height: 4),
                   Text(
                     _formatTime(message.timestamp),
@@ -293,7 +413,8 @@ class _AIHealthBotScreenState extends State<AIHealthBotScreen> {
               child: TextField(
                 controller: _messageController,
                 decoration: const InputDecoration(
-                  hintText: 'Ask about your health...',
+                  hintText:
+                      'Ask about your health... (Shift+Enter for new line)',
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.symmetric(
                     horizontal: 16,
@@ -303,6 +424,17 @@ class _AIHealthBotScreenState extends State<AIHealthBotScreen> {
                 maxLines: null,
                 textCapitalization: TextCapitalization.sentences,
                 onSubmitted: (_) => _sendMessage(),
+                onChanged: (text) {
+                  // Handle Shift+Enter vs Enter
+                  if (text.endsWith('\n') && !text.endsWith('shift\n')) {
+                    // This is a simple Enter, send message
+                    _messageController.text = text.substring(
+                      0,
+                      text.length - 1,
+                    );
+                    _sendMessage();
+                  }
+                },
               ),
             ),
           ),
@@ -358,4 +490,65 @@ class ChatMessage {
     required this.isBot,
     required this.timestamp,
   });
+}
+
+class AnimatedText extends StatefulWidget {
+  final String text;
+  final bool isBot;
+
+  const AnimatedText({super.key, required this.text, required this.isBot});
+
+  @override
+  State<AnimatedText> createState() => _AnimatedTextState();
+}
+
+class _AnimatedTextState extends State<AnimatedText>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<int> _characterCount;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: Duration(milliseconds: widget.text.length * 20), // Adjust speed
+      vsync: this,
+    );
+    _characterCount = IntTween(
+      begin: 0,
+      end: widget.text.length,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+
+    if (widget.isBot) {
+      _controller.forward();
+    } else {
+      _characterCount = IntTween(
+        begin: widget.text.length,
+        end: widget.text.length,
+      ).animate(_controller);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _characterCount,
+      builder: (context, child) {
+        String displayText = widget.text.substring(0, _characterCount.value);
+
+        return Text(
+          displayText,
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: widget.isBot ? AppColors.grey800 : Colors.white,
+          ),
+        );
+      },
+    );
+  }
 }

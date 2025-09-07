@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'core/theme/app_theme.dart';
 import 'presentation/screens/auth/role_selection_screen.dart';
 
-void main() {
+Future<void> main() async {
+  await dotenv.load(fileName: 'assets/env.env');
   runApp(const MyHealthApp());
 }
 
