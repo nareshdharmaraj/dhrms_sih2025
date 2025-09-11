@@ -121,18 +121,84 @@ class RoleSelectionScreen extends StatelessWidget {
       ),
     ];
 
-    return ListView.builder(
-      itemCount: roles.length,
-      itemBuilder: (context, index) {
-        return Padding(
-          padding: EdgeInsets.only(bottom: isTablet ? 20.0 : 16.0),
-          child: RoleCardWidget(
-            role: roles[index],
-            isTablet: isTablet,
-            onTap: () => _handleRoleSelection(context, roles[index]),
+    return Column(
+      children: [
+        // New Patient Registration Button
+        Container(
+          width: double.infinity,
+          margin: EdgeInsets.only(bottom: isTablet ? 30.0 : 24.0),
+          child: ElevatedButton(
+            onPressed: () => Navigator.pushNamed(context, '/patient-registration'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: const Color(0xFF2E7D32),
+              padding: EdgeInsets.symmetric(
+                vertical: isTablet ? 20.0 : 16.0,
+                horizontal: 24.0,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              elevation: 8,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.person_add,
+                  size: isTablet ? 28 : 24,
+                ),
+                SizedBox(width: 12),
+                Text(
+                  'New Patient Registration',
+                  style: TextStyle(
+                    fontSize: isTablet ? 20 : 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
           ),
-        );
-      },
+        ),
+        
+        // Divider
+        Row(
+          children: [
+            Expanded(child: Divider(color: Colors.white.withOpacity(0.5))),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                'OR LOGIN WITH EXISTING ACCOUNT',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.8),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            Expanded(child: Divider(color: Colors.white.withOpacity(0.5))),
+          ],
+        ),
+        
+        SizedBox(height: isTablet ? 30.0 : 24.0),
+        
+        // Role Cards
+        Expanded(
+          child: ListView.builder(
+            itemCount: roles.length,
+            itemBuilder: (context, index) {
+              return Padding(
+                padding: EdgeInsets.only(bottom: isTablet ? 20.0 : 16.0),
+                child: RoleCardWidget(
+                  role: roles[index],
+                  isTablet: isTablet,
+                  onTap: () => _handleRoleSelection(context, roles[index]),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 

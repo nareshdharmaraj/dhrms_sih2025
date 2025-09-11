@@ -5,7 +5,7 @@ import 'dart:convert';
 class HospitalStaffDashboard extends StatefulWidget {
   final Map<String, dynamic> userData;
 
-  const HospitalStaffDashboard({Key? key, required this.userData}) : super(key: key);
+  const HospitalStaffDashboard({super.key, required this.userData});
 
   @override
   _HospitalStaffDashboardState createState() => _HospitalStaffDashboardState();

@@ -5,7 +5,7 @@ import 'dart:convert';
 class PatientDashboard extends StatefulWidget {
   final Map<String, dynamic> userData;
 
-  const PatientDashboard({Key? key, required this.userData}) : super(key: key);
+  const PatientDashboard({super.key, required this.userData});
 
   @override
   _PatientDashboardState createState() => _PatientDashboardState();
@@ -230,7 +230,7 @@ class _PatientDashboardState extends State<PatientDashboard>
   }
 
   Widget _buildLoadingState() {
-    return Container(
+    return SizedBox(
       height: MediaQuery.of(context).size.height * 0.6,
       child: Center(
         child: Column(
@@ -270,7 +270,7 @@ class _PatientDashboardState extends State<PatientDashboard>
   }
 
   Widget _buildErrorState() {
-    return Container(
+    return SizedBox(
       height: MediaQuery.of(context).size.height * 0.6,
       child: Center(
         child: Container(
@@ -498,10 +498,16 @@ class _PatientDashboardState extends State<PatientDashboard>
                 () {},
               ),
               _buildActionButton(
-                'Medications',
-                Icons.medication,
+                'Wearables',
+                Icons.watch,
                 Colors.purple,
-                () {},
+                () {
+                  Navigator.pushNamed(
+                    context, 
+                    '/wearable-data',
+                    arguments: widget.userData,
+                  );
+                },
               ),
               _buildActionButton(
                 'Reports',

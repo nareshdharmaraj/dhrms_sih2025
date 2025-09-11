@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
 import '../utils/app_constants.dart';
-import 'frontend/lib/screens/hospital_dashboard_screen.dart';
-import 'frontend/lib/screens/hospital_register_screen.dart';
+import 'hospital_dashboard_screen.dart';
+import 'hospital_register_screen.dart';
 
 class HospitalLoginScreen extends StatefulWidget {
   const HospitalLoginScreen({super.key});

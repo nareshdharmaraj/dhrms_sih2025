@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
 import '../utils/app_constants.dart';
-import '../services/api_service.dart';
 import 'hospital_dashboard_screen.dart';
 
 class HospitalRegisterScreen extends StatefulWidget {

@@ -72,7 +72,7 @@ class _PatientLoginScreenState extends State<PatientLoginScreen> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: Colors.white.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Icon(
@@ -95,7 +95,7 @@ class _PatientLoginScreenState extends State<PatientLoginScreen> {
           'Access your health records',
           style: TextStyle(
             fontSize: isTablet ? 16 : 14,
-            color: Colors.white.withOpacity(0.9),
+            color: Colors.white.withValues(alpha: 0.9),
             fontWeight: FontWeight.w300,
           ),
         ),
@@ -111,7 +111,7 @@ class _PatientLoginScreenState extends State<PatientLoginScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -124,8 +124,8 @@ class _PatientLoginScreenState extends State<PatientLoginScreen> {
           children: [
             CustomTextField(
               controller: _emailController,
-              label: 'Email or Health ID',
-              hint: 'Enter your email or UHI',
+              labelText: 'Email or Health ID',
+              hintText: 'Enter your email or UHI',
               prefixIcon: Icons.email_outlined,
               keyboardType: TextInputType.emailAddress,
               validator: (value) {
@@ -138,21 +138,16 @@ class _PatientLoginScreenState extends State<PatientLoginScreen> {
             const SizedBox(height: 20),
             CustomTextField(
               controller: _passwordController,
-              label: 'Password',
-              hint: 'Enter your password',
+              labelText: 'Password',
+              hintText: 'Enter your password',
               prefixIcon: Icons.lock_outline,
-              obscureText: _obscurePassword,
-              suffixIcon: IconButton(
-                icon: Icon(
-                  _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                  color: Colors.grey[600],
-                ),
-                onPressed: () {
-                  setState(() {
-                    _obscurePassword = !_obscurePassword;
-                  });
-                },
-              ),
+              isPassword: true,
+              isPasswordVisible: !_obscurePassword,
+              onTogglePasswordVisibility: () {
+                setState(() {
+                  _obscurePassword = !_obscurePassword;
+                });
+              },
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'Please enter your password';
@@ -200,7 +195,7 @@ class _PatientLoginScreenState extends State<PatientLoginScreen> {
         Text(
           'Don\'t have an account?',
           style: TextStyle(
-            color: Colors.white.withOpacity(0.9),
+            color: Colors.white.withValues(alpha: 0.9),
             fontSize: 14,
           ),
         ),

@@ -9,12 +9,11 @@ dotenv.config();
 
 // Import routes
 const authRoutes = require('./routes/auth_routes');
-// const patientRoutes = require('./routes/patient_routes');  // Temporarily disabled
-// const hospitalRoutes = require('./routes/hospital_routes');  // Temporarily disabled
-// const regionalRoutes = require('./routes/regional_routes');  // Temporarily disabled
+const patientRoutes = require('./routes/patientRoutes');
 const userRoutes = require('./routes/user_routes');
 const allRolesRoutes = require('./routes/all_roles_routes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
+const wearableRoutes = require('./routes/wearableRoutes');
 
 // Import middleware
 const errorHandler = require('./middleware/error_handler');
@@ -42,12 +41,11 @@ app.get('/health', (req, res) => {
 
 // API Routes
 app.use('/api/auth', authRoutes);
-// app.use('/api/patients', patientRoutes);  // Temporarily disabled
-// app.use('/api/hospital', hospitalRoutes);  // Temporarily disabled
-// app.use('/api/regional', regionalRoutes);  // Temporarily disabled
+app.use('/api/patients', patientRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/roles', allRolesRoutes);
 app.use('/api', dashboardRoutes);
+app.use('/api/wearables', wearableRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

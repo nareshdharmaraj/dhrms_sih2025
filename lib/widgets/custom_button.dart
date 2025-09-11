@@ -85,7 +85,7 @@ class _CustomButtonState extends State<CustomButton>
               boxShadow: widget.elevation > 0
                   ? [
                       BoxShadow(
-                        color: backgroundColor.withOpacity(0.3),
+                        color: backgroundColor.withValues(alpha: 0.3),
                         blurRadius: widget.elevation,
                         offset: Offset(0, widget.elevation / 2),
                       ),
@@ -366,7 +366,7 @@ class FloatingActionButton extends StatelessWidget {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: (backgroundColor ?? AppConstants.primaryGreen).withOpacity(0.3),
+            color: (backgroundColor ?? AppConstants.primaryGreen).withValues(alpha: 0.3),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),

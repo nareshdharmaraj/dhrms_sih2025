@@ -5,7 +5,7 @@ import 'dart:convert';
 class RegionalOfficerDashboard extends StatefulWidget {
   final Map<String, dynamic> userData;
 
-  const RegionalOfficerDashboard({Key? key, required this.userData}) : super(key: key);
+  const RegionalOfficerDashboard({super.key, required this.userData});
 
   @override
   _RegionalOfficerDashboardState createState() => _RegionalOfficerDashboardState();
