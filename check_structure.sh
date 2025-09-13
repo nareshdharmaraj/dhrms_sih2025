@@ -1,0 +1,1 @@
+cat PROJECT_STRUCTURE.md

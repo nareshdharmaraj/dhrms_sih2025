@@ -35,7 +35,27 @@ app.get('/health', (req, res) => {
     status: 'OK',
     message: 'DHRMS Backend is running',
     timestamp: new Date().toISOString(),
-    version: '1.0.0'
+    version: '1.0.0',
+    environment: process.env.NODE_ENV || 'development',
+    port: PORT
+  });
+});
+
+// Simple test route for Render compatibility
+app.get('/api/test', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    message: 'API test endpoint working',
+    backend: 'DHRMS Backend Server',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    mongodb_connected: mongoose.connection.readyState === 1,
+    endpoints: {
+      health: '/health',
+      patients: '/api/patients',
+      wearables: '/api/wearables',
+      auth: '/api/auth'
+    }
   });
 });
 
@@ -66,8 +86,8 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/myhealth'
 .then(() => {
   console.log('✅ Connected to MongoDB - Database: myhealth');
   
-  // Start server
-  app.listen(PORT, () => {
+  // Start server - Compatible with Render
+  app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 DHRMS Backend server running on port ${PORT}`);
     console.log(`📋 Health check: http://localhost:${PORT}/health`);
   });
