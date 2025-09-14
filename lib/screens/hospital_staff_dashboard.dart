@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../utils/app_constants.dart';
 
 class HospitalStaffDashboard extends StatefulWidget {
   final Map<String, dynamic> userData;
@@ -30,19 +31,19 @@ class _HospitalStaffDashboardState extends State<HospitalStaffDashboard> {
       
       // Load patients from the hospital/department
       final patientsResponse = await http.get(
-        Uri.parse('http://localhost:3000/api/patients'),
+        Uri.parse('${AppConstants.baseUrl}/patients'),
         headers: {'Content-Type': 'application/json'},
       );
 
       // Load appointments for this staff member
       final appointmentsResponse = await http.get(
-        Uri.parse('http://localhost:3000/api/appointments/staff/${widget.userData['_id']}'),
+        Uri.parse('${AppConstants.baseUrl}/appointments/staff/${widget.userData['_id']}'),
         headers: {'Content-Type': 'application/json'},
       );
 
-      // Load medical records created by this staff member
+      // Load medical records for this staff member's patients
       final recordsResponse = await http.get(
-        Uri.parse('http://localhost:3000/api/medical-records/staff/${widget.userData['_id']}'),
+        Uri.parse('${AppConstants.baseUrl}/medical-records/staff/${widget.userData['_id']}'),
         headers: {'Content-Type': 'application/json'},
       );
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../utils/app_constants.dart';
 
 class PatientDashboard extends StatefulWidget {
   final Map<String, dynamic> userData;
@@ -43,15 +44,24 @@ class _PatientDashboardState extends State<PatientDashboard>
     try {
       setState(() => isLoading = true);
       
+      // Debug: Check user data
+      print('Patient Dashboard - User Data: ${widget.userData}');
+      final userId = widget.userData['_id'] ?? widget.userData['id'] ?? widget.userData['uhid'];
+      print('Patient Dashboard - User ID: $userId');
+      
+      if (userId == null) {
+        throw Exception('User ID is null - cannot load patient data');
+      }
+      
       // Load medical records
       final recordsResponse = await http.get(
-        Uri.parse('http://localhost:3000/api/medical-records/${widget.userData['_id']}'),
+        Uri.parse('${AppConstants.baseUrl}/medical-records/$userId'),
         headers: {'Content-Type': 'application/json'},
       );
 
       // Load appointments
       final appointmentsResponse = await http.get(
-        Uri.parse('http://localhost:3000/api/appointments/patient/${widget.userData['_id']}'),
+        Uri.parse('${AppConstants.baseUrl}/appointments/patient/$userId'),
         headers: {'Content-Type': 'application/json'},
       );
 

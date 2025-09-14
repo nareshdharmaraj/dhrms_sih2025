@@ -111,8 +111,9 @@ class AppConstants {
   ];
   
   // API Endpoints (for future backend integration)
-  static const String baseUrl = 'http://localhost:3000/api';
-  static const String apiBaseUrl = 'http://localhost:3000/api';
+  // For Android emulator, use 10.0.2.2 instead of localhost
+  static const String baseUrl = 'http://10.0.2.2:3000/api';
+  static const String apiBaseUrl = 'http://10.0.2.2:3000/api';
   static const String loginEndpoint = '/auth/login';
   static const String registerEndpoint = '/auth/register';
   static const String profileEndpoint = '/user/profile';

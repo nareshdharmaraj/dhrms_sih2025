@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui' as ui;
+import '../utils/app_constants.dart';
 
 class DigitalHealthCardScreen extends StatefulWidget {
   final String uhid;
@@ -30,7 +31,7 @@ class _DigitalHealthCardScreenState extends State<DigitalHealthCardScreen> {
   Future<void> _loadDigitalCard() async {
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:3000/api/patients/digital-card/${widget.uhid}'),
+        Uri.parse('${AppConstants.baseUrl}/patients/digital-card/${widget.uhid}'),
         headers: {'Content-Type': 'application/json'},
       );
 

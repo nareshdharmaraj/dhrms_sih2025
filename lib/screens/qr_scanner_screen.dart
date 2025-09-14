@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../utils/app_constants.dart';
 
 class QRScannerScreen extends StatefulWidget {
   const QRScannerScreen({super.key});
@@ -55,7 +56,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
 
       // Fetch patient data
       final response = await http.get(
-        Uri.parse('http://localhost:3000/api/patients/uhid/$uhid'),
+        Uri.parse('${AppConstants.baseUrl}/patients/uhid/$uhid'),
         headers: {'Content-Type': 'application/json'},
       );
 
