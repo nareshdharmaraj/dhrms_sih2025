@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
-import 'dart:io' show Platform;
-import 'debug_config.dart';
+import 'environment_config.dart';
 
 class AppConstants {
   // Brand Colors
@@ -114,30 +112,10 @@ class AppConstants {
   ];
   
   // API Endpoints (for backend integration)
-  // Dynamic base URL that adapts to the platform
+  // Dynamic base URL that adapts to the platform using environment configuration
   static String get baseUrl {
-    // Check debug configuration first
-    String debugUrl = DebugConfig.getDebugBaseUrl();
-    if (debugUrl.isNotEmpty) {
-      return debugUrl;
-    }
-    
-    // Default platform detection
-    if (kIsWeb) {
-      // For web development, use localhost
-      return 'http://localhost:3000/api';
-    } else if (Platform.isAndroid) {
-      // For Android: Try to detect if we're on physical device vs emulator
-      // This is a simple heuristic - in practice, physical device detection
-      // should be enabled via DebugConfig.forcePhysicalDeviceMode
-      return 'http://10.0.2.2:3000/api';
-    } else if (Platform.isIOS) {
-      // For iOS simulator, use localhost; for physical device, IP varies
-      return 'http://localhost:3000/api';
-    } else {
-      // For desktop platforms (Windows, macOS, Linux)
-      return 'http://localhost:3000/api';
-    }
+    // Use the new environment-based configuration
+    return EnvironmentConfig.getApiBaseUrl();
   }
   
   // Alternative base URL for physical devices (maintained for compatibility)

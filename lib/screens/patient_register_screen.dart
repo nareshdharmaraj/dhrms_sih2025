@@ -3,6 +3,7 @@ import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
 import '../utils/app_constants.dart';
 import '../services/api_service.dart';
+import '../screens/digital_health_card_screen.dart';
 
 class PatientRegisterScreen extends StatefulWidget {
   const PatientRegisterScreen({super.key});
@@ -463,10 +464,27 @@ class _PatientRegisterScreenState extends State<PatientRegisterScreen> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Please save this UHI ID safely. You will need it for accessing healthcare services.',
+                              'Please save this UHI ID safely. This is your USERNAME for login. You can also use your email address to log in.',
                               style: TextStyle(
                                 fontSize: AppConstants.smallFont,
                                 color: AppConstants.secondaryText,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppConstants.lightBlue,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                '💡 To login: Use this UHI ID or your email as username',
+                                style: TextStyle(
+                                  fontSize: AppConstants.smallFont,
+                                  color: AppConstants.primaryBlue,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                           ],
@@ -475,6 +493,17 @@ class _PatientRegisterScreenState extends State<PatientRegisterScreen> {
                     ],
                   ),
                   actions: [
+                    // Generate Card Button
+                    CustomButton(
+                      text: 'Generate Health Card',
+                      backgroundColor: AppConstants.primaryBlue,
+                      textColor: Colors.white,
+                      onPressed: () {
+                        _generateHealthCard(context, uhiId, fullName);
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    // Continue to Dashboard Button  
                     CustomButton(
                       text: 'Continue to Dashboard',
                       backgroundColor: AppConstants.primaryGreen,
@@ -532,6 +561,67 @@ class _PatientRegisterScreenState extends State<PatientRegisterScreen> {
             ),
           );
         }
+      }
+    }
+  }
+
+  // Method to generate and download health card
+  Future<void> _generateHealthCard(BuildContext context, String uhiId, String fullName) async {
+    try {
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 16),
+              Text('Preparing Health Card...'),
+            ],
+          ),
+        ),
+      );
+
+      // Add a small delay to ensure patient data is saved on backend
+      await Future.delayed(const Duration(seconds: 2));
+
+      // Close loading dialog and navigate to digital card screen
+      if (context.mounted) {
+        Navigator.pop(context);
+        
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Opening digital health card for UHID: $uhiId'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+
+        // Navigate to digital card screen with UHI ID
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DigitalHealthCardScreen(
+              uhid: uhiId,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      // Close loading dialog if open
+      if (context.mounted) {
+        Navigator.pop(context);
+        
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to open health card: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
       }
     }
   }

@@ -3,8 +3,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
-import '../utils/app_constants.dart';
 import '../utils/card_download_service.dart';
+import '../utils/environment_config.dart';
 
 class DigitalHealthCardScreen extends StatefulWidget {
   final String uhid;
@@ -29,10 +29,18 @@ class _DigitalHealthCardScreenState extends State<DigitalHealthCardScreen> {
 
   Future<void> _loadDigitalCard() async {
     try {
+      // Get the current API base URL from environment config
+      final apiBaseUrl = await EnvironmentConfig.getApiBaseUrl();
+      print('🔍 Loading digital card for UHID: ${widget.uhid}');
+      print('🌐 Using API URL: $apiBaseUrl');
+      
       final response = await http.get(
-        Uri.parse('${AppConstants.apiBaseUrl}/patients/digital-card/${widget.uhid}'),
+        Uri.parse('$apiBaseUrl/patients/digital-card/${widget.uhid}'),
         headers: {'Content-Type': 'application/json'},
       );
+
+      print('📡 Response status: ${response.statusCode}');
+      print('📄 Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -41,23 +49,27 @@ class _DigitalHealthCardScreenState extends State<DigitalHealthCardScreen> {
             cardData = data['digitalCard'];
             isLoading = false;
           });
+          print('✅ Digital card loaded successfully');
         } else {
           setState(() {
-            error = data['message'];
+            error = data['message'] ?? 'Failed to load card data';
             isLoading = false;
           });
+          print('❌ API error: ${data['message']}');
         }
       } else {
         setState(() {
-          error = 'Failed to load digital card';
+          error = 'Failed to load digital card (Status: ${response.statusCode})';
           isLoading = false;
         });
+        print('❌ HTTP error: ${response.statusCode}');
       }
     } catch (e) {
       setState(() {
         error = 'Network error: $e';
         isLoading = false;
       });
+      print('❌ Network error: $e');
     }
   }
 

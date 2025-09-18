@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../utils/connection_test_service.dart';
 import '../utils/app_constants.dart';
-import '../utils/debug_config.dart';
+import '../utils/environment_config.dart';
+import '../services/configuration_manager.dart';
+import 'api_configuration_screen.dart';
 
 class DebugConnectionScreen extends StatefulWidget {
   const DebugConnectionScreen({super.key});
@@ -44,6 +46,21 @@ class _DebugConnectionScreenState extends State<DebugConnectionScreen> {
         foregroundColor: Colors.white,
         actions: [
           IconButton(
+            icon: Icon(Icons.settings),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ApiConfigurationScreen(),
+                ),
+              ).then((_) {
+                // Refresh the debug screen when returning from configuration
+                _runTests();
+              });
+            },
+            tooltip: 'API Configuration',
+          ),
+          IconButton(
             icon: Icon(Icons.refresh),
             onPressed: _runTests,
           ),
@@ -55,6 +72,8 @@ class _DebugConnectionScreenState extends State<DebugConnectionScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildConfigSection(),
+            SizedBox(height: 20),
+            _buildQuickSwitcher(),
             SizedBox(height: 20),
             _buildTestSection(),
             SizedBox(height: 20),
@@ -78,9 +97,10 @@ class _DebugConnectionScreenState extends State<DebugConnectionScreen> {
             ),
             SizedBox(height: 10),
             _buildConfigRow('API Base URL', AppConstants.apiBaseUrl),
-            _buildConfigRow('Physical Device Mode', DebugConfig.forcePhysicalDeviceMode.toString()),
-            _buildConfigRow('Physical Device IP', DebugConfig.physicalDeviceIP),
-            _buildConfigRow('Server Port', DebugConfig.serverPort.toString()),
+            _buildConfigRow('Use Cloud Server', EnvironmentConfig.useCloudServer.toString()),
+            _buildConfigRow('Cloud API URL', EnvironmentConfig.cloudApiUrl),
+            _buildConfigRow('Physical Device IP', EnvironmentConfig.physicalDeviceIP),
+            _buildConfigRow('Server Port', EnvironmentConfig.serverPort.toString()),
           ],
         ),
       ),
@@ -107,6 +127,96 @@ class _DebugConnectionScreenState extends State<DebugConnectionScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildQuickSwitcher() {
+    return Card(
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Quick Configuration Switch',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      await ConfigurationManager.instance.switchMode(ApiConfigMode.local);
+                      setState(() {});
+                      _runTests();
+                    },
+                    icon: Icon(Icons.computer, size: 16),
+                    label: Text('Local'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: ConfigurationManager.instance.currentMode == ApiConfigMode.local 
+                          ? AppConstants.primaryGreen 
+                          : AppConstants.lightGrey,
+                      foregroundColor: ConfigurationManager.instance.currentMode == ApiConfigMode.local 
+                          ? Colors.white 
+                          : AppConstants.primaryText,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      await ConfigurationManager.instance.switchMode(ApiConfigMode.physicalDevice);
+                      setState(() {});
+                      _runTests();
+                    },
+                    icon: Icon(Icons.phone_android, size: 16),
+                    label: Text('Device'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: ConfigurationManager.instance.currentMode == ApiConfigMode.physicalDevice 
+                          ? AppConstants.primaryGreen 
+                          : AppConstants.lightGrey,
+                      foregroundColor: ConfigurationManager.instance.currentMode == ApiConfigMode.physicalDevice 
+                          ? Colors.white 
+                          : AppConstants.primaryText,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      await ConfigurationManager.instance.switchMode(ApiConfigMode.cloud);
+                      setState(() {});
+                      _runTests();
+                    },
+                    icon: Icon(Icons.cloud, size: 16),
+                    label: Text('Cloud'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: ConfigurationManager.instance.currentMode == ApiConfigMode.cloud 
+                          ? AppConstants.primaryGreen 
+                          : AppConstants.lightGrey,
+                      foregroundColor: ConfigurationManager.instance.currentMode == ApiConfigMode.cloud 
+                          ? Colors.white 
+                          : AppConstants.primaryText,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Current: ${ConfigurationManager.instance.currentMode.displayName}',
+              style: TextStyle(
+                fontSize: 12,
+                color: AppConstants.secondaryText,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -279,8 +389,8 @@ Common IP Commands:
 • Mac/Linux: ifconfig
 
 Current Settings:
-• Physical Mode: ${DebugConfig.forcePhysicalDeviceMode}
-• Device IP: ${DebugConfig.physicalDeviceIP}
+• Cloud Server: ${EnvironmentConfig.useCloudServer}
+• Device IP: ${EnvironmentConfig.physicalDeviceIP}
 • API URL: ${AppConstants.apiBaseUrl}
           '''),
         ),
@@ -303,9 +413,13 @@ Current Settings:
           child: SelectableText('''
 Platform: ${Theme.of(context).platform}
 API Base URL: ${AppConstants.apiBaseUrl}
-Physical Device Mode: ${DebugConfig.forcePhysicalDeviceMode}
-Physical Device IP: ${DebugConfig.physicalDeviceIP}
-Server Port: ${DebugConfig.serverPort}
+Use Cloud Server: ${EnvironmentConfig.useCloudServer}
+Cloud API URL: ${EnvironmentConfig.cloudApiUrl}
+Physical Device IP: ${EnvironmentConfig.physicalDeviceIP}
+Server Port: ${EnvironmentConfig.serverPort}
+
+Environment Info:
+${EnvironmentConfig.getEnvironmentInfo()}
 
 Test Results:
 ${testResults != null ? testResults.toString() : 'No test results'}

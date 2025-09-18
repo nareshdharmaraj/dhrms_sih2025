@@ -8,8 +8,14 @@ import 'screens/patient_registration_screen.dart';
 import 'screens/digital_health_card_screen.dart';
 import 'screens/qr_scanner_screen.dart';
 import 'screens/wearable_data_screen.dart';
+import 'utils/environment_config.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize the configuration system
+  await EnvironmentConfig.initialize();
+  
   runApp(const DHRMSApp());
 }
 

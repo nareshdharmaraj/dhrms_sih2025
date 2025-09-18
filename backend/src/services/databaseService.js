@@ -4,10 +4,17 @@ const RegionalOfficer = require('../models/RegionalOfficer');
 
 class DatabaseService {
   // Universal login method - checks all three collections
-  async validateUserCredentials(username, password) {
+  async validateUserCredentials(usernameOrEmail, password) {
     try {
-      // Check in Patients collection
-      let user = await Patient.findOne({ username: username });
+      console.log(`Attempting login with: ${usernameOrEmail}`);
+      
+      // Check in Patients collection - support both username and email
+      let user = await Patient.findOne({ 
+        $or: [
+          { username: usernameOrEmail },
+          { email: usernameOrEmail }
+        ]
+      });
       if (user && user.password === password) {
         // Create a safe patient data object with default values for missing fields
         const patientData = {
@@ -43,7 +50,7 @@ class DatabaseService {
           registrationDate: user.registrationDate || new Date()
         };
         
-        console.log(`Enhanced patient data for ${username}: `, patientData);
+        console.log(`Patient found: ${user.username} (${user.email})`);
         
         return {
           success: true,
@@ -62,9 +69,16 @@ class DatabaseService {
         };
       }
 
-      // Check in Hospital Staff collection
-      user = await HospitalStaff.findOne({ username: username });
+      // Check in Hospital Staff collection - support both username and email
+      user = await HospitalStaff.findOne({ 
+        $or: [
+          { username: usernameOrEmail },
+          { email: usernameOrEmail }
+        ]
+      });
       if (user && user.password === password) {
+        console.log(`Hospital staff found: ${user.username} (${user.email})`);
+        
         return {
           success: true,
           message: 'Login successful',
@@ -83,9 +97,16 @@ class DatabaseService {
         };
       }
 
-      // Check in Regional Officers collection
-      user = await RegionalOfficer.findOne({ username: username });
+      // Check in Regional Officers collection - support both username and email
+      user = await RegionalOfficer.findOne({ 
+        $or: [
+          { username: usernameOrEmail },
+          { email: usernameOrEmail }
+        ]
+      });
       if (user && user.password === password) {
+        console.log(`Regional officer found: ${user.username} (${user.email})`);
+        
         return {
           success: true,
           message: 'Login successful',
@@ -103,6 +124,7 @@ class DatabaseService {
         };
       }
 
+      console.log(`No user found with username/email: ${usernameOrEmail}`);
       return { success: false, message: 'Invalid username or password' };
     } catch (error) {
       console.error('Error validating credentials:', error);
