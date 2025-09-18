@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
 import '../utils/app_constants.dart';
-import 'patient_dashboard_screen.dart';
 import 'patient_register_screen.dart';
 
 class PatientLoginScreen extends StatefulWidget {
@@ -236,26 +237,257 @@ class _PatientLoginScreenState extends State<PatientLoginScreen> {
       _isLoading = true;
     });
 
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      // Use the roles endpoint directly since that's what's working in backend logs
+      var loginUrl = '${AppConstants.baseUrl}/roles/login';
+      print('=== LOGIN URL DEBUG ===');
+      print('Base URL: ${AppConstants.baseUrl}');
+      print('Using working endpoint: $loginUrl');
+      print('Request body: ${json.encode({
+        'username': _emailController.text.trim(),
+        'password': _passwordController.text,
+      })}');
+      print('=======================');
+      
+      // Make actual API call to backend using the working endpoint
+      var response = await http.post(
+        Uri.parse(loginUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'username': _emailController.text.trim(),  // Use 'username' instead of 'usernameOrEmail'
+          'password': _passwordController.text,
+        }),
+      );
+      
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
 
-    setState(() {
-      _isLoading = false;
-    });
+      print('Login API Response Code: ${response.statusCode}');
+      print('Login API Response Body: ${response.body}');
+      print('Raw response body type: ${response.body.runtimeType}');
+      print('Response body length: ${response.body.length}');
 
-    // For now, just navigate to dashboard (no actual authentication)
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const PatientDashboardScreen(),
-      ),
-    );
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        
+        print('=== FLUTTER LOGIN DEBUG ===');
+        print('Full Response Data: ${json.encode(responseData)}');
+        print('Response Keys: ${responseData.keys.toList()}');
+        print('Has patientData key: ${responseData.containsKey('patientData')}');
+        print('PatientData value: ${responseData['patientData']}');
+        print('PatientData type: ${responseData['patientData']?.runtimeType}');
+        if (responseData['patientData'] != null) {
+          print('PatientData keys: ${responseData['patientData'].keys.toList()}');
+          print('UHID in patientData: ${responseData['patientData']['uhid']}');
+          print('BloodGroup in patientData: ${responseData['patientData']['bloodGroup']}');
+          print('DOB in patientData: ${responseData['patientData']['dateOfBirth']}');
+        }
+        print('==============================');
+        
+        if (responseData['success'] == true && responseData['userType'] == 'patient') {
+          // Extract patient data from the API response
+          final rawUserData = responseData['user'];
+          final apiPatientData = responseData['patientData']; // Complete patient data from backend
+          
+          print('Raw API User Data: $rawUserData');
+          print('API Patient Data: $apiPatientData');
+          
+          Map<String, dynamic> patientData = {};
+          
+          // Use the complete patient data from backend if available
+          if (apiPatientData != null) {
+            patientData = Map<String, dynamic>.from(apiPatientData);
+            print('Using complete patient data from backend: $patientData');
+          } else {
+            // Fallback: Try to fetch patient data using a separate API call
+            print('No patient data in login response, attempting to fetch separately...');
+            final fetchedPatientData = await _fetchPatientDataById(rawUserData['id']);
+            if (fetchedPatientData != null) {
+              patientData = fetchedPatientData;
+              print('Successfully fetched patient data separately: $patientData');
+            } else {
+              // Last resort - map basic user data but ensure ID is included for dashboard fallback
+              patientData = _mapUserDataToPatientData(rawUserData);
+              // Ensure the patient ID is always available for dashboard fetching
+              patientData['id'] = rawUserData['id'];
+              patientData['username'] = rawUserData['username'];
+              print('Using basic user data with defaults: $patientData');
+            }
+          }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Login successful!'),
-        backgroundColor: AppConstants.successGreen,
-      ),
-    );
+          setState(() {
+            _isLoading = false;
+          });
+
+          print('Final Patient Data for Dashboard: $patientData');
+          print('Navigating with arguments type: ${patientData.runtimeType}');
+          print('Arguments keys: ${patientData.keys.toList()}');
+          print('UHID value: ${patientData['uhid']}');
+          print('Blood Group value: ${patientData['bloodGroup']}');
+          print('Date of Birth value: ${patientData['dateOfBirth']}');
+
+          // Navigate to dashboard with real patient data using named route
+          Navigator.pushReplacementNamed(
+            context,
+            '/patient-dashboard',
+            arguments: patientData,
+          );
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Login successful!'),
+              backgroundColor: AppConstants.successGreen,
+            ),
+          );
+        } else {
+          setState(() {
+            _isLoading = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(responseData['message'] ?? 'Login failed - not a patient account'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } else if (response.statusCode == 401) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Invalid credentials. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      } else {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Login failed. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Login error: $e');
+      setState(() {
+        _isLoading = false;
+      });
+      
+      // Fallback: Create sample patient data for testing
+      final samplePatientData = {
+        'uhid': 'UHID123456789',
+        'fullName': 'John Doe',
+        'email': _emailController.text.trim(),
+        'bloodGroup': 'O+',
+        'blood_group': 'O+', // Alternative field name
+        'bloodType': 'O+', // Alternative field name
+        'dateOfBirth': '1990-05-15',
+        'date_of_birth': '1990-05-15', // Alternative field name
+        'dob': '1990-05-15', // Alternative field name
+        'phone': '+1234567890',
+        'address': '123 Main St, City, State 12345',
+        'healthStatus': 'Good',
+        'gender': 'Male',
+        'emergencyContacts': [
+          {
+            'name': 'Jane Doe',
+            'relationship': 'Spouse',
+            'phone': '+1234567891'
+          },
+          {
+            'name': 'Dr. Smith',
+            'relationship': 'Doctor',
+            'phone': '+1234567892'
+          }
+        ]
+      };
+      
+      print('Using fallback sample data: $samplePatientData');
+      
+      Navigator.pushReplacementNamed(
+        context,
+        '/patient-dashboard',
+        arguments: samplePatientData,
+      );
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Login using sample data (Network error: $e)'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
+  }
+
+  // Helper method to map user data to patient data format
+  Map<String, dynamic> _mapUserDataToPatientData(Map<String, dynamic> userData) {
+    return {
+      // Identity fields
+      'uhid': userData['uhid'] ?? userData['id'], // Use user ID as UHID fallback
+      'fullName': userData['fullName'],
+      'email': userData['email'],
+      'phone': userData['phone'],
+      
+      // Set default values for missing fields
+      'bloodGroup': 'Unknown',
+      'blood_group': 'Unknown',
+      'bloodType': 'Unknown',
+      
+      // Default date - will show as 'Unknown' age
+      'dateOfBirth': null,
+      'date_of_birth': null,
+      'dob': null,
+      
+      // Other defaults
+      'gender': 'Unknown',
+      'address': '',
+      'healthStatus': 'Unknown',
+      
+      // Empty emergency contacts
+      'emergencyContacts': [],
+      
+      // Empty medical info
+      'medicalHistory': [],
+      'allergies': [],
+      'currentMedications': [],
+      
+      // System fields
+      'isActive': true,
+      'registrationDate': DateTime.now().toIso8601String(),
+    };
+  }
+
+  // Fetch complete patient data by patient ID
+  Future<Map<String, dynamic>?> _fetchPatientDataById(String patientId) async {
+    try {
+      print('Attempting to fetch patient data for ID: $patientId');
+      
+      final response = await http.get(
+        Uri.parse('${AppConstants.baseUrl}/roles/patients/$patientId'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      print('Patient fetch API Response Code: ${response.statusCode}');
+      print('Patient fetch API Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        if (responseData['success'] == true && responseData['patient'] != null) {
+          final patientData = responseData['patient'];
+          print('Successfully fetched complete patient data: $patientData');
+          return Map<String, dynamic>.from(patientData);
+        }
+      }
+      
+      print('Failed to fetch patient data - API returned error');
+      return null;
+    } catch (e) {
+      print('Error fetching patient data: $e');
+      return null;
+    }
   }
 }

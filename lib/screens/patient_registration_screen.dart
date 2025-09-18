@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'digital_health_card_screen.dart';
 import 'package:image_picker/image_picker.dart';
@@ -7,6 +6,9 @@ import 'dart:typed_data';
 import 'dart:convert' as convert;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../utils/web_image_picker.dart';
+import '../utils/app_constants.dart';
+import '../utils/network_helper.dart';
+import '../utils/card_download_service.dart';
 
 class PatientRegistrationScreen extends StatefulWidget {
   const PatientRegistrationScreen({super.key});
@@ -383,41 +385,6 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
     return isValid;
   }
 
-  bool _validateEmergencyInfo() {
-    bool isValid = true;
-    List<String> missingFields = [];
-    
-    // Check form validation
-    if (!(_emergencyFormKey.currentState?.validate() ?? false)) {
-      isValid = false;
-    }
-    
-    // Check specific required fields
-    if (_emergencyNameController.text.trim().isEmpty) {
-      missingFields.add('Emergency Contact Name');
-      isValid = false;
-    }
-    if (_emergencyPhoneController.text.trim().isEmpty || _emergencyPhoneController.text.length != 10) {
-      missingFields.add('Valid Emergency Contact Phone (10 digits)');
-      isValid = false;
-    }
-    if (_emergencyRelationController.text.trim().isEmpty || _selectedRelationship == null) {
-      missingFields.add('Emergency Contact Relation');
-      isValid = false;
-    }
-    
-    if (!isValid && missingFields.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Please fill: ${missingFields.join(', ')}'),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 4),
-        ),
-      );
-    }
-    
-    return isValid;
-  }
 
   bool _validateAllForms() {
     // Final validation - check all forms are complete without showing individual error messages
@@ -492,6 +459,12 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
     });
 
     try {
+      // Debug: Show which API endpoint is being used
+      print('=== DEBUG: Registration API Endpoint ===');
+      print('Using API base URL: ${AppConstants.apiBaseUrl}');
+      print('Full registration URL: ${AppConstants.apiBaseUrl}/auth/register/patient');
+      print('=======================================');
+      
       // Convert date format
       List<String> dateParts = _dobController.text.split('/');
       String formattedDate =
@@ -528,25 +501,31 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
         'currentMedications': [],
       };
 
-      final response = await http.post(
-        Uri.parse('http://localhost:3000/api/patients/register'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(requestData),
+      print('=== DEBUG: Registration Request Data ===');
+      print('Request data keys: ${requestData.keys.toList()}');
+      print('=======================================');
+
+      // Use enhanced network helper with retry logic
+      final response = await NetworkHelper.postWithRetry(
+        endpoint: '${AppConstants.apiBaseUrl}/auth/register/patient',
+        body: requestData,
+        maxRetries: 3,
+        timeoutSeconds: 30,
       );
 
       final responseData = json.decode(response.body);
+      
+      print('=== DEBUG: Registration Response ===');
+      print('Status code: ${response.statusCode}');
+      print('Response: $responseData');
+      print('===================================');
 
       if (response.statusCode == 201 && responseData['success']) {
         // Registration successful
-        // Navigate directly to digital health card screen with the generated UHID
         final uhid = responseData['patient']?['uhid'] ?? responseData['uhid'];
         if (uhid != null) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => DigitalHealthCardScreen(uhid: uhid),
-            ),
-          );
+          // Show success dialog with download option
+          _showSuccessDialogWithDownload(responseData['patient'], uhid);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -559,7 +538,12 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
         _showErrorDialog(responseData['message'] ?? 'Registration failed');
       }
     } catch (e) {
-      _showErrorDialog('Network error: $e');
+      print('=== DEBUG: Registration Error ===');
+      print('Error: $e');
+      print('API URL was: ${AppConstants.apiBaseUrl}/auth/register/patient');
+      print('===============================');
+      
+      _showErrorDialog('Network error: $e\nAPI: ${AppConstants.apiBaseUrl}');
     } finally {
       setState(() {
         _isLoading = false;
@@ -567,7 +551,7 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
     }
   }
 
-  void _showSuccessDialog(Map<String, dynamic> patientData) {
+  void _showSuccessDialogWithDownload(Map<String, dynamic> patientData, String uhid) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -575,144 +559,230 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
         return AlertDialog(
           title: Row(
             children: [
-              Icon(Icons.check_circle, color: Colors.green, size: 30),
-              SizedBox(width: 10),
+              Icon(Icons.check_circle, color: Colors.green, size: 24),
+              SizedBox(width: 8),
               Expanded(
-                child: Text(
-                  'Registration Successful!\nDigital Card Generated!',
-                  style: TextStyle(fontSize: 16),
-                ),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Your UHID and username have been generated:'),
-              SizedBox(height: 10),
-              Container(
-                padding: EdgeInsets.all(15),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.blue.shade200),
-                ),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'UHID: ${patientData['uhid']}',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue.shade800,
-                      ),
+                      'Registration Successful!',
+                      style: TextStyle(fontSize: 15),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    SizedBox(height: 5),
                     Text(
-                      'Username: ${patientData['username']}',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.green.shade700,
-                      ),
-                    ),
-                    SizedBox(height: 10),
-                    Text('Name: ${patientData['fullName']}'),
-                    Text('Phone: ${patientData['phone']}'),
-                  ],
-                ),
-              ),
-              SizedBox(height: 15),
-              
-              // Card Generation Success Message
-              Container(
-                padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.green.shade200),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.credit_card, color: Colors.green.shade700, size: 20),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '🎉 Digital Health Card Generated Successfully!',
-                        style: TextStyle(
-                          color: Colors.green.shade700,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 10),
-              Container(
-                padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.amber.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.amber.shade200),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.info, color: Colors.amber.shade700, size: 20),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Save your username and password for future login. Your digital health card has been automatically created and is ready to view!',
-                        style: TextStyle(
-                          color: Colors.amber.shade700,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
+                      'Digital Card Generated!',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.normal),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          actions: [
-            Row(
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      Navigator.of(context).pop(); // Go back to previous screen
-                    },
-                    child: Text('Close'),
+                Text('Your UHID and username have been generated:'),
+                SizedBox(height: 10),
+                Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.blue.shade200),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        'UHID: ${patientData['uhid']}',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue.shade800,
+                        ),
+                      ),
+                      SizedBox(height: 5),
+                      Text(
+                        'Username: ${patientData['username']}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.green.shade700,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text('Name: ${patientData['fullName']}'),
+                      Text('Phone: ${patientData['phone']}'),
+                    ],
                   ),
                 ),
-                SizedBox(width: 10),
-                Expanded(
-                  flex: 2,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      // Navigate to digital health card screen
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => DigitalHealthCardScreen(
-                            uhid: patientData['uhid'],
+                SizedBox(height: 12),
+                
+                // Card Generation Success Message
+                Container(
+                  padding: EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.green.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.credit_card, color: Colors.green.shade700, size: 18),
+                      SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          '🎉 Digital Health Card Generated Successfully!',
+                          style: TextStyle(
+                            color: Colors.green.shade700,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                      );
-                    },
-                    icon: Icon(Icons.credit_card),
-                    label: Text('View Digital Card'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green.shade600,
-                      foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                    ),
+                      ),
+                    ],
                   ),
+                ),
+                SizedBox(height: 8),
+                Container(
+                  padding: EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.amber.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info, color: Colors.amber.shade700, size: 18),
+                      SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'Save your username and password for future login. Your digital health card is ready!',
+                          style: TextStyle(
+                            color: Colors.amber.shade700,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            Column(
+              children: [
+                // Primary action buttons row
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          // Navigate to digital health card screen
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DigitalHealthCardScreen(uhid: uhid),
+                            ),
+                          );
+                        },
+                        icon: Icon(Icons.credit_card, size: 16),
+                        label: Flexible(
+                          child: Text(
+                            'View Card',
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green.shade600,
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(vertical: 10),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 6),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () async {
+                          // Share card info quickly
+                          await CardDownloadService.shareCard(
+                            patientName: patientData['fullName'] ?? 'Unknown',
+                            uhid: patientData['uhid'] ?? 'N/A',
+                            bloodGroup: 'Not specified', // We don't have this in the response
+                            emergencyContact: 'Set in profile',
+                            issueDate: DateTime.now().toString().split(' ')[0],
+                            context: context,
+                          );
+                        },
+                        icon: Icon(Icons.share, size: 16),
+                        label: Flexible(
+                          child: Text(
+                            'Share Info',
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue.shade600,
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(vertical: 10),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 6),
+                // Secondary action row
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          Navigator.of(context).pop(); // Go back to previous screen
+                        },
+                        child: Text('Close'),
+                      ),
+                    ),
+                    SizedBox(width: 6),
+                    Expanded(
+                      child: TextButton.icon(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          // Navigate to card for download options
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DigitalHealthCardScreen(uhid: uhid),
+                            ),
+                          ).then((_) {
+                            // Auto-show download options after card loads
+                            Future.delayed(Duration(milliseconds: 500), () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('💡 Tip: Tap "Download" button to save your card!'),
+                                  backgroundColor: Colors.blue.shade600,
+                                  duration: Duration(seconds: 3),
+                                ),
+                              );
+                            });
+                          });
+                        },
+                        icon: Icon(Icons.download, size: 16),
+                        label: Flexible(
+                          child: Text(
+                            'Download',
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -729,9 +799,14 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
         return AlertDialog(
           title: Row(
             children: [
-              Icon(Icons.error, color: Colors.red, size: 30),
-              SizedBox(width: 10),
-              Text('Registration Failed'),
+              Icon(Icons.error, color: Colors.red, size: 24),
+              SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  'Registration Failed',
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
           ),
           content: Text(message),
@@ -768,20 +843,20 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
             children: [
               // Enhanced Header
               Container(
-                padding: EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+                padding: EdgeInsets.symmetric(vertical: 20, horizontal: 16),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      Colors.blue.shade700,
-                      Colors.blue.shade600,
-                      Colors.teal.shade500,
+                      Colors.indigo.shade800,
+                      Colors.indigo.shade700,
+                      Colors.green.shade600,
                     ],
                   ),
                   borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(30),
-                    bottomRight: Radius.circular(30),
+                    bottomLeft: Radius.circular(25),
+                    bottomRight: Radius.circular(25),
                   ),
                   boxShadow: [
                     BoxShadow(
@@ -797,35 +872,42 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
                     Row(
                       children: [
                         Container(
-                          padding: EdgeInsets.all(12),
+                          padding: EdgeInsets.all(10),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(15),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
                             Icons.health_and_safety,
                             color: Colors.white,
-                            size: 32,
+                            size: 28,
                           ),
                         ),
-                        SizedBox(width: 15),
+                        SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                'Patient Registration',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  'Patient Registration',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
-                              Text(
-                                'Digital Health Record Management System',
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 14,
+                              SizedBox(height: 2),
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  'Digital Health Record Management System',
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ),
                             ],
@@ -833,12 +915,12 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
                         ),
                       ],
                     ),
-                    SizedBox(height: 20),
+                    SizedBox(height: 16),
                     // Enhanced Tab Bar
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(25),
+                        borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           color: Colors.white.withOpacity(0.3),
                           width: 1,
@@ -848,7 +930,7 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
                         controller: _tabController,
                         indicator: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(23),
+                          borderRadius: BorderRadius.circular(18),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(0.1),
@@ -861,41 +943,70 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
                         unselectedLabelColor: Colors.white,
                         labelStyle: TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 14,
+                          fontSize: 12,
                         ),
                         unselectedLabelStyle: TextStyle(
                           fontWeight: FontWeight.w500,
-                          fontSize: 13,
+                          fontSize: 11,
                         ),
+                        dividerColor: Colors.transparent,
+                        indicatorSize: TabBarIndicatorSize.tab,
                         tabs: [
                           Tab(
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.person, size: 18),
-                                SizedBox(width: 6),
-                                Text('Personal'),
-                              ],
+                            child: Container(
+                              constraints: BoxConstraints(maxWidth: 100),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.person, size: 14),
+                                  SizedBox(width: 3),
+                                  Flexible(
+                                    child: Text(
+                                      'Personal',
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(fontSize: 11),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                           Tab(
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.location_on, size: 18),
-                                SizedBox(width: 6),
-                                Text('Address'),
-                              ],
+                            child: Container(
+                              constraints: BoxConstraints(maxWidth: 100),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.location_on, size: 14),
+                                  SizedBox(width: 3),
+                                  Flexible(
+                                    child: Text(
+                                      'Address',
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(fontSize: 11),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                           Tab(
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.emergency, size: 18),
-                                SizedBox(width: 6),
-                                Text('Emergency'),
-                              ],
+                            child: Container(
+                              constraints: BoxConstraints(maxWidth: 100),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.emergency, size: 14),
+                                  SizedBox(width: 3),
+                                  Flexible(
+                                    child: Text(
+                                      'Emergency',
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(fontSize: 11),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ],
@@ -925,7 +1036,7 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
 
   Widget _buildPersonalInfoTab() {
     return SingleChildScrollView(
-      padding: EdgeInsets.all(20),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       child: Form(
         key: _personalFormKey,
         child: Column(
@@ -1043,6 +1154,7 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
                   Row(
                     children: [
                       Expanded(
+                        flex: 1,
                         child: _buildTextField(
                           'First Name',
                           _firstNameController,
@@ -1051,8 +1163,9 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
                               value?.isEmpty ?? true ? 'Required' : null,
                         ),
                       ),
-                      SizedBox(width: 15),
+                      SizedBox(width: 12),
                       Expanded(
+                        flex: 1,
                         child: _buildTextField(
                           'Last Name',
                           _lastNameController,
@@ -1120,6 +1233,7 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
                   Row(
                     children: [
                       Expanded(
+                        flex: 1,
                         child: _buildDropdown(
                           'Gender',
                           _selectedGender,
@@ -1128,8 +1242,9 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
                           Icons.person_outline,
                         ),
                       ),
-                      SizedBox(width: 15),
+                      SizedBox(width: 12),
                       Expanded(
+                        flex: 1,
                         child: _buildDropdown(
                           'Blood Group',
                           _selectedBloodGroup,
@@ -1147,8 +1262,9 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
 
             SizedBox(height: 30),
             // Continue Button
-            SizedBox(
+            Container(
               width: double.infinity,
+              padding: EdgeInsets.symmetric(horizontal: 4),
               child: ElevatedButton(
                 onPressed: () {
                   if (_validatePersonalInfo()) {
@@ -1165,7 +1281,7 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue.shade600,
                   foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(vertical: 15),
+                  padding: EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -1173,16 +1289,20 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      'Continue to Address Info',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                    Flexible(
+                      child: Text(
+                        'Continue to Address Info',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    SizedBox(width: 10),
-                    Icon(Icons.arrow_forward),
+                    SizedBox(width: 8),
+                    Icon(Icons.arrow_forward, size: 20),
                   ],
                 ),
               ),
@@ -1196,7 +1316,7 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
 
   Widget _buildAddressInfoTab() {
     return SingleChildScrollView(
-      padding: EdgeInsets.all(20),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       child: Form(
         key: _addressFormKey,
         child: Column(
@@ -1262,6 +1382,7 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
                 Row(
                   children: [
                     Expanded(
+                      flex: 1,
                       child: _buildDropdown(
                         'State',
                         _selectedState,
@@ -1276,8 +1397,9 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
                         Icons.map,
                       ),
                     ),
-                    SizedBox(width: 15),
+                    SizedBox(width: 12),
                     Expanded(
+                      flex: 1,
                       child: _buildDropdown(
                         'City',
                         _selectedCity,
@@ -1297,6 +1419,7 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
                 Row(
                   children: [
                     Expanded(
+                      flex: 1,
                       child: _buildTextField(
                         'ZIP Code',
                         _zipCodeController,
@@ -1306,8 +1429,9 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
                             value?.isEmpty ?? true ? 'Required' : null,
                       ),
                     ),
-                    SizedBox(width: 15),
+                    SizedBox(width: 12),
                     Expanded(
+                      flex: 1,
                       child: _buildDropdown(
                         'Home State',
                         _selectedHomeState,
@@ -1328,6 +1452,7 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
           Row(
             children: [
               Expanded(
+                flex: 1,
                 child: ElevatedButton(
                   onPressed: () {
                     _tabController.animateTo(0);
@@ -1335,26 +1460,31 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.grey.shade600,
                     foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(vertical: 15),
+                    padding: EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.arrow_back),
-                      SizedBox(width: 10),
-                      Text(
-                        'Previous',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      Icon(Icons.arrow_back, size: 18),
+                      SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          'Previous',
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   ),
                 ),
               ),
-              SizedBox(width: 15),
+              SizedBox(width: 12),
               Expanded(
+                flex: 1,
                 child: ElevatedButton(
                   onPressed: () {
                     if (_validateAddressInfo()) {
@@ -1371,20 +1501,24 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue.shade600,
                     foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(vertical: 15),
+                    padding: EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        'Continue',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      Flexible(
+                        child: Text(
+                          'Continue',
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                      SizedBox(width: 10),
-                      Icon(Icons.arrow_forward),
+                      SizedBox(width: 6),
+                      Icon(Icons.arrow_forward, size: 18),
                     ],
                   ),
                 ),
@@ -1400,7 +1534,7 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
 
   Widget _buildEmergencyInfoTab() {
     return SingleChildScrollView(
-      padding: EdgeInsets.all(20),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       child: Form(
         key: _emergencyFormKey,
         child: Column(
@@ -1466,6 +1600,7 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
                 Row(
                   children: [
                     Expanded(
+                      flex: 1,
                       child: _buildTextField(
                         'Emergency Phone',
                         _emergencyPhoneController,
@@ -1474,8 +1609,9 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
                         validator: _validatePhone,
                       ),
                     ),
-                    SizedBox(width: 15),
+                    SizedBox(width: 12),
                     Expanded(
+                      flex: 1,
                       child: _buildDropdown(
                         'Relationship',
                         _selectedRelationship,
@@ -1498,8 +1634,9 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
           SizedBox(height: 30),
 
           // Register Button
-          SizedBox(
+          Container(
             width: double.infinity,
+            padding: EdgeInsets.symmetric(horizontal: 4),
             child: ElevatedButton(
               onPressed: _isLoading ? null : () {
                 print('=== DEBUG: Generate Card Button Clicked ===');
@@ -1532,7 +1669,7 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green.shade600,
                 foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(vertical: 18),
+                padding: EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -1541,36 +1678,44 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
               child: _isLoading
                   ? Row(
                       mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         SizedBox(
-                          width: 20,
-                          height: 20,
+                          width: 18,
+                          height: 18,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
                             valueColor:
                                 AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         ),
-                        SizedBox(width: 10),
-                        Text(
-                          'Creating Digital Health Card...',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                        SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            'Creating Digital Health Card...',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
                     )
                   : Row(
                       mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.person_add, size: 24),
-                        SizedBox(width: 10),
-                        Text(
-                          'Generate Digital Health Card',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                        Icon(Icons.person_add, size: 22),
+                        SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            'Generate Digital Health Card',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
@@ -1581,8 +1726,9 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
           SizedBox(height: 15),
           
           // Back Button
-          SizedBox(
+          Container(
             width: double.infinity,
+            padding: EdgeInsets.symmetric(horizontal: 4),
             child: ElevatedButton(
               onPressed: () {
                 _tabController.animateTo(1);
@@ -1590,19 +1736,23 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.grey.shade600,
                 foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(vertical: 15),
+                padding: EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.arrow_back),
-                  SizedBox(width: 10),
-                  Text(
-                    'Back to Address Info',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  Icon(Icons.arrow_back, size: 18),
+                  SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      'Back to Address Info',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ],
               ),
@@ -1618,7 +1768,11 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
 
   Widget _buildSectionCard(String title, Widget child) {
     return Container(
-      padding: EdgeInsets.all(20),
+      width: double.infinity,
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.of(context).size.width - 40,
+      ),
+      padding: EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
@@ -1637,12 +1791,12 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
           Text(
             title,
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 16,
               fontWeight: FontWeight.bold,
               color: Colors.blue.shade700,
             ),
           ),
-          SizedBox(height: 15),
+          SizedBox(height: 12),
           child,
         ],
       ),
@@ -1677,13 +1831,13 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
         decoration: InputDecoration(
           labelText: label,
           prefixIcon: Container(
-            margin: EdgeInsets.all(12),
-            padding: EdgeInsets.all(8),
+            margin: EdgeInsets.all(10),
+            padding: EdgeInsets.all(6),
             decoration: BoxDecoration(
               color: Colors.blue.shade50,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: Colors.blue.shade600, size: 20),
+            child: Icon(icon, color: Colors.blue.shade600, size: 18),
           ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
@@ -1711,7 +1865,7 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
             color: Colors.grey.shade600,
             fontWeight: FontWeight.w500,
           ),
-          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         ),
       ),
     );
@@ -1740,16 +1894,17 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
         value: value,
         onChanged: onChanged,
         validator: (value) => value == null ? 'Required' : null,
+        isExpanded: true,
         decoration: InputDecoration(
           labelText: label,
           prefixIcon: Container(
-            margin: EdgeInsets.all(12),
-            padding: EdgeInsets.all(8),
+            margin: EdgeInsets.all(6),
+            padding: EdgeInsets.all(5),
             decoration: BoxDecoration(
               color: Colors.blue.shade50,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, color: Colors.blue.shade600, size: 20),
+            child: Icon(icon, color: Colors.blue.shade600, size: 16),
           ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
@@ -1769,16 +1924,22 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
             color: Colors.grey.shade600,
             fontWeight: FontWeight.w500,
           ),
-          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 12),
         ),
         items: items.map((String item) {
           return DropdownMenuItem<String>(
             value: item,
-            child: Text(
-              item,
-              style: TextStyle(
-                color: Colors.grey.shade800,
-                fontWeight: FontWeight.w500,
+            child: Container(
+              width: double.infinity,
+              constraints: BoxConstraints(maxWidth: 200),
+              child: Text(
+                item,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: Colors.grey.shade800,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 13,
+                ),
               ),
             ),
           );
