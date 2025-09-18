@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../utils/app_constants.dart';
 
 class ApiService {
-  // For Android emulator, use 10.0.2.2 instead of localhost
-  // For physical device, use your computer's IP address
-  static const String baseUrl = 'http://10.0.2.2:3000/api';
+  // Use dynamic base URL from AppConstants
+  static String get baseUrl => AppConstants.apiBaseUrl;
   
   // Universal login method - works for all roles (Patient, Hospital Staff, Regional Officer)
   static Future<Map<String, dynamic>> login(String username, String password) async {
@@ -18,6 +18,11 @@ class ApiService {
           'username': username,
           'password': password,
         }),
+      ).timeout(
+        Duration(seconds: 30), // Increased timeout for mobile networks
+        onTimeout: () {
+          throw Exception('Login request timed out after 30 seconds. Please check your internet connection.');
+        },
       );
 
       if (response.statusCode == 200 || response.statusCode == 401) {

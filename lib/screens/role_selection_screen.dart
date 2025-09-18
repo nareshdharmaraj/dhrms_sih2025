@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/role_card_widget.dart';
 import '../models/user_role_model.dart';
 import 'login_screen.dart';
+import 'debug_connection_screen.dart';
 
 class RoleSelectionScreen extends StatelessWidget {
   const RoleSelectionScreen({super.key});
@@ -12,6 +13,25 @@ class RoleSelectionScreen extends StatelessWidget {
     final isTablet = screenSize.width > 600;
     
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.bug_report, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DebugConnectionScreen(),
+                ),
+              );
+            },
+            tooltip: 'Debug Connection',
+          ),
+        ],
+      ),
+      extendBodyBehindAppBar: true,
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -118,6 +138,15 @@ class RoleSelectionScreen extends StatelessWidget {
         icon: Icons.admin_panel_settings,
         color: const Color(0xFF9C27B0),
         route: '/regional',
+      ),
+      // Test role for dashboard debugging
+      UserRole(
+        title: '[TEST] Patient Dashboard',
+        subtitle: 'Direct dashboard test',
+        description: 'Test dashboard with sample data - FOR DEBUGGING',
+        icon: Icons.bug_report,
+        color: const Color(0xFFFF9800),
+        route: '/test-dashboard',
       ),
     ];
 
@@ -229,10 +258,52 @@ class RoleSelectionScreen extends StatelessWidget {
   }
 
   void _handleRoleSelection(BuildContext context, UserRole role) {
-    // Navigate directly to login screen
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const LoginScreen()),
-    );
+    if (role.route == '/test-dashboard') {
+      // Direct navigation to dashboard with test data
+      final testPatientData = {
+        'uhid': 'TEST123456789',
+        'fullName': 'Test Patient',
+        'email': 'test@example.com',
+        'bloodGroup': 'A+',
+        'blood_group': 'A+',
+        'bloodType': 'A+',
+        'dateOfBirth': '1985-03-20',
+        'date_of_birth': '1985-03-20',
+        'dob': '1985-03-20',
+        'phone': '+1234567890',
+        'address': '123 Test Street, Test City, TC 12345',
+        'healthStatus': 'Excellent',
+        'gender': 'Female',
+        'emergencyContacts': [
+          {
+            'name': 'John Test',
+            'relationship': 'Spouse',
+            'phone': '+1234567891'
+          },
+          {
+            'name': 'Dr. Emily Test',
+            'relationship': 'Primary Doctor',
+            'phone': '+1234567892'
+          },
+          {
+            'name': 'Sarah Test',
+            'relationship': 'Sister',
+            'phone': '+1234567893'
+          }
+        ]
+      };
+      
+      Navigator.pushNamed(
+        context,
+        '/patient-dashboard',
+        arguments: testPatientData,
+      );
+    } else {
+      // Navigate directly to login screen for other roles
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
+    }
   }
 }

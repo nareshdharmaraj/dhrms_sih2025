@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'screens/role_selection_screen.dart';
 import 'screens/login_screen.dart';
-import 'screens/patient_dashboard.dart';
+import 'screens/patient_dashboard_screen.dart';
 import 'screens/hospital_staff_dashboard.dart';
 import 'screens/regional_officer_dashboard.dart';
 import 'screens/patient_registration_screen.dart';
@@ -37,7 +37,15 @@ class DHRMSApp extends StatelessWidget {
         '/qr-scanner': (context) => QRScannerScreen(),
         '/patient-dashboard': (context) {
           final userData = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-          return PatientDashboard(userData: userData ?? {});
+          // Extract UHID from patient data - prioritize actual UHID field over database IDs
+          final uhid = userData?['uhid'] ?? 
+                       userData?['UHID'] ??
+                       userData?['patientId'] ??
+                       userData?['patient_id'];
+          return PatientDashboardScreen(
+            uhid: uhid?.toString(),
+            patientData: userData,
+          );
         },
         '/hospital-staff-dashboard': (context) {
           final userData = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;

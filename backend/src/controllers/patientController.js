@@ -6,6 +6,7 @@ const QRCode = require('qrcode');
 const registerPatient = async (req, res) => {
   try {
     const {
+      uhid, // UHID should come from auth controller
       firstName,
       lastName,
       aadhaarNumber,
@@ -24,11 +25,11 @@ const registerPatient = async (req, res) => {
       currentMedications
     } = req.body;
 
-    // Validate required fields
-    if (!firstName || !lastName || !aadhaarNumber || !phone || !address || !password || !dateOfBirth || !gender || !bloodGroup || !homeState) {
+    // Validate required fields including UHID
+    if (!uhid || !firstName || !lastName || !aadhaarNumber || !phone || !address || !password || !dateOfBirth || !gender || !bloodGroup || !homeState) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields including password'
+        message: 'Missing required fields including UHID and password'
       });
     }
 
@@ -52,8 +53,9 @@ const registerPatient = async (req, res) => {
       }
     }
 
-    // Create new patient
+    // Create new patient with provided UHID
     const patientData = {
+      uhid, // Use provided UHID from auth controller
       firstName,
       lastName,
       aadhaarNumber,
@@ -78,11 +80,33 @@ const registerPatient = async (req, res) => {
 
     const newPatient = new Patient(patientData);
     
-    // Save patient (UHID and username will be auto-generated in pre-save middleware)
+    // Save patient (username and digital card will be auto-generated in pre-save middleware)
     await newPatient.save();
 
-    // Generate QR Code for digital card
-    const qrCodeDataURL = await QRCode.toDataURL(newPatient.digitalCard.qrCode);
+    // Generate comprehensive QR Code for digital card with all required data
+    const comprehensiveQRData = JSON.stringify({
+      uhid: newPatient.uhid,
+      name: newPatient.fullName,
+      address: {
+        street: newPatient.address?.street || '',
+        city: newPatient.address?.city || '',
+        state: newPatient.address?.state || '',
+        zipCode: newPatient.address?.zipCode || '',
+        country: newPatient.address?.country || 'India'
+      },
+      homeState: newPatient.homeState,
+      bloodGroup: newPatient.bloodGroup,
+      emergencyContact: {
+        name: newPatient.emergencyContact?.name || '',
+        phone: newPatient.emergencyContact?.phone || ''
+      },
+      type: 'DHRMS_PATIENT_CARD',
+      version: '2.0',
+      timestamp: new Date().toISOString(),
+      verificationURL: `https://dhrms.gov.in/verify/${newPatient.uhid}`
+    });
+
+    const qrCodeDataURL = await QRCode.toDataURL(comprehensiveQRData);
 
     // Prepare response
     const response = {
@@ -90,7 +114,7 @@ const registerPatient = async (req, res) => {
       message: 'Patient registered successfully',
       patient: {
         uhid: newPatient.uhid,
-        username: newPatient.username, // Auto-generated username
+        username: newPatient.username, // Auto-generated username (same as UHID)
         firstName: newPatient.firstName,
         lastName: newPatient.lastName,
         fullName: newPatient.fullName,
@@ -270,8 +294,30 @@ const getDigitalCard = async (req, res) => {
       });
     }
 
-    // Generate fresh QR code
-    const qrCodeDataURL = await QRCode.toDataURL(patient.digitalCard.qrCode);
+    // Generate fresh QR code with comprehensive data
+    const comprehensiveQRData = JSON.stringify({
+      uhid: patient.uhid,
+      name: patient.fullName,
+      address: {
+        street: patient.address?.street || '',
+        city: patient.address?.city || '',
+        state: patient.address?.state || '',
+        zipCode: patient.address?.zipCode || '',
+        country: patient.address?.country || 'India'
+      },
+      homeState: patient.homeState,
+      bloodGroup: patient.bloodGroup,
+      emergencyContact: {
+        name: patient.emergencyContact?.name || '',
+        phone: patient.emergencyContact?.phone || ''
+      },
+      type: 'DHRMS_PATIENT_CARD',
+      version: '2.0',
+      timestamp: new Date().toISOString(),
+      verificationURL: `https://dhrms.gov.in/verify/${patient.uhid}`
+    });
+    
+    const qrCodeDataURL = await QRCode.toDataURL(comprehensiveQRData);
 
     res.json({
       success: true,
@@ -280,9 +326,23 @@ const getDigitalCard = async (req, res) => {
         cardNumber: patient.digitalCard.cardNumber,
         patientName: patient.fullName,
         bloodGroup: patient.bloodGroup,
-        emergencyContact: patient.emergencyContact.phone,
+        emergencyContact: patient.emergencyContact?.phone || 'Not provided',
+        emergencyContactName: patient.emergencyContact?.name || 'Not provided',
+        address: {
+          street: patient.address?.street || '',
+          city: patient.address?.city || '',
+          state: patient.address?.state || '',
+          zipCode: patient.address?.zipCode || '',
+          country: patient.address?.country || 'India',
+          fullAddress: `${patient.address?.street || ''}, ${patient.address?.city || ''}, ${patient.address?.state || ''} - ${patient.address?.zipCode || ''}`
+        },
+        homeState: patient.homeState,
+        dateOfBirth: patient.dateOfBirth,
+        gender: patient.gender,
+        phone: patient.phone,
         issueDate: patient.digitalCard.issueDate,
         qrCode: qrCodeDataURL,
+        qrCodeData: comprehensiveQRData, // Raw QR data for verification
         photo: patient.photo,
         isActive: patient.digitalCard.isActive
       }

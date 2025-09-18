@@ -574,7 +574,6 @@ class _HospitalStaffDashboardState extends State<HospitalStaffDashboard> {
 
   Widget _buildDepartmentOverview() {
     String department = widget.userData['department'] ?? 'General';
-    String role = widget.userData['staffRole'] ?? 'staff';
 
     return Card(
       elevation: 4,

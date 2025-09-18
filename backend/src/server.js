@@ -67,9 +67,10 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/myhealth'
   console.log('✅ Connected to MongoDB - Database: myhealth');
   
   // Start server
-  app.listen(PORT, () => {
+  app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 DHRMS Backend server running on port ${PORT}`);
     console.log(`📋 Health check: http://localhost:${PORT}/health`);
+    console.log(`🌐 External access: http://10.123.62.47:${PORT}/health`);
   });
 })
 .catch((error) => {

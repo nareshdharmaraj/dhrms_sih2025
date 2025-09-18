@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'dart:io' show Platform;
+import 'debug_config.dart';
 
 class AppConstants {
   // Brand Colors
@@ -110,10 +113,38 @@ class AppConstants {
     'National Level',
   ];
   
-  // API Endpoints (for future backend integration)
-  // For Android emulator, use 10.0.2.2 instead of localhost
-  static const String baseUrl = 'http://10.0.2.2:3000/api';
-  static const String apiBaseUrl = 'http://10.0.2.2:3000/api';
+  // API Endpoints (for backend integration)
+  // Dynamic base URL that adapts to the platform
+  static String get baseUrl {
+    // Check debug configuration first
+    String debugUrl = DebugConfig.getDebugBaseUrl();
+    if (debugUrl.isNotEmpty) {
+      return debugUrl;
+    }
+    
+    // Default platform detection
+    if (kIsWeb) {
+      // For web development, use localhost
+      return 'http://localhost:3000/api';
+    } else if (Platform.isAndroid) {
+      // For Android: Try to detect if we're on physical device vs emulator
+      // This is a simple heuristic - in practice, physical device detection
+      // should be enabled via DebugConfig.forcePhysicalDeviceMode
+      return 'http://10.0.2.2:3000/api';
+    } else if (Platform.isIOS) {
+      // For iOS simulator, use localhost; for physical device, IP varies
+      return 'http://localhost:3000/api';
+    } else {
+      // For desktop platforms (Windows, macOS, Linux)
+      return 'http://localhost:3000/api';
+    }
+  }
+  
+  // Alternative base URL for physical devices (maintained for compatibility)
+  static const String physicalDeviceBaseUrl = 'http://10.123.62.47:3000/api';
+  
+  // Getter for API base URL (main access point)
+  static String get apiBaseUrl => baseUrl;
   static const String loginEndpoint = '/auth/login';
   static const String registerEndpoint = '/auth/register';
   static const String profileEndpoint = '/user/profile';

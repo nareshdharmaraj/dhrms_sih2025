@@ -4,7 +4,7 @@ const RegionalOfficer = require('../models/RegionalOfficer');
 
 /**
  * Generate a unique UHI (Universal Health Identity) ID
- * Format: {FirstName}{Last4DigitsOfAadhaar} + optional suffix for uniqueness
+ * Format: {First4LettersOfName}{Last4DigitsOfAadhaar} = exactly 8 characters
  * @param {string} firstName - First name of the user
  * @param {string} aadhaarNumber - 12-digit Aadhaar number
  * @param {string} role - User role (patient, hospital_staff, regional_officer)
@@ -24,30 +24,30 @@ async function generateUHI(firstName, aadhaarNumber, role = 'patient') {
     // Clean and format first name (remove spaces, special chars, convert to uppercase)
     const cleanFirstName = firstName.replace(/[^a-zA-Z]/g, '').toUpperCase();
     
+    // Get exactly first 4 letters of name (pad with 'X' if less than 4 characters)
+    const first4Letters = cleanFirstName.length >= 4 
+      ? cleanFirstName.substring(0, 4) 
+      : cleanFirstName.padEnd(4, 'X');
+    
     // Get last 4 digits of Aadhaar
     const last4Digits = aadhaarNumber.slice(-4);
     
-    // Base UHI format
-    let baseUHI = `${cleanFirstName}${last4Digits}`;
-    
-    // Ensure minimum length
-    if (baseUHI.length < 6) {
-      baseUHI = baseUHI.padEnd(6, '0');
-    }
+    // Base UHI format: exactly 8 characters (4 letters + 4 digits)
+    let baseUHI = `${first4Letters}${last4Digits}`;
 
     // Check for uniqueness across all models
     let uhiId = baseUHI;
-    let suffix = 0;
+    let suffix = 1;
     let isUnique = false;
 
     while (!isUnique) {
-      const currentUHI = suffix === 0 ? uhiId : `${baseUHI}${suffix}`;
+      const currentUHI = suffix === 1 ? uhiId : `${first4Letters}${(parseInt(last4Digits) + suffix).toString().padStart(4, '0')}`;
       
-      // Check across all three models
+      // Check across all three models (using correct field names)
       const [patientExists, staffExists, officerExists] = await Promise.all([
-        Patient.findOne({ uhi: currentUHI }),
-        HospitalStaff.findOne({ uhi: currentUHI }),
-        RegionalOfficer.findOne({ uhi: currentUHI })
+        Patient.findOne({ uhid: currentUHI }), // Patient model uses 'uhid'
+        HospitalStaff.findOne({ uhi: currentUHI }), // Staff model uses 'uhi'
+        RegionalOfficer.findOne({ uhi: currentUHI }) // Officer model uses 'uhi'
       ]);
 
       if (!patientExists && !staffExists && !officerExists) {
@@ -55,20 +55,22 @@ async function generateUHI(firstName, aadhaarNumber, role = 'patient') {
         isUnique = true;
       } else {
         suffix++;
-        // Add additional elements for uniqueness
-        if (suffix > 99) {
-          // After 99 attempts, add random elements
-          const randomSuffix = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-          uhiId = `${baseUHI}${randomSuffix}`;
+        // If we exceed reasonable suffix range, try different approach
+        if (suffix > 999) {
+          // Change one letter in the name part for uniqueness
+          const nameVariations = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+          const randomIndex = Math.floor(Math.random() * nameVariations.length);
+          const modifiedName = first4Letters.substring(0, 3) + nameVariations[randomIndex];
+          uhiId = `${modifiedName}${last4Digits}`;
           
-          // Check this random combination
-          const [randomPatientExists, randomStaffExists, randomOfficerExists] = await Promise.all([
-            Patient.findOne({ uhi: uhiId }),
-            HospitalStaff.findOne({ uhi: uhiId }),
-            RegionalOfficer.findOne({ uhi: uhiId })
+          // Check this variation
+          const [variantPatientExists, variantStaffExists, variantOfficerExists] = await Promise.all([
+            Patient.findOne({ uhid: uhiId }), // Patient model uses 'uhid'
+            HospitalStaff.findOne({ uhi: uhiId }), // Staff model uses 'uhi'
+            RegionalOfficer.findOne({ uhi: uhiId }) // Officer model uses 'uhi'
           ]);
 
-          if (!randomPatientExists && !randomStaffExists && !randomOfficerExists) {
+          if (!variantPatientExists && !variantStaffExists && !variantOfficerExists) {
             isUnique = true;
           }
         }
@@ -92,8 +94,8 @@ function validateUHI(uhi) {
     return false;
   }
 
-  // UHI should be alphanumeric and at least 6 characters
-  return /^[A-Z0-9]{6,}$/.test(uhi);
+  // UHI should be exactly 8 characters: 4 letters + 4 digits
+  return /^[A-Z]{4}\d{4}$/.test(uhi);
 }
 
 /**
@@ -104,9 +106,9 @@ function validateUHI(uhi) {
 async function checkUHIExists(uhi) {
   try {
     const [patient, staff, officer] = await Promise.all([
-      Patient.findOne({ uhi }),
-      HospitalStaff.findOne({ uhi }),
-      RegionalOfficer.findOne({ uhi })
+      Patient.findOne({ uhid: uhi }), // Patient model uses 'uhid'
+      HospitalStaff.findOne({ uhi }), // Staff model uses 'uhi'
+      RegionalOfficer.findOne({ uhi }) // Officer model uses 'uhi'
     ]);
 
     if (patient) {

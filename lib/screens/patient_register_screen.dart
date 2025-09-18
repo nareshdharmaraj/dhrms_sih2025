@@ -3,7 +3,6 @@ import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
 import '../utils/app_constants.dart';
 import '../services/api_service.dart';
-import 'patient_dashboard_screen.dart';
 
 class PatientRegisterScreen extends StatefulWidget {
   const PatientRegisterScreen({super.key});
@@ -481,11 +480,26 @@ class _PatientRegisterScreenState extends State<PatientRegisterScreen> {
                       backgroundColor: AppConstants.primaryGreen,
                       onPressed: () {
                         Navigator.pop(context); // Close dialog
-                        Navigator.pushReplacement(
+                        
+                        // Create patient data from registration
+                        final patientData = {
+                          'uhid': uhiId,
+                          'fullName': fullName,
+                          'email': _emailController.text.trim(),
+                          'phone': _phoneController.text.trim(),
+                          'dateOfBirth': _selectedDate?.toIso8601String() ?? '',
+                          'date_of_birth': _selectedDate?.toIso8601String() ?? '', // Alternative field name
+                          'dob': _selectedDate?.toIso8601String() ?? '', // Alternative field name
+                          'gender': _selectedGender,
+                          'address': _addressController.text.trim(),
+                          'aadhaarNumber': _aadhaarController.text.trim(),
+                          // Add other registration data as needed
+                        };
+                        
+                        Navigator.pushReplacementNamed(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => const PatientDashboardScreen(),
-                          ),
+                          '/patient-dashboard',
+                          arguments: patientData,
                         );
                       },
                     ),

@@ -5,7 +5,8 @@ import '../models/wearable_data.dart';
 import '../utils/app_constants.dart';
 
 class WearableService {
-  static const String baseUrl = AppConstants.apiBaseUrl;
+  // Use dynamic base URL from AppConstants
+  static String get baseUrl => AppConstants.apiBaseUrl;
 
   // Device Management
   static Future<Map<String, dynamic>> registerDevice({

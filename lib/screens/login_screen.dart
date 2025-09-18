@@ -32,10 +32,20 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
+      // Debug: Show which API endpoint is being used
+      print('=== DEBUG: Login API Endpoint ===');
+      print('Using API base URL: ${ApiService.baseUrl}');
+      print('Full login URL: ${ApiService.baseUrl}/roles/login');
+      print('================================');
+      
       final result = await ApiService.login(
         _usernameController.text.trim(),
         _passwordController.text,
       );
+
+      print('=== DEBUG: Login Response ===');
+      print('Response: $result');
+      print('=============================');
 
       if (mounted) {
         setState(() {
@@ -70,6 +80,10 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       }
     } catch (e) {
+      print('=== DEBUG: Login Error ===');
+      print('Error: $e');
+      print('=========================');
+      
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -77,9 +91,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: $e'),
+            content: Text('Network Error: $e\nAPI: ${ApiService.baseUrl}'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 5),
           ),
         );
       }

@@ -9,6 +9,42 @@ class DatabaseService {
       // Check in Patients collection
       let user = await Patient.findOne({ username: username });
       if (user && user.password === password) {
+        // Create a safe patient data object with default values for missing fields
+        const patientData = {
+          // Use actual values or defaults
+          uhid: user.uhid || username,
+          firstName: user.firstName || (user.fullName ? user.fullName.split(' ')[0] : 'Patient'),
+          lastName: user.lastName || (user.fullName ? user.fullName.split(' ').slice(1).join(' ') : 'User'),
+          fullName: user.fullName || `${user.firstName || 'Patient'} ${user.lastName || 'User'}`,
+          email: user.email || '',
+          phone: user.phone || '',
+          aadhaarNumber: user.aadhaarNumber || '',
+          // Provide default values for critical health fields
+          dateOfBirth: user.dateOfBirth || '1990-01-01',
+          gender: user.gender || 'not specified',
+          bloodGroup: user.bloodGroup || 'O+',
+          address: user.address || { 
+            street: 'Not provided', 
+            city: 'Not provided', 
+            state: 'Not provided', 
+            country: 'India', 
+            postalCode: '' 
+          },
+          emergencyContact: user.emergencyContact || { name: 'Not provided', phone: 'Not provided', relation: 'Not provided' },
+          medicalHistory: user.medicalHistory || [],
+          allergies: user.allergies || [],
+          currentMedications: user.currentMedications || [],
+          homeState: user.homeState || 'Not provided',
+          isMigrant: user.isMigrant || false,
+          migrantDetails: user.migrantDetails || null,
+          digitalCard: user.digitalCard || null,
+          photo: user.photo || null,
+          isActive: user.isActive !== undefined ? user.isActive : true,
+          registrationDate: user.registrationDate || new Date()
+        };
+        
+        console.log(`Enhanced patient data for ${username}: `, patientData);
+        
         return {
           success: true,
           message: 'Login successful',
@@ -20,7 +56,9 @@ class DatabaseService {
             fullName: user.fullName,
             phone: user.phone,
             role: 'patient'
-          }
+          },
+          // Include enhanced patient data with defaults for frontend dashboard
+          patientData: patientData
         };
       }
 

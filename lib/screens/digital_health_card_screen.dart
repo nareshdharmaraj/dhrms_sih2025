@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
-import 'dart:ui' as ui;
 import '../utils/app_constants.dart';
+import '../utils/card_download_service.dart';
 
 class DigitalHealthCardScreen extends StatefulWidget {
   final String uhid;
@@ -31,7 +30,7 @@ class _DigitalHealthCardScreenState extends State<DigitalHealthCardScreen> {
   Future<void> _loadDigitalCard() async {
     try {
       final response = await http.get(
-        Uri.parse('${AppConstants.baseUrl}/patients/digital-card/${widget.uhid}'),
+        Uri.parse('${AppConstants.apiBaseUrl}/patients/digital-card/${widget.uhid}'),
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -160,10 +159,11 @@ class _DigitalHealthCardScreenState extends State<DigitalHealthCardScreen> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      Colors.blue.shade700,
-                      Colors.blue.shade500,
-                      Colors.teal.shade400,
+                      Color(0xFF1A237E), // Deep Government Indigo
+                      Color(0xFF283593), // Medium Indigo
+                      Color(0xFF1B5E20), // Government Green
                     ],
+                    stops: [0.0, 0.6, 1.0],
                   ),
                 ),
                 child: Column(
@@ -173,10 +173,19 @@ class _DigitalHealthCardScreenState extends State<DigitalHealthCardScreen> {
                       padding: EdgeInsets.all(20),
                       child: Row(
                         children: [
-                          Icon(
-                            Icons.health_and_safety,
-                            color: Colors.white,
-                            size: 40,
+                          // Government Emblem
+                          Container(
+                            padding: EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
+                            ),
+                            child: Icon(
+                              Icons.account_balance,
+                              color: Colors.white,
+                              size: 32,
+                            ),
                           ),
                           SizedBox(width: 15),
                           Expanded(
@@ -184,19 +193,29 @@ class _DigitalHealthCardScreenState extends State<DigitalHealthCardScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
+                                  'भारत सरकार • Government of India',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
                                   'DIGITAL HEALTH CARD',
                                   style: TextStyle(
                                     color: Colors.white,
-                                    fontSize: 16,
+                                    fontSize: 18,
                                     fontWeight: FontWeight.bold,
-                                    letterSpacing: 1.2,
+                                    letterSpacing: 1.5,
                                   ),
                                 ),
                                 Text(
-                                  'Government of India',
+                                  'Ministry of Health & Family Welfare',
                                   style: TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 12,
+                                    color: Colors.white.withOpacity(0.9),
+                                    fontSize: 10,
+                                    fontStyle: FontStyle.italic,
                                   ),
                                 ),
                               ],
@@ -367,8 +386,60 @@ class _DigitalHealthCardScreenState extends State<DigitalHealthCardScreen> {
                           
                           SizedBox(height: 20),
                           
+                          // Patient Details Section
+                          Container(
+                            padding: EdgeInsets.all(15),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade50,
+                              borderRadius: BorderRadius.circular(15),
+                              border: Border.all(color: Colors.grey.shade200),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Patient Details',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey.shade800,
+                                  ),
+                                ),
+                                SizedBox(height: 12),
+                                _buildDetailRow('Date of Birth', _formatDate(cardData!['dateOfBirth'])),
+                                _buildDetailRow('Gender', cardData!['gender']?.toString().toUpperCase() ?? 'Not specified'),
+                                _buildDetailRow('Phone', cardData!['phone'] ?? 'Not provided'),
+                                if (cardData!['address'] != null) ...[
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'Address:',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    cardData!['address']['fullAddress'] ?? 'Address not available',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.grey.shade700,
+                                    ),
+                                  ),
+                                ],
+                                if (cardData!['homeState'] != null) ...[
+                                  SizedBox(height: 8),
+                                  _buildDetailRow('Home State', cardData!['homeState']),
+                                ],
+                              ],
+                            ),
+                          ),
+                          
+                          SizedBox(height: 20),
+                          
                           // Emergency Contact
-                          if (cardData!['emergencyContact'] != null)
+                          if (cardData!['emergencyContact'] != null || cardData!['emergencyContactName'] != null)
                             Container(
                               padding: EdgeInsets.all(15),
                               decoration: BoxDecoration(
@@ -392,12 +463,21 @@ class _DigitalHealthCardScreenState extends State<DigitalHealthCardScreen> {
                                             fontWeight: FontWeight.w600,
                                           ),
                                         ),
+                                        if (cardData!['emergencyContactName'] != null && cardData!['emergencyContactName'] != 'Not provided')
+                                          Text(
+                                            cardData!['emergencyContactName'],
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.red.shade800,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
                                         Text(
-                                          cardData!['emergencyContact'],
+                                          cardData!['emergencyContact'] ?? 'Not provided',
                                           style: TextStyle(
-                                            fontSize: 16,
+                                            fontSize: 14,
                                             color: Colors.red.shade800,
-                                            fontWeight: FontWeight.bold,
+                                            fontWeight: FontWeight.w600,
                                           ),
                                         ),
                                       ],
@@ -527,7 +607,14 @@ class _DigitalHealthCardScreenState extends State<DigitalHealthCardScreen> {
                 child: ElevatedButton.icon(
                   onPressed: () {
                     // Share functionality
-                    _shareCard();
+                    CardDownloadService.shareCard(
+                      patientName: cardData!['patientName'] ?? 'Unknown',
+                      uhid: cardData!['uhid'] ?? 'N/A',
+                      bloodGroup: cardData!['bloodGroup'] ?? 'Unknown',
+                      emergencyContact: cardData!['emergencyContact'] ?? 'N/A',
+                      issueDate: _formatDate(cardData!['issueDate']),
+                      context: context,
+                    );
                   },
                   icon: Icon(Icons.share),
                   label: Text('Share Card'),
@@ -546,7 +633,16 @@ class _DigitalHealthCardScreenState extends State<DigitalHealthCardScreen> {
                 child: ElevatedButton.icon(
                   onPressed: () {
                     // Download functionality
-                    _downloadCard();
+                    CardDownloadService.showDownloadOptions(
+                      context: context,
+                      cardKey: _cardKey,
+                      cardData: cardData!,
+                      patientName: cardData!['patientName'] ?? 'Unknown',
+                      uhid: cardData!['uhid'] ?? 'N/A',
+                      bloodGroup: cardData!['bloodGroup'] ?? 'Unknown',
+                      emergencyContact: cardData!['emergencyContact'] ?? 'N/A',
+                      issueDate: _formatDate(cardData!['issueDate']),
+                    );
                   },
                   icon: Icon(Icons.download),
                   label: Text('Download'),
@@ -578,89 +674,36 @@ class _DigitalHealthCardScreenState extends State<DigitalHealthCardScreen> {
       return dateString;
     }
   }
-
-  void _shareCard() {
-    // Create shareable text with patient info
-    String shareText = '''
-🏥 Digital Health Card - Government of India
-
-👤 Patient: ${cardData!['patientName']}
-🆔 UHID: ${cardData!['uhid']}
-🩸 Blood Group: ${cardData!['bloodGroup']}
-📅 Issued: ${_formatDate(cardData!['issueDate'])}
-
-🚨 Emergency Contact: ${cardData!['emergencyContact']}
-
-This is an official digital health card issued under the Digital Health Record Management System (DHRMS).
-
-For more information, visit: https://dhrms.gov.in
-    ''';
-
-    // For web, copy to clipboard
-    Clipboard.setData(ClipboardData(text: shareText));
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Health card details copied to clipboard!'),
-        backgroundColor: Colors.teal.shade600,
-        action: SnackBarAction(
-          label: 'OK',
-          textColor: Colors.white,
-          onPressed: () {},
-        ),
-      ),
-    );
-  }
-
-  void _downloadCard() async {
-    try {
-      RenderRepaintBoundary boundary = 
-          _cardKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-      ui.Image image = await boundary.toImage(pixelRatio: 2.0);
-      ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      
-      if (byteData != null) {
-        // Platform-specific download handling
-        if (kIsWeb) {
-          // For web platform, we need to implement web-specific download
-          // This will be handled by a separate web-specific service
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Web download feature coming soon'),
-              backgroundColor: Colors.blue,
-            ),
-          );
-        } else {
-          // For mobile platforms, save to gallery or show share dialog
-          // This could be implemented with path_provider and gallery_saver
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Download feature coming soon for mobile'),
-              backgroundColor: Colors.orange,
-            ),
-          );
-          return;
-        }
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Digital Health Card downloaded successfully!'),
-            backgroundColor: Colors.green.shade600,
-            action: SnackBarAction(
-              label: 'OK',
-              textColor: Colors.white,
-              onPressed: () {},
+  
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(
+              '$label:',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade600,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error downloading card: $e'),
-          backgroundColor: Colors.red.shade600,
-        ),
-      );
-    }
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey.shade800,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
