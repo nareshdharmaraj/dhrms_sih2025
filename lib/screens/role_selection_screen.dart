@@ -11,7 +11,7 @@ class RoleSelectionScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
     final isTablet = screenSize.width > 600;
-    
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -53,9 +53,7 @@ class RoleSelectionScreen extends StatelessWidget {
               children: [
                 _buildHeader(context, isTablet),
                 const SizedBox(height: 40),
-                Expanded(
-                  child: _buildRoleSelection(context, isTablet),
-                ),
+                Expanded(child: _buildRoleSelection(context, isTablet)),
                 _buildFooter(context),
               ],
             ),
@@ -118,7 +116,8 @@ class RoleSelectionScreen extends StatelessWidget {
       UserRole(
         title: 'Patient',
         subtitle: 'Access your health records',
-        description: 'View medical history, book appointments, and track health metrics',
+        description:
+            'View medical history, book appointments, and track health metrics',
         icon: Icons.person,
         color: const Color(0xFF4CAF50),
         route: '/patient',
@@ -139,15 +138,6 @@ class RoleSelectionScreen extends StatelessWidget {
         color: const Color(0xFF9C27B0),
         route: '/regional',
       ),
-      // Test role for dashboard debugging
-      UserRole(
-        title: '[TEST] Patient Dashboard',
-        subtitle: 'Direct dashboard test',
-        description: 'Test dashboard with sample data - FOR DEBUGGING',
-        icon: Icons.bug_report,
-        color: const Color(0xFFFF9800),
-        route: '/test-dashboard',
-      ),
     ];
 
     return Column(
@@ -157,7 +147,8 @@ class RoleSelectionScreen extends StatelessWidget {
           width: double.infinity,
           margin: EdgeInsets.only(bottom: isTablet ? 30.0 : 24.0),
           child: ElevatedButton(
-            onPressed: () => Navigator.pushNamed(context, '/patient-registration'),
+            onPressed: () =>
+                Navigator.pushNamed(context, '/patient-registration'),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white,
               foregroundColor: const Color(0xFF2E7D32),
@@ -173,10 +164,7 @@ class RoleSelectionScreen extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.person_add,
-                  size: isTablet ? 28 : 24,
-                ),
+                Icon(Icons.person_add, size: isTablet ? 28 : 24),
                 SizedBox(width: 12),
                 Text(
                   'New Patient Registration',
@@ -189,7 +177,7 @@ class RoleSelectionScreen extends StatelessWidget {
             ),
           ),
         ),
-        
+
         // Divider
         Row(
           children: [
@@ -208,9 +196,9 @@ class RoleSelectionScreen extends StatelessWidget {
             Expanded(child: Divider(color: Colors.white.withOpacity(0.5))),
           ],
         ),
-        
+
         SizedBox(height: isTablet ? 30.0 : 24.0),
-        
+
         // Role Cards
         Expanded(
           child: ListView.builder(
@@ -258,52 +246,10 @@ class RoleSelectionScreen extends StatelessWidget {
   }
 
   void _handleRoleSelection(BuildContext context, UserRole role) {
-    if (role.route == '/test-dashboard') {
-      // Direct navigation to dashboard with test data
-      final testPatientData = {
-        'uhid': 'TEST123456789',
-        'fullName': 'Test Patient',
-        'email': 'test@example.com',
-        'bloodGroup': 'A+',
-        'blood_group': 'A+',
-        'bloodType': 'A+',
-        'dateOfBirth': '1985-03-20',
-        'date_of_birth': '1985-03-20',
-        'dob': '1985-03-20',
-        'phone': '+1234567890',
-        'address': '123 Test Street, Test City, TC 12345',
-        'healthStatus': 'Excellent',
-        'gender': 'Female',
-        'emergencyContacts': [
-          {
-            'name': 'John Test',
-            'relationship': 'Spouse',
-            'phone': '+1234567891'
-          },
-          {
-            'name': 'Dr. Emily Test',
-            'relationship': 'Primary Doctor',
-            'phone': '+1234567892'
-          },
-          {
-            'name': 'Sarah Test',
-            'relationship': 'Sister',
-            'phone': '+1234567893'
-          }
-        ]
-      };
-      
-      Navigator.pushNamed(
-        context,
-        '/patient-dashboard',
-        arguments: testPatientData,
-      );
-    } else {
-      // Navigate directly to login screen for other roles
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-      );
-    }
+    // Navigate directly to login screen for all roles
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+    );
   }
 }

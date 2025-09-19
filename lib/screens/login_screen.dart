@@ -37,7 +37,7 @@ class _LoginScreenState extends State<LoginScreen> {
       print('Using API base URL: ${ApiService.baseUrl}');
       print('Full login URL: ${ApiService.baseUrl}/roles/login');
       print('================================');
-      
+
       final result = await ApiService.login(
         _usernameController.text.trim(),
         _passwordController.text,
@@ -56,7 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
           // Login successful
           final user = result['user'];
           final userType = result['userType'];
-          
+
           // Show success message
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -83,7 +83,7 @@ class _LoginScreenState extends State<LoginScreen> {
       print('=== DEBUG: Login Error ===');
       print('Error: $e');
       print('=========================');
-      
+
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -313,7 +313,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
                                       valueColor: AlwaysStoppedAnimation<Color>(
-                                          Colors.white),
+                                        Colors.white,
+                                      ),
                                     ),
                                   )
                                 : Text(
@@ -327,40 +328,57 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 24),
 
-                        // Sample credentials info
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Colors.blue.withOpacity(0.3),
+                        // Create Account Button
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: OutlinedButton(
+                            onPressed: () {
+                              Navigator.pushNamed(
+                                context,
+                                '/patient-registration',
+                              );
+                            },
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF2E7D32),
+                              side: const BorderSide(
+                                color: Color(0xFF2E7D32),
+                                width: 2,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: Text(
+                              'Create New Account',
+                              style: TextStyle(
+                                fontSize: isTablet ? 18 : 16,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Sample Login Credentials:',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Forgot Password Link
+                        TextButton(
+                          onPressed: () {
+                            // TODO: Implement forgot password
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Forgot password feature coming soon',
                                 ),
+                                backgroundColor: Colors.orange,
                               ),
-                              const SizedBox(height: 8),
-                              const Text(
-                                'Patient: patient1 / pass123',
-                                style: TextStyle(fontSize: 12),
-                              ),
-                              const Text(
-                                'Doctor: doctor1 / doc123',
-                                style: TextStyle(fontSize: 12),
-                              ),
-                              const Text(
-                                'Officer: officer1 / off123',
-                                style: TextStyle(fontSize: 12),
-                              ),
-                            ],
+                            );
+                          },
+                          child: const Text(
+                            'Forgot Password?',
+                            style: TextStyle(
+                              color: Color(0xFF2E7D32),
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ],

@@ -29,13 +29,9 @@ class _RegionalLoginScreenState extends State<RegionalLoginScreen>
       duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
     _animationController.forward();
   }
 
@@ -110,10 +106,7 @@ class _RegionalLoginScreenState extends State<RegionalLoginScreen>
                       const SizedBox(height: 8),
                       const Text(
                         'Manage regional health records',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.white70,
-                        ),
+                        style: TextStyle(fontSize: 16, color: Colors.white70),
                       ),
                     ],
                   ),
@@ -182,7 +175,9 @@ class _RegionalLoginScreenState extends State<RegionalLoginScreen>
                               // Handle forgot password
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Forgot password feature coming soon'),
+                                  content: Text(
+                                    'Forgot password feature coming soon',
+                                  ),
                                 ),
                               );
                             },
@@ -205,26 +200,22 @@ class _RegionalLoginScreenState extends State<RegionalLoginScreen>
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
-                      ),
+                      border: Border.all(color: Colors.white.withOpacity(0.3)),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const Text(
                           "Don't have an account? ",
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 16,
-                          ),
+                          style: TextStyle(color: Colors.white70, fontSize: 16),
                         ),
                         GestureDetector(
                           onTap: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const RegionalRegisterScreen(),
+                                builder: (context) =>
+                                    const RegionalRegisterScreen(),
                               ),
                             );
                           },
