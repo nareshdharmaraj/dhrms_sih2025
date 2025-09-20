@@ -147,6 +147,10 @@ class _RegionalOfficerDashboardState extends State<RegionalOfficerDashboard> {
                       _buildOfficerInfoCard(),
                       SizedBox(height: 20),
                       
+                      // Management Actions
+                      _buildManagementActions(),
+                      SizedBox(height: 20),
+                      
                       // Regional Overview Stats
                       _buildRegionalStats(),
                       SizedBox(height: 20),
@@ -239,6 +243,136 @@ class _RegionalOfficerDashboardState extends State<RegionalOfficerDashboard> {
           textAlign: TextAlign.center,
         ),
       ],
+    );
+  }
+
+  Widget _buildManagementActions() {
+    return Card(
+      elevation: 4,
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Management Actions',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 16),
+            GridView.count(
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 2.5,
+              children: [
+                _buildActionButton(
+                  'Hospital Management',
+                  'Manage hospitals in your region',
+                  Icons.local_hospital,
+                  Colors.blue,
+                  () => _navigateToHospitalManagement(),
+                ),
+                _buildActionButton(
+                  'Staff Oversight',
+                  'Monitor hospital staff',
+                  Icons.people,
+                  Colors.green,
+                  () => _showComingSoon('Staff Oversight'),
+                ),
+                _buildActionButton(
+                  'Health Reports',
+                  'Generate regional reports',
+                  Icons.assessment,
+                  Colors.orange,
+                  () => _showComingSoon('Health Reports'),
+                ),
+                _buildActionButton(
+                  'Emergency Response',
+                  'Emergency coordination',
+                  Icons.emergency,
+                  Colors.red,
+                  () => _showComingSoon('Emergency Response'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton(
+    String title,
+    String subtitle,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withOpacity(0.3)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: color, size: 20),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: Colors.grey.shade800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _navigateToHospitalManagement() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          appBar: AppBar(title: const Text('Hospital Management')),
+          body: const Center(
+            child: Text('Hospital Management Screen - Coming Soon'),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showComingSoon(String feature) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$feature feature coming soon!'),
+        backgroundColor: Colors.blue,
+      ),
     );
   }
 

@@ -464,27 +464,10 @@ class _PatientRegisterScreenState extends State<PatientRegisterScreen> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Please save this UHI ID safely. This is your USERNAME for login. You can also use your email address to log in.',
+                              'Please save this UHI ID safely. You will need it for accessing healthcare services.',
                               style: TextStyle(
                                 fontSize: AppConstants.smallFont,
                                 color: AppConstants.secondaryText,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: AppConstants.lightBlue,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                '💡 To login: Use this UHI ID or your email as username',
-                                style: TextStyle(
-                                  fontSize: AppConstants.smallFont,
-                                  color: AppConstants.primaryBlue,
-                                  fontWeight: FontWeight.w600,
-                                ),
                               ),
                             ),
                           ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'screens/splash_screen.dart';
 import 'screens/role_selection_screen.dart';
 import 'screens/login_screen.dart';
@@ -10,7 +11,10 @@ import 'screens/digital_health_card_screen.dart';
 import 'screens/qr_scanner_screen.dart';
 import 'screens/wearable_data_screen.dart';
 import 'screens/ai_health_chatbot_screen.dart';
+import 'screens/who_login_screen.dart';
+import 'screens/sho_login_screen.dart';
 import 'utils/environment_config.dart';
+import 'widgets/configuration_switcher.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,12 +44,14 @@ class DHRMSApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => SplashScreen(
-          nextScreen: const RoleSelectionScreen(),
+          nextScreen: _wrapWithConfigSwitcher(const RoleSelectionScreen()),
         ),
-        '/role-selection': (context) => const RoleSelectionScreen(),
-        '/login': (context) => const LoginScreen(),
-        '/patient-registration': (context) => PatientRegistrationScreen(),
-        '/qr-scanner': (context) => QRScannerScreen(),
+        '/role-selection': (context) => _wrapWithConfigSwitcher(const RoleSelectionScreen()),
+        '/login': (context) => _wrapWithConfigSwitcher(const LoginScreen()),
+        '/who-login': (context) => _wrapWithConfigSwitcher(const WhoLoginScreen()),
+        '/sho-login': (context) => _wrapWithConfigSwitcher(const ShoLoginScreen()),
+        '/patient-registration': (context) => _wrapWithConfigSwitcher(PatientRegistrationScreen()),
+        '/qr-scanner': (context) => _wrapWithConfigSwitcher(QRScannerScreen()),
         '/patient-dashboard': (context) {
           final userData =
               ModalRoute.of(context)?.settings.arguments
@@ -56,35 +62,43 @@ class DHRMSApp extends StatelessWidget {
               userData?['UHID'] ??
               userData?['patientId'] ??
               userData?['patient_id'];
-          return PatientDashboardScreen(
+          return _wrapWithConfigSwitcher(PatientDashboardScreen(
             uhid: uhid?.toString(),
             patientData: userData,
-          );
+          ));
         },
         '/hospital-staff-dashboard': (context) {
           final userData =
               ModalRoute.of(context)?.settings.arguments
                   as Map<String, dynamic>?;
-          return HospitalStaffDashboard(userData: userData ?? {});
+          return _wrapWithConfigSwitcher(HospitalStaffDashboard(userData: userData ?? {}));
         },
         '/regional-officer-dashboard': (context) {
           final userData =
               ModalRoute.of(context)?.settings.arguments
                   as Map<String, dynamic>?;
-          return RegionalOfficerDashboard(userData: userData ?? {});
+          return _wrapWithConfigSwitcher(RegionalOfficerDashboard(userData: userData ?? {}));
         },
         '/digital-card': (context) {
           final uhid = ModalRoute.of(context)?.settings.arguments as String?;
-          return DigitalHealthCardScreen(uhid: uhid ?? '');
+          return _wrapWithConfigSwitcher(DigitalHealthCardScreen(uhid: uhid ?? ''));
         },
         '/wearable-data': (context) {
           final userData =
               ModalRoute.of(context)?.settings.arguments
                   as Map<String, dynamic>?;
-          return WearableDataScreen(userData: userData ?? {});
+          return _wrapWithConfigSwitcher(WearableDataScreen(userData: userData ?? {}));
         },
-        '/ai-health-chatbot': (context) => const AIHealthChatBotScreen(),
+        '/ai-health-chatbot': (context) => _wrapWithConfigSwitcher(const AIHealthChatBotScreen()),
       },
     );
+  }
+
+  /// Wrap screens with configuration switcher in debug mode only
+  Widget _wrapWithConfigSwitcher(Widget child) {
+    if (kDebugMode) {
+      return ConfigurationSwitcher(child: child);
+    }
+    return child;
   }
 }

@@ -283,7 +283,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       trailing: Switch(
         value: value,
         onChanged: onChanged,
-        activeColor: Colors.blue.shade600,
+        thumbColor: WidgetStateProperty.resolveWith<Color?>(
+          (Set<WidgetState> states) {
+            if (states.contains(WidgetState.selected)) {
+              return Colors.blue.shade600;
+            }
+            return null;
+          },
+        ),
       ),
     );
   }

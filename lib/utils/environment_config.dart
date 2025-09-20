@@ -35,11 +35,14 @@ class EnvironmentConfig {
   static String getApiBaseUrl() {
     // Priority 1: Use build-time override if specified
     if (_buildTimeApiUrl.isNotEmpty) {
+      debugPrint('🔍 Using build-time API URL: $_buildTimeApiUrl');
       return _buildTimeApiUrl;
     }
     
     // Priority 2: Use runtime configuration manager
-    return ConfigurationManager.instance.getCurrentApiUrl();
+    final runtimeUrl = ConfigurationManager.instance.getCurrentApiUrl();
+    debugPrint('🔍 Using runtime API URL: $runtimeUrl');
+    return runtimeUrl;
   }
   
   // Getters for compatibility and configuration display
@@ -52,6 +55,13 @@ class EnvironmentConfig {
   /// Initialize the configuration system
   static Future<void> initialize() async {
     await ConfigurationManager.instance.initialize();
+    
+    // TEMPORARY FIX: Force reset if using wrong port 3001
+    final currentUrl = ConfigurationManager.instance.getCurrentApiUrl();
+    if (currentUrl.contains(':3001')) {
+      debugPrint('🔧 Detected old port 3001, resetting configuration...');
+      await ConfigurationManager.instance.resetToDefaults();
+    }
     
     // Apply build-time overrides if they exist
     if (_buildTimeUseCloud) {
@@ -71,6 +81,7 @@ class EnvironmentConfig {
     }
     
     debugPrint('🚀 EnvironmentConfig initialized with mode: ${ConfigurationManager.instance.currentMode.displayName}');
+    debugPrint('🔍 Final API URL: ${getApiBaseUrl()}');
   }
   
   /// Get current environment information for debugging

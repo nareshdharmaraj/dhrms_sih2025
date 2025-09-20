@@ -31,7 +31,7 @@ class _DigitalHealthCardScreenState extends State<DigitalHealthCardScreen> {
   Future<void> _loadDigitalCard() async {
     try {
       // Get the current API base URL from environment config
-      final apiBaseUrl = EnvironmentConfig.getApiBaseUrl();
+      final apiBaseUrl = await EnvironmentConfig.getApiBaseUrl();
       print('🔍 Loading digital card for UHID: ${widget.uhid}');
       print('🌐 Using API URL: $apiBaseUrl');
 
@@ -554,7 +554,7 @@ class _DigitalHealthCardScreenState extends State<DigitalHealthCardScreen> {
                             gradient: LinearGradient(
                               colors: [
                                 Colors.red.shade600,
-                                Colors.red.shade700,
+                                Colors.orange.shade600,
                               ],
                             ),
                             borderRadius: BorderRadius.only(
@@ -614,6 +614,21 @@ class _DigitalHealthCardScreenState extends State<DigitalHealthCardScreen> {
                                   ],
                                 ),
                               ),
+                              // Small QR code in bottom-right
+                              Container(
+                                width: 50,
+                                height: 50,
+                                padding: EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  Icons.qr_code,
+                                  color: Colors.grey.shade700,
+                                  size: 24,
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -641,11 +656,97 @@ class _DigitalHealthCardScreenState extends State<DigitalHealthCardScreen> {
                                   color: Colors.grey.shade600,
                                 ),
                               ),
+                              Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: Colors.grey.shade300,
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.qr_code,
+                                  color: Colors.grey.shade700,
+                                  size: 20,
+                                ),
+                              ),
                             ],
                           ),
                         ),
 
-                      // Emergency Contact Section removed - keeping only the top one with QR code
+                      // Emergency Contact Section
+                      if (cardData!['emergencyContact'] != null &&
+                          cardData!['emergencyContact'] != 'Not provided')
+                        Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(15),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.red.shade600,
+                                Colors.red.shade700,
+                              ],
+                            ),
+                            borderRadius: BorderRadius.only(
+                              bottomLeft: Radius.circular(20),
+                              bottomRight: Radius.circular(20),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.emergency,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Emergency Contact',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  if (cardData!['emergencyContactName'] !=
+                                          null &&
+                                      cardData!['emergencyContactName'] !=
+                                          'Not provided')
+                                    Expanded(
+                                      child: Text(
+                                        cardData!['emergencyContactName'],
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  Text(
+                                    cardData!['emergencyContact'],
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
                     ],
                   ),
                 ),

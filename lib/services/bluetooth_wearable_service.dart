@@ -526,4 +526,39 @@ class BluetoothWearableService {
     _dataStreamController.add(data);
     _storeDataPoint(data);
   }
+
+  List<WearableCapability> _getCapabilitiesForDeviceType(WearableDeviceType deviceType) {
+    switch (deviceType) {
+      case WearableDeviceType.smartwatch:
+        return [
+          WearableCapability.heartRate,
+          WearableCapability.steps,
+          WearableCapability.calories,
+          WearableCapability.sleep,
+          WearableCapability.stress,
+        ];
+      case WearableDeviceType.fitnessBand:
+        return [
+          WearableCapability.heartRate,
+          WearableCapability.steps,
+          WearableCapability.calories,
+          WearableCapability.sleep,
+        ];
+      case WearableDeviceType.heartMonitor:
+        return [
+          WearableCapability.heartRate,
+          WearableCapability.ecg,
+        ];
+      case WearableDeviceType.bloodPressureMonitor:
+        return [
+          WearableCapability.bloodPressure,
+          WearableCapability.heartRate,
+        ];
+      case WearableDeviceType.pulseOximeter:
+        return [
+          WearableCapability.oxygenSaturation,
+          WearableCapability.heartRate,
+        ];
+    }
+  }
 }

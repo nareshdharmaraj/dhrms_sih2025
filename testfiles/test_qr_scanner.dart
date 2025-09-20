@@ -8,7 +8,10 @@ void main() {
 class TestQRScannerApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(title: 'Test QR Scanner', home: TestQRScannerScreen());
+    return MaterialApp(
+      title: 'Test QR Scanner',
+      home: TestQRScannerScreen(),
+    );
   }
 }
 
@@ -16,12 +19,18 @@ class TestQRScannerScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Test QR Scanner')),
+      appBar: AppBar(
+        title: Text('Test QR Scanner'),
+      ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.qr_code_scanner, size: 80, color: Colors.blue),
+            Icon(
+              Icons.qr_code_scanner,
+              size: 80,
+              color: Colors.blue,
+            ),
             SizedBox(height: 30),
             Text(
               'Enhanced QR Scanner Test',

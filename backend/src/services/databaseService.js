@@ -1,6 +1,7 @@
 const Patient = require('../models/Patient');
 const HospitalStaff = require('../models/HospitalStaff');
 const RegionalOfficer = require('../models/RegionalOfficer');
+const SHO = require('../models/StateHealthOfficer');
 
 class DatabaseService {
   // Universal login method - checks all three collections
@@ -120,6 +121,34 @@ class DatabaseService {
             officerRank: user.officerRank,
             assignedRegion: user.assignedRegion,
             role: 'regional_officer'
+          }
+        };
+      }
+
+      // Check in SHO (State Health Officer) collection - support both username and email
+      user = await SHO.findOne({ 
+        $or: [
+          { username: usernameOrEmail },
+          { email: usernameOrEmail }
+        ],
+        isActive: true // Only allow active SHOs to login
+      });
+      if (user && user.password === password) {
+        console.log(`SHO found: ${user.username} (${user.email}) - State: ${user.assignedState}`);
+        
+        return {
+          success: true,
+          message: 'Login successful',
+          userType: 'sho',
+          user: {
+            id: user._id,
+            username: user.username,
+            email: user.email,
+            fullName: user.fullName,
+            phone: user.phone,
+            designation: user.designation,
+            assignedState: user.assignedState,
+            role: 'sho'
           }
         };
       }
@@ -268,6 +297,11 @@ class DatabaseService {
         return { ...officer.toObject(), userType: 'regional_officer' };
       }
 
+      const sho = await SHO.findOne({ username: username }).select('-password');
+      if (sho) {
+        return { ...sho.toObject(), userType: 'sho' };
+      }
+
       return null;
     } catch (error) {
       console.error('Error searching user by username:', error);
@@ -281,15 +315,48 @@ class DatabaseService {
       const patientCount = await Patient.countDocuments({ isActive: true });
       const staffCount = await HospitalStaff.countDocuments({ isActive: true });
       const officerCount = await RegionalOfficer.countDocuments({ isActive: true });
+      const shoCount = await SHO.countDocuments({ isActive: true });
 
       return {
         patients: patientCount,
         hospitalStaff: staffCount,
         regionalOfficers: officerCount,
-        total: patientCount + staffCount + officerCount
+        shos: shoCount,
+        total: patientCount + staffCount + officerCount + shoCount
       };
     } catch (error) {
       console.error('Error getting database stats:', error);
+      throw error;
+    }
+  }
+
+  // SHO specific methods
+  async getAllSHOs() {
+    try {
+      const shos = await SHO.find({ isActive: true }).select('-password');
+      return shos;
+    } catch (error) {
+      console.error('Error getting all SHOs:', error);
+      throw error;
+    }
+  }
+
+  async getSHOById(id) {
+    try {
+      const sho = await SHO.findById(id).select('-password');
+      return sho;
+    } catch (error) {
+      console.error('Error getting SHO by ID:', error);
+      throw error;
+    }
+  }
+
+  async getSHOByState(state) {
+    try {
+      const sho = await SHO.findOne({ assignedState: state, isActive: true }).select('-password');
+      return sho;
+    } catch (error) {
+      console.error('Error getting SHO by state:', error);
       throw error;
     }
   }

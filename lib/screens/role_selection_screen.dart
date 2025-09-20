@@ -138,6 +138,22 @@ class RoleSelectionScreen extends StatelessWidget {
         color: const Color(0xFF9C27B0),
         route: '/regional',
       ),
+      UserRole(
+        title: 'State Health Officer',
+        subtitle: 'State health administration',
+        description: 'Manage state-wide health initiatives and oversight',
+        icon: Icons.account_balance,
+        color: const Color(0xFFFF9800),
+        route: '/sho',
+      ),
+      UserRole(
+        title: 'WHO Admin',
+        subtitle: 'World Health Organization',
+        description: 'Administrative oversight and state-wide health analytics',
+        icon: Icons.public,
+        color: const Color(0xFFFF5722),
+        route: '/who',
+      ),
     ];
 
     return Column(
@@ -246,10 +262,20 @@ class RoleSelectionScreen extends StatelessWidget {
   }
 
   void _handleRoleSelection(BuildContext context, UserRole role) {
-    // Navigate directly to login screen for all roles
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const LoginScreen()),
-    );
+    // Navigate to WHO login for WHO admin role
+    if (role.route == '/who') {
+      Navigator.pushNamed(context, '/who-login');
+    } 
+    // Navigate to SHO login for SHO role
+    else if (role.route == '/sho') {
+      Navigator.pushNamed(context, '/sho-login');
+    } 
+    else {
+      // Navigate directly to login screen for all other roles
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
+    }
   }
 }

@@ -30,6 +30,7 @@ class ConfigurationManager {
   static const String _defaultCloudUrl = 'https://dhrms-sih2025.onrender.com/api';
   static const String _defaultPhysicalDeviceIp = '172.2.4.104';
   static const int _defaultServerPort = 3000;
+  static const int _defaultLocalServerPort = 3000;
   
   // Current configuration
   ApiConfigMode _currentMode = ApiConfigMode.local;
@@ -62,15 +63,16 @@ class ConfigurationManager {
   
   /// Get platform-specific local URL
   String _getLocalUrl() {
+    final localPort = _defaultLocalServerPort; // Use debug port for local development
     if (kIsWeb) {
-      return 'http://localhost:$_serverPort/api';
+      return 'http://localhost:$localPort/api';
     } else if (Platform.isAndroid) {
-      return 'http://10.0.2.2:$_serverPort/api'; // Android emulator
+      return 'http://10.0.2.2:$localPort/api'; // Android emulator
     } else if (Platform.isIOS) {
-      return 'http://localhost:$_serverPort/api'; // iOS simulator
+      return 'http://localhost:$localPort/api'; // iOS simulator
     } else {
       // Desktop platforms
-      return 'http://localhost:$_serverPort/api';
+      return 'http://localhost:$localPort/api';
     }
   }
   
