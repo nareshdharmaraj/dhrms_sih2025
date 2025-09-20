@@ -1891,7 +1891,7 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
         ],
       ),
       child: DropdownButtonFormField<String>(
-        value: value,
+        initialValue: value,
         onChanged: onChanged,
         validator: (value) => value == null ? 'Required' : null,
         isExpanded: true,

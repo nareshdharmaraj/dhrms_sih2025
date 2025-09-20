@@ -30,7 +30,7 @@ class _DigitalHealthCardScreenState extends State<DigitalHealthCardScreen> {
   Future<void> _loadDigitalCard() async {
     try {
       // Get the current API base URL from environment config
-      final apiBaseUrl = await EnvironmentConfig.getApiBaseUrl();
+      final apiBaseUrl = EnvironmentConfig.getApiBaseUrl();
       print('🔍 Loading digital card for UHID: ${widget.uhid}');
       print('🌐 Using API URL: $apiBaseUrl');
       

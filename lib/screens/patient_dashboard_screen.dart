@@ -38,7 +38,7 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
 
   // Track hover states for interactive cards
   bool _wearablesCardHovered = false;
-  Set<int> _hoveredStatCards = {};
+  final Set<int> _hoveredStatCards = {};
 
   // Real data state variables
   List<dynamic> medicalRecords = [];
@@ -119,8 +119,8 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
             : null);
 
     print('Blood group lookup - widget.patientData: ${widget.patientData}');
-    print('Blood group lookup - _patientDataFromArgs: ${_patientDataFromArgs}');
-    print('Blood group lookup - healthData: ${healthData}');
+    print('Blood group lookup - _patientDataFromArgs: $_patientDataFromArgs');
+    print('Blood group lookup - healthData: $healthData');
     print('Found blood group: $bloodGroup');
 
     // Format the blood group properly if it exists
@@ -182,8 +182,8 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
             : null);
 
     print('DOB lookup - widget.patientData: ${widget.patientData}');
-    print('DOB lookup - _patientDataFromArgs: ${_patientDataFromArgs}');
-    print('DOB lookup - healthData: ${healthData}');
+    print('DOB lookup - _patientDataFromArgs: $_patientDataFromArgs');
+    print('DOB lookup - healthData: $healthData');
     print('Found DOB: $dob');
 
     return _calculateAge(dob);
@@ -1239,7 +1239,7 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
                               contact['phone'],
                             ),
                           )
-                          .toList(),
+                          ,
                     ],
                   ],
                 ),
@@ -1462,11 +1462,7 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
                   subtitle: 'Health assistant',
                   color: Colors.orange.shade600,
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('AI HealthBot feature coming soon'),
-                      ),
-                    );
+                    Navigator.of(context).pushNamed('/ai-health-chatbot');
                   },
                 ),
                 _buildServiceCard(
@@ -2420,7 +2416,7 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
                         ),
                       ),
                     )
-                    .toList(),
+                    ,
               ] else ...[
                 Text(
                   'No health tips available at the moment.',

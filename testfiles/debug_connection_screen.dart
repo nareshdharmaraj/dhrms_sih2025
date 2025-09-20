@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../lib/utils/connection_test_service.dart';
-import '../lib/utils/app_constants.dart';
-import '../lib/utils/debug_config.dart';
+import 'package:dhrms/utils/connection_test_service.dart';
+import 'package:dhrms/utils/app_constants.dart';
+import 'package:dhrms/utils/debug_config.dart';
 
 class DebugConnectionScreen extends StatefulWidget {
   const DebugConnectionScreen({super.key});
