@@ -979,7 +979,7 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const AdvancedSOSScreen(),
+                      builder: (context) => AdvancedSOSScreen(patientData: combinedPatientData),
                     ),
                   ),
                 ),
