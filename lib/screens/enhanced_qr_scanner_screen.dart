@@ -10,7 +10,8 @@ class EnhancedQRScannerScreen extends StatefulWidget {
   const EnhancedQRScannerScreen({super.key});
 
   @override
-  _EnhancedQRScannerScreenState createState() => _EnhancedQRScannerScreenState();
+  _EnhancedQRScannerScreenState createState() =>
+      _EnhancedQRScannerScreenState();
 }
 
 class _EnhancedQRScannerScreenState extends State<EnhancedQRScannerScreen> {
@@ -32,7 +33,9 @@ class _EnhancedQRScannerScreenState extends State<EnhancedQRScannerScreen> {
       facing: CameraFacing.back,
       torchEnabled: false,
       useNewCameraSelector: true, // Better camera handling
-      formats: [BarcodeFormat.qrCode], // Only scan QR codes for better performance
+      formats: [
+        BarcodeFormat.qrCode,
+      ], // Only scan QR codes for better performance
     );
     setState(() {
       isCameraMode = true;
@@ -42,7 +45,7 @@ class _EnhancedQRScannerScreenState extends State<EnhancedQRScannerScreen> {
 
   void _onDetect(BarcodeCapture barcodeCapture) async {
     if (!isScanning) return;
-    
+
     final List<Barcode> barcodes = barcodeCapture.barcodes;
     for (final barcode in barcodes) {
       if (barcode.rawValue != null && barcode.rawValue!.trim().isNotEmpty) {
@@ -51,12 +54,12 @@ class _EnhancedQRScannerScreenState extends State<EnhancedQRScannerScreen> {
           isScanning = false;
           scannedData = barcode.rawValue!.trim();
         });
-        
+
         // Add haptic feedback
         if (mounted) {
           HapticFeedback.mediumImpact();
         }
-        
+
         // Process the scanned data
         await _processScannedData(barcode.rawValue!.trim());
         break;
@@ -102,17 +105,16 @@ class _EnhancedQRScannerScreenState extends State<EnhancedQRScannerScreen> {
       // For now, let's use a placeholder approach
       // In a real implementation, you might use a library like qr_code_scanner
       // or implement image processing to detect QR codes
-      
+
       await Future.delayed(Duration(seconds: 2)); // Simulate processing
-      
+
       // Close processing dialog
       if (Navigator.canPop(context)) {
         Navigator.of(context).pop();
       }
-      
+
       // For demonstration, let's show a dialog asking for manual input
       _showManualInputDialog();
-      
     } catch (e) {
       // Close processing dialog if still open
       if (Navigator.canPop(context)) {
@@ -124,7 +126,7 @@ class _EnhancedQRScannerScreenState extends State<EnhancedQRScannerScreen> {
 
   void _showManualInputDialog() {
     final TextEditingController uhidController = TextEditingController();
-    
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -238,10 +240,16 @@ class _EnhancedQRScannerScreenState extends State<EnhancedQRScannerScreen> {
             ),
           );
         } else {
-          _showErrorDialog('Patient not found', responseData['message'] ?? 'No patient found with this UHID');
+          _showErrorDialog(
+            'Patient not found',
+            responseData['message'] ?? 'No patient found with this UHID',
+          );
         }
       } else {
-        _showErrorDialog('Error', 'Failed to fetch patient data. Status: ${response.statusCode}');
+        _showErrorDialog(
+          'Error',
+          'Failed to fetch patient data. Status: ${response.statusCode}',
+        );
       }
     } catch (e) {
       // Close processing dialog if still open
@@ -330,14 +338,11 @@ class _EnhancedQRScannerScreenState extends State<EnhancedQRScannerScreen> {
                 SizedBox(height: 20),
                 Text(
                   'Select how you want to scan the patient QR code',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(height: 40),
-                
+
                 // Camera Option
                 Container(
                   width: double.infinity,
@@ -347,7 +352,10 @@ class _EnhancedQRScannerScreenState extends State<EnhancedQRScannerScreen> {
                     icon: Icon(Icons.camera_alt, size: 24),
                     label: Text(
                       'Use Camera',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue.shade600,
@@ -359,7 +367,7 @@ class _EnhancedQRScannerScreenState extends State<EnhancedQRScannerScreen> {
                     ),
                   ),
                 ),
-                
+
                 // Upload Option
                 Container(
                   width: double.infinity,
@@ -368,7 +376,10 @@ class _EnhancedQRScannerScreenState extends State<EnhancedQRScannerScreen> {
                     icon: Icon(Icons.photo_library, size: 24),
                     label: Text(
                       'Upload from Gallery',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green.shade600,
@@ -380,9 +391,9 @@ class _EnhancedQRScannerScreenState extends State<EnhancedQRScannerScreen> {
                     ),
                   ),
                 ),
-                
+
                 SizedBox(height: 30),
-                
+
                 Container(
                   padding: EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -451,16 +462,11 @@ class _EnhancedQRScannerScreenState extends State<EnhancedQRScannerScreen> {
         children: [
           // Camera View
           if (cameraController != null)
-            MobileScanner(
-              controller: cameraController!,
-              onDetect: _onDetect,
-            ),
-          
+            MobileScanner(controller: cameraController!, onDetect: _onDetect),
+
           // Overlay
           Container(
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.5),
-            ),
+            decoration: BoxDecoration(color: Colors.black.withOpacity(0.5)),
             child: Column(
               children: [
                 Expanded(
@@ -476,9 +482,7 @@ class _EnhancedQRScannerScreenState extends State<EnhancedQRScannerScreen> {
                     children: [
                       Expanded(
                         flex: 1,
-                        child: Container(
-                          color: Colors.black.withOpacity(0.7),
-                        ),
+                        child: Container(color: Colors.black.withOpacity(0.7)),
                       ),
                       Expanded(
                         flex: 2,
@@ -495,9 +499,7 @@ class _EnhancedQRScannerScreenState extends State<EnhancedQRScannerScreen> {
                       ),
                       Expanded(
                         flex: 1,
-                        child: Container(
-                          color: Colors.black.withOpacity(0.7),
-                        ),
+                        child: Container(color: Colors.black.withOpacity(0.7)),
                       ),
                     ],
                   ),
@@ -518,20 +520,17 @@ class _EnhancedQRScannerScreenState extends State<EnhancedQRScannerScreen> {
                           ),
                           SizedBox(height: 10),
                           Text(
-                            isScanning 
-                              ? 'Position the QR code within the frame'
-                              : 'Processing QR Code...',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                            ),
+                            isScanning
+                                ? 'Position the QR code within the frame'
+                                : 'Processing QR Code...',
+                            style: TextStyle(color: Colors.white, fontSize: 16),
                             textAlign: TextAlign.center,
                           ),
                           SizedBox(height: 5),
                           Text(
-                            isScanning 
-                              ? 'Scanning for patient health card...'
-                              : 'Please wait...',
+                            isScanning
+                                ? 'Scanning for patient health card...'
+                                : 'Please wait...',
                             style: TextStyle(
                               color: Colors.white70,
                               fontSize: 14,
@@ -546,7 +545,7 @@ class _EnhancedQRScannerScreenState extends State<EnhancedQRScannerScreen> {
               ],
             ),
           ),
-          
+
           // Loading indicator when processing
           if (!isScanning)
             Container(
@@ -559,19 +558,13 @@ class _EnhancedQRScannerScreenState extends State<EnhancedQRScannerScreen> {
                     SizedBox(height: 20),
                     Text(
                       'Processing QR Code...',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                      ),
+                      style: TextStyle(color: Colors.white, fontSize: 18),
                     ),
                     if (scannedData != null) ...[
                       SizedBox(height: 10),
                       Text(
                         'Data: ${scannedData!.length > 30 ? scannedData!.substring(0, 30) + '...' : scannedData}',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 14,
-                        ),
+                        style: TextStyle(color: Colors.white70, fontSize: 14),
                       ),
                     ],
                   ],
@@ -679,17 +672,23 @@ class PatientRecordScreen extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _buildInfoItem('Age', _calculateAge(patientData['dateOfBirth'])),
+                      _buildInfoItem(
+                        'Age',
+                        _calculateAge(patientData['dateOfBirth']),
+                      ),
                       _buildInfoItem('Gender', patientData['gender'] ?? 'N/A'),
-                      _buildInfoItem('Blood', patientData['bloodGroup'] ?? 'N/A'),
+                      _buildInfoItem(
+                        'Blood',
+                        patientData['bloodGroup'] ?? 'N/A',
+                      ),
                     ],
                   ),
                 ],
               ),
             ),
-            
+
             SizedBox(height: 20),
-            
+
             // Basic Information
             _buildSectionHeader('Basic Information'),
             _buildInfoCard([
@@ -698,20 +697,29 @@ class PatientRecordScreen extends StatelessWidget {
               _buildDetailRow('Address', patientData['address'] ?? 'N/A'),
               _buildDetailRow('Home State', patientData['homeState'] ?? 'N/A'),
             ]),
-            
+
             SizedBox(height: 20),
-            
+
             // Emergency Contact
             if (patientData['emergencyContact'] != null) ...[
               _buildSectionHeader('Emergency Contact'),
               _buildInfoCard([
-                _buildDetailRow('Name', patientData['emergencyContact']['name'] ?? 'N/A'),
-                _buildDetailRow('Relationship', patientData['emergencyContact']['relationship'] ?? 'N/A'),
-                _buildDetailRow('Phone', patientData['emergencyContact']['phone'] ?? 'N/A'),
+                _buildDetailRow(
+                  'Name',
+                  patientData['emergencyContact']['name'] ?? 'N/A',
+                ),
+                _buildDetailRow(
+                  'Relationship',
+                  patientData['emergencyContact']['relationship'] ?? 'N/A',
+                ),
+                _buildDetailRow(
+                  'Phone',
+                  patientData['emergencyContact']['phone'] ?? 'N/A',
+                ),
               ]),
               SizedBox(height: 20),
             ],
-            
+
             // Migration History
             if (migrations.isNotEmpty) ...[
               _buildSectionHeader('Migration History'),
@@ -822,10 +830,7 @@ class PatientRecordScreen extends StatelessWidget {
           ),
           Text(': ', style: TextStyle(color: Colors.grey.shade600)),
           Expanded(
-            child: Text(
-              value,
-              style: TextStyle(color: Colors.grey.shade800),
-            ),
+            child: Text(value, style: TextStyle(color: Colors.grey.shade800)),
           ),
         ],
       ),
@@ -846,10 +851,7 @@ class PatientRecordScreen extends StatelessWidget {
         SizedBox(height: 5),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey.shade600,
-          ),
+          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
         ),
       ],
     );
@@ -861,7 +863,7 @@ class PatientRecordScreen extends StatelessWidget {
       DateTime birthDate = DateTime.parse(dob.toString());
       DateTime now = DateTime.now();
       int age = now.year - birthDate.year;
-      if (now.month < birthDate.month || 
+      if (now.month < birthDate.month ||
           (now.month == birthDate.month && now.day < birthDate.day)) {
         age--;
       }

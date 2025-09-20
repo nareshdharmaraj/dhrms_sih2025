@@ -6,7 +6,7 @@ import '../utils/emergency_dialer.dart';
 
 class AdvancedSOSScreen extends StatefulWidget {
   final Map<String, dynamic>? patientData;
-  
+
   const AdvancedSOSScreen({super.key, this.patientData});
 
   @override
@@ -27,7 +27,7 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
   int _countdown = 10;
   Timer? _countdownTimer;
   String? _emergencyContactNumber;
-  
+
   final List<SOSAction> _sosActions = [
     SOSAction(
       title: 'Emergency Call',
@@ -71,20 +71,23 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
       // Try multiple possible emergency contact fields
       if (widget.patientData!['emergencyContact'] != null) {
         if (widget.patientData!['emergencyContact'] is Map) {
-          _emergencyContactNumber = widget.patientData!['emergencyContact']['phone'];
+          _emergencyContactNumber =
+              widget.patientData!['emergencyContact']['phone'];
         } else {
-          _emergencyContactNumber = widget.patientData!['emergencyContact'].toString();
+          _emergencyContactNumber = widget.patientData!['emergencyContact']
+              .toString();
         }
       } else if (widget.patientData!['emergencyContacts'] != null &&
-                 widget.patientData!['emergencyContacts'] is List &&
-                 (widget.patientData!['emergencyContacts'] as List).isNotEmpty) {
-        final firstContact = (widget.patientData!['emergencyContacts'] as List).first;
+          widget.patientData!['emergencyContacts'] is List &&
+          (widget.patientData!['emergencyContacts'] as List).isNotEmpty) {
+        final firstContact =
+            (widget.patientData!['emergencyContacts'] as List).first;
         if (firstContact is Map && firstContact['phone'] != null) {
           _emergencyContactNumber = firstContact['phone'];
         }
       }
     }
-    
+
     // Fallback to a default emergency number if none found
     _emergencyContactNumber ??= '108'; // Default ambulance number
   }
@@ -94,12 +97,12 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
       duration: const Duration(seconds: 1),
       vsync: this,
     );
-    
+
     _countdownController = AnimationController(
       duration: const Duration(seconds: 10),
       vsync: this,
     );
-    
+
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
@@ -108,11 +111,11 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
     _pulseAnimation = Tween<double>(begin: 1.0, end: 1.3).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
-    
+
     _countdownAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(
       CurvedAnimation(parent: _countdownController, curve: Curves.linear),
     );
-    
+
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
     );
@@ -139,7 +142,11 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: _isSOSActive
-                ? [Colors.red.shade800, Colors.red.shade600, Colors.red.shade400]
+                ? [
+                    Colors.red.shade800,
+                    Colors.red.shade600,
+                    Colors.red.shade400,
+                  ]
                 : [Colors.red.shade50, Colors.white, Colors.orange.shade50],
           ),
         ),
@@ -149,7 +156,9 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
             builder: (context, child) {
               return FadeTransition(
                 opacity: _fadeAnimation,
-                child: _isSOSActive ? _buildSOSActiveView() : _buildSOSInactiveView(),
+                child: _isSOSActive
+                    ? _buildSOSActiveView()
+                    : _buildSOSInactiveView(),
               );
             },
           ),
@@ -199,7 +208,10 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  if (_isCountingDown) _buildCountdownView() else _buildExecutingView(),
+                  if (_isCountingDown)
+                    _buildCountdownView()
+                  else
+                    _buildExecutingView(),
                   const SizedBox(height: 50),
                   _buildCancelButton(),
                 ],
@@ -333,26 +345,43 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
               const SizedBox(width: 12),
               const Text(
                 'How to Use Emergency SOS',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          _buildInstructionStep('1', 'Press and hold the SOS button', 'Long press for 3 seconds to activate'),
-          _buildInstructionStep('2', '10-second countdown begins', 'You can cancel during this time'),
-          _buildInstructionStep('3', 'Emergency contact called', _emergencyContactNumber != null 
-              ? 'Automatic call to $_emergencyContactNumber' 
-              : 'Automatic call to emergency number'),
-          _buildInstructionStep('4', 'Location and contacts notified', 'Live location shared with emergency contacts'),
+          _buildInstructionStep(
+            '1',
+            'Press and hold the SOS button',
+            'Long press for 3 seconds to activate',
+          ),
+          _buildInstructionStep(
+            '2',
+            '10-second countdown begins',
+            'You can cancel during this time',
+          ),
+          _buildInstructionStep(
+            '3',
+            'Emergency contact called',
+            _emergencyContactNumber != null
+                ? 'Automatic call to $_emergencyContactNumber'
+                : 'Automatic call to emergency number',
+          ),
+          _buildInstructionStep(
+            '4',
+            'Location and contacts notified',
+            'Live location shared with emergency contacts',
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildInstructionStep(String number, String title, String description) {
+  Widget _buildInstructionStep(
+    String number,
+    String title,
+    String description,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -390,10 +419,7 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
                 ),
                 Text(
                   description,
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
                 ),
               ],
             ),
@@ -417,10 +443,7 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
               height: 200,
               decoration: BoxDecoration(
                 gradient: RadialGradient(
-                  colors: [
-                    Colors.red.shade400,
-                    Colors.red.shade700,
-                  ],
+                  colors: [Colors.red.shade400, Colors.red.shade700],
                 ),
                 shape: BoxShape.circle,
                 boxShadow: [
@@ -452,10 +475,7 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
                       ),
                       Text(
                         'Hold to activate',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                        ),
+                        style: TextStyle(color: Colors.white, fontSize: 14),
                       ),
                     ],
                   ),
@@ -488,19 +508,16 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
         children: [
           const Text(
             'Quick Emergency Actions',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
                 child: _buildQuickActionButton(
-                  _emergencyContactNumber != null 
-                    ? 'Call $_emergencyContactNumber' 
-                    : 'Call Emergency',
+                  _emergencyContactNumber != null
+                      ? 'Call $_emergencyContactNumber'
+                      : 'Call Emergency',
                   Icons.phone,
                   Colors.red,
                   () => _makeEmergencyCall(_emergencyContactNumber ?? '108'),
@@ -544,7 +561,12 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
     );
   }
 
-  Widget _buildQuickActionButton(String label, IconData icon, Color color, VoidCallback onTap) {
+  Widget _buildQuickActionButton(
+    String label,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
     return Container(
       height: 80,
       decoration: BoxDecoration(
@@ -584,9 +606,7 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.green.shade50, Colors.white],
-        ),
+        gradient: LinearGradient(colors: [Colors.green.shade50, Colors.white]),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.green.withOpacity(0.2)),
       ),
@@ -607,17 +627,11 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
               children: [
                 Text(
                   'Location Services',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 Text(
                   'GPS enabled - Location will be shared during emergencies',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ],
             ),
@@ -648,10 +662,7 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
         children: [
           const Text(
             'SOS Settings',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           ListTile(
@@ -708,7 +719,9 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
                     value: _countdownAnimation.value,
                     strokeWidth: 8,
                     backgroundColor: Colors.white.withOpacity(0.3),
-                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      Colors.white,
+                    ),
                   );
                 },
               ),
@@ -726,17 +739,11 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
         const SizedBox(height: 20),
         const Text(
           'Emergency services will be contacted',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-          ),
+          style: TextStyle(color: Colors.white, fontSize: 16),
         ),
         const Text(
           'Tap cancel to stop',
-          style: TextStyle(
-            color: Colors.white70,
-            fontSize: 14,
-          ),
+          style: TextStyle(color: Colors.white70, fontSize: 14),
         ),
       ],
     );
@@ -761,7 +768,9 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
             borderRadius: BorderRadius.circular(20),
           ),
           child: Column(
-            children: _sosActions.map((action) => _buildSOSActionItem(action)).toList(),
+            children: _sosActions
+                .map((action) => _buildSOSActionItem(action))
+                .toList(),
           ),
         ),
       ],
@@ -776,7 +785,9 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
         color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: action.isCompleted ? Colors.green : Colors.white.withOpacity(0.3),
+          color: action.isCompleted
+              ? Colors.green
+              : Colors.white.withOpacity(0.3),
         ),
       ),
       child: Row(
@@ -803,10 +814,7 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
                 ),
                 Text(
                   action.description,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                  ),
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
                 ),
               ],
             ),
@@ -839,10 +847,7 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
         ),
         child: const Text(
           'CANCEL EMERGENCY',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
       ),
     );
@@ -855,7 +860,7 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
       _isCountingDown = true;
       _countdown = 10;
     });
-    
+
     _countdownController.forward();
     _startCountdownTimer();
   }
@@ -865,9 +870,9 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
       setState(() {
         _countdown--;
       });
-      
+
       HapticFeedback.lightImpact();
-      
+
       if (_countdown <= 0) {
         timer.cancel();
         _executeEmergency();
@@ -884,7 +889,7 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
   void _cancelEmergency() {
     _countdownTimer?.cancel();
     _countdownController.reset();
-    
+
     setState(() {
       _isSOSActive = false;
       _isCountingDown = false;
@@ -893,7 +898,7 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
         action.isCompleted = false;
       }
     });
-    
+
     HapticFeedback.mediumImpact();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -907,7 +912,7 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
     setState(() {
       _isCountingDown = false;
     });
-    
+
     // Execute emergency actions including automatic dialing
     _executeEmergencyActions();
   }
@@ -931,7 +936,7 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
         );
       }
     }
-    
+
     // Simulate other emergency actions
     for (int i = 1; i < _sosActions.length; i++) {
       await Future.delayed(const Duration(seconds: 2));
@@ -940,7 +945,7 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
       });
       HapticFeedback.lightImpact();
     }
-    
+
     // Show completion
     await Future.delayed(const Duration(seconds: 2));
     _showEmergencyCompleted();
@@ -1012,9 +1017,7 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
 
   void _showEmergencyContacts() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Opening emergency contacts...'),
-      ),
+      const SnackBar(content: Text('Opening emergency contacts...')),
     );
   }
 
@@ -1023,7 +1026,9 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Countdown Duration'),
-        content: const Text('Set the countdown duration before emergency services are contacted.'),
+        content: const Text(
+          'Set the countdown duration before emergency services are contacted.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -1040,9 +1045,7 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
 
   void _showMedicalInfo() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Opening medical information...'),
-      ),
+      const SnackBar(content: Text('Opening medical information...')),
     );
   }
 }

@@ -8,10 +8,7 @@ void main() {
 class TestSOSApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Test Emergency SOS',
-      home: TestSOSScreen(),
-    );
+    return MaterialApp(title: 'Test Emergency SOS', home: TestSOSScreen());
   }
 }
 
@@ -29,9 +26,7 @@ class TestSOSScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Test Emergency SOS'),
-      ),
+      appBar: AppBar(title: Text('Test Emergency SOS')),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -46,9 +41,8 @@ class TestSOSScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => AdvancedSOSScreen(
-                      patientData: testPatientData,
-                    ),
+                    builder: (context) =>
+                        AdvancedSOSScreen(patientData: testPatientData),
                   ),
                 );
               },
