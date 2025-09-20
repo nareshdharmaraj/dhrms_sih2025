@@ -172,7 +172,7 @@ class _RegionalRegisterScreenState extends State<RegionalRegisterScreen> {
                         ),
                         const SizedBox(height: AppConstants.smallPadding),
                         DropdownButtonFormField<String>(
-                          initialValue: _selectedLevel,
+                          value: _selectedLevel,
                           decoration: const InputDecoration(
                             border: InputBorder.none,
                           ),
