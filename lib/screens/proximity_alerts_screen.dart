@@ -23,7 +23,9 @@ class _ProximityAlertsScreenState extends State<ProximityAlertsScreen> {
         elevation: 0,
         actions: [
           IconButton(
-            icon: Icon(_isLocationEnabled ? Icons.location_on : Icons.location_off),
+            icon: Icon(
+              _isLocationEnabled ? Icons.location_on : Icons.location_off,
+            ),
             onPressed: _toggleLocationService,
           ),
         ],
@@ -50,7 +52,10 @@ class _ProximityAlertsScreenState extends State<ProximityAlertsScreen> {
               onPressed: _showCreateAlertDialog,
               backgroundColor: Colors.cyan.shade600,
               icon: const Icon(Icons.add_location, color: Colors.white),
-              label: const Text('Add Alert', style: TextStyle(color: Colors.white)),
+              label: const Text(
+                'Add Alert',
+                style: TextStyle(color: Colors.white),
+              ),
             )
           : null,
     );
@@ -64,14 +69,18 @@ class _ProximityAlertsScreenState extends State<ProximityAlertsScreen> {
         color: _isLocationEnabled ? Colors.green.shade50 : Colors.red.shade50,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: _isLocationEnabled ? Colors.green.shade200 : Colors.red.shade200,
+          color: _isLocationEnabled
+              ? Colors.green.shade200
+              : Colors.red.shade200,
         ),
       ),
       child: Row(
         children: [
           Icon(
             _isLocationEnabled ? Icons.location_on : Icons.location_off,
-            color: _isLocationEnabled ? Colors.green.shade600 : Colors.red.shade600,
+            color: _isLocationEnabled
+                ? Colors.green.shade600
+                : Colors.red.shade600,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -79,19 +88,25 @@ class _ProximityAlertsScreenState extends State<ProximityAlertsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _isLocationEnabled ? 'Location Services Enabled' : 'Location Services Disabled',
+                  _isLocationEnabled
+                      ? 'Location Services Enabled'
+                      : 'Location Services Disabled',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: _isLocationEnabled ? Colors.green.shade700 : Colors.red.shade700,
+                    color: _isLocationEnabled
+                        ? Colors.green.shade700
+                        : Colors.red.shade700,
                   ),
                 ),
                 Text(
-                  _isLocationEnabled 
+                  _isLocationEnabled
                       ? 'You will receive alerts when near important locations'
                       : 'Enable location to receive proximity alerts',
                   style: TextStyle(
                     fontSize: 12,
-                    color: _isLocationEnabled ? Colors.green.shade600 : Colors.red.shade600,
+                    color: _isLocationEnabled
+                        ? Colors.green.shade600
+                        : Colors.red.shade600,
                   ),
                 ),
               ],
@@ -100,7 +115,9 @@ class _ProximityAlertsScreenState extends State<ProximityAlertsScreen> {
           ElevatedButton(
             onPressed: _toggleLocationService,
             style: ElevatedButton.styleFrom(
-              backgroundColor: _isLocationEnabled ? Colors.red.shade600 : Colors.green.shade600,
+              backgroundColor: _isLocationEnabled
+                  ? Colors.red.shade600
+                  : Colors.green.shade600,
               foregroundColor: Colors.white,
             ),
             child: Text(_isLocationEnabled ? 'Disable' : 'Enable'),
@@ -134,10 +151,7 @@ class _ProximityAlertsScreenState extends State<ProximityAlertsScreen> {
             _isLocationEnabled
                 ? 'Create alerts for important locations'
                 : 'Enable location services to use proximity alerts',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey.shade600,
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
@@ -149,7 +163,10 @@ class _ProximityAlertsScreenState extends State<ProximityAlertsScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.cyan.shade600,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
               ),
             ),
           if (!_isLocationEnabled)
@@ -160,7 +177,10 @@ class _ProximityAlertsScreenState extends State<ProximityAlertsScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green.shade600,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
               ),
             ),
         ],
@@ -187,7 +207,9 @@ class _ProximityAlertsScreenState extends State<ProximityAlertsScreen> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: _getAlertTypeColor(alert['type']).withOpacity(0.1),
+                        color: _getAlertTypeColor(
+                          alert['type'],
+                        ).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
@@ -229,7 +251,9 @@ class _ProximityAlertsScreenState extends State<ProximityAlertsScreen> {
                   children: [
                     Chip(
                       label: Text(alert['type']),
-                      backgroundColor: _getAlertTypeColor(alert['type']).withOpacity(0.1),
+                      backgroundColor: _getAlertTypeColor(
+                        alert['type'],
+                      ).withOpacity(0.1),
                       labelStyle: TextStyle(
                         color: _getAlertTypeColor(alert['type']),
                         fontSize: 12,
@@ -255,7 +279,8 @@ class _ProximityAlertsScreenState extends State<ProximityAlertsScreen> {
                     ),
                   ],
                 ),
-                if (alert['message'] != null && alert['message'].isNotEmpty) ...[
+                if (alert['message'] != null &&
+                    alert['message'].isNotEmpty) ...[
                   const SizedBox(height: 12),
                   Container(
                     width: double.infinity,
@@ -360,8 +385,8 @@ class _ProximityAlertsScreenState extends State<ProximityAlertsScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          _isLocationEnabled 
-              ? 'Location services enabled' 
+          _isLocationEnabled
+              ? 'Location services enabled'
               : 'Location services disabled',
         ),
         backgroundColor: _isLocationEnabled ? Colors.green : Colors.red,
@@ -389,9 +414,15 @@ class _ProximityAlertsScreenState extends State<ProximityAlertsScreen> {
     int? index,
     Map<String, dynamic>? initialData,
   }) {
-    final nameController = TextEditingController(text: initialData?['name'] ?? '');
-    final addressController = TextEditingController(text: initialData?['address'] ?? '');
-    final messageController = TextEditingController(text: initialData?['message'] ?? '');
+    final nameController = TextEditingController(
+      text: initialData?['name'] ?? '',
+    );
+    final addressController = TextEditingController(
+      text: initialData?['address'] ?? '',
+    );
+    final messageController = TextEditingController(
+      text: initialData?['message'] ?? '',
+    );
     String selectedType = initialData?['type'] ?? 'Hospital';
     double selectedRadius = (initialData?['radius'] ?? 500).toDouble();
 
@@ -428,10 +459,19 @@ class _ProximityAlertsScreenState extends State<ProximityAlertsScreen> {
                     border: OutlineInputBorder(),
                   ),
                   items: const [
-                    DropdownMenuItem(value: 'Hospital', child: Text('Hospital')),
-                    DropdownMenuItem(value: 'Pharmacy', child: Text('Pharmacy')),
+                    DropdownMenuItem(
+                      value: 'Hospital',
+                      child: Text('Hospital'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'Pharmacy',
+                      child: Text('Pharmacy'),
+                    ),
                     DropdownMenuItem(value: 'Clinic', child: Text('Clinic')),
-                    DropdownMenuItem(value: 'Emergency', child: Text('Emergency Center')),
+                    DropdownMenuItem(
+                      value: 'Emergency',
+                      child: Text('Emergency Center'),
+                    ),
                     DropdownMenuItem(value: 'Home', child: Text('Home')),
                     DropdownMenuItem(value: 'Work', child: Text('Work')),
                     DropdownMenuItem(value: 'Other', child: Text('Other')),
@@ -482,7 +522,8 @@ class _ProximityAlertsScreenState extends State<ProximityAlertsScreen> {
           ),
           ElevatedButton(
             onPressed: () {
-              if (nameController.text.isNotEmpty && addressController.text.isNotEmpty) {
+              if (nameController.text.isNotEmpty &&
+                  addressController.text.isNotEmpty) {
                 if (isEdit && index != null) {
                   _updateAlert(
                     index,
@@ -515,7 +556,13 @@ class _ProximityAlertsScreenState extends State<ProximityAlertsScreen> {
     );
   }
 
-  void _addAlert(String name, String address, String type, int radius, String message) {
+  void _addAlert(
+    String name,
+    String address,
+    String type,
+    int radius,
+    String message,
+  ) {
     setState(() {
       _alerts.add({
         'name': name,
@@ -536,7 +583,14 @@ class _ProximityAlertsScreenState extends State<ProximityAlertsScreen> {
     );
   }
 
-  void _updateAlert(int index, String name, String address, String type, int radius, String message) {
+  void _updateAlert(
+    int index,
+    String name,
+    String address,
+    String type,
+    int radius,
+    String message,
+  ) {
     setState(() {
       _alerts[index] = {
         ..._alerts[index],
@@ -558,12 +612,14 @@ class _ProximityAlertsScreenState extends State<ProximityAlertsScreen> {
 
   void _deleteAlert(int index) {
     final alertName = _alerts[index]['name'];
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Alert'),
-        content: Text('Are you sure you want to delete the proximity alert for "$alertName"?'),
+        content: Text(
+          'Are you sure you want to delete the proximity alert for "$alertName"?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -575,7 +631,7 @@ class _ProximityAlertsScreenState extends State<ProximityAlertsScreen> {
                 _alerts.removeAt(index);
               });
               Navigator.pop(context);
-              
+
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Proximity alert for "$alertName" deleted'),

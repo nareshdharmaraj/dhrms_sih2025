@@ -6,7 +6,8 @@ class InsuranceServicesScreen extends StatefulWidget {
   const InsuranceServicesScreen({super.key, this.patientData});
 
   @override
-  State<InsuranceServicesScreen> createState() => _InsuranceServicesScreenState();
+  State<InsuranceServicesScreen> createState() =>
+      _InsuranceServicesScreenState();
 }
 
 class _InsuranceServicesScreenState extends State<InsuranceServicesScreen> {
@@ -61,7 +62,9 @@ class _InsuranceServicesScreenState extends State<InsuranceServicesScreen> {
   }
 
   Widget _buildMyPlansTab() {
-    return _insurancePlans.isEmpty ? _buildMyPlansEmptyState() : _buildMyPlansList();
+    return _insurancePlans.isEmpty
+        ? _buildMyPlansEmptyState()
+        : _buildMyPlansList();
   }
 
   Widget _buildMyPlansEmptyState() {
@@ -69,11 +72,7 @@ class _InsuranceServicesScreenState extends State<InsuranceServicesScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.shield_outlined,
-            size: 120,
-            color: Colors.indigo.shade300,
-          ),
+          Icon(Icons.shield_outlined, size: 120, color: Colors.indigo.shade300),
           const SizedBox(height: 24),
           Text(
             'No Insurance Plans',
@@ -86,10 +85,7 @@ class _InsuranceServicesScreenState extends State<InsuranceServicesScreen> {
           const SizedBox(height: 12),
           Text(
             'Add your insurance plans to track coverage',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey.shade600,
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
@@ -130,10 +126,7 @@ class _InsuranceServicesScreenState extends State<InsuranceServicesScreen> {
                         color: Colors.indigo.shade100,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Icon(
-                        Icons.shield,
-                        color: Colors.indigo.shade600,
-                      ),
+                      child: Icon(Icons.shield, color: Colors.indigo.shade600),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -158,7 +151,10 @@ class _InsuranceServicesScreenState extends State<InsuranceServicesScreen> {
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: plan['isActive'] ? Colors.green : Colors.red,
                         borderRadius: BorderRadius.circular(12),
@@ -178,11 +174,17 @@ class _InsuranceServicesScreenState extends State<InsuranceServicesScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: _buildInfoCard('Policy Number', plan['policyNumber']),
+                      child: _buildInfoCard(
+                        'Policy Number',
+                        plan['policyNumber'],
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: _buildInfoCard('Group ID', plan['groupId'] ?? 'N/A'),
+                      child: _buildInfoCard(
+                        'Group ID',
+                        plan['groupId'] ?? 'N/A',
+                      ),
                     ),
                   ],
                 ),
@@ -190,7 +192,10 @@ class _InsuranceServicesScreenState extends State<InsuranceServicesScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: _buildInfoCard('Deductible', '\$${plan['deductible']}'),
+                      child: _buildInfoCard(
+                        'Deductible',
+                        '\$${plan['deductible']}',
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -255,10 +260,7 @@ class _InsuranceServicesScreenState extends State<InsuranceServicesScreen> {
           const SizedBox(height: 4),
           Text(
             value,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -291,10 +293,7 @@ class _InsuranceServicesScreenState extends State<InsuranceServicesScreen> {
           const SizedBox(height: 12),
           Text(
             'Your insurance claims will appear here',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey.shade600,
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
             textAlign: TextAlign.center,
           ),
         ],
@@ -318,10 +317,7 @@ class _InsuranceServicesScreenState extends State<InsuranceServicesScreen> {
               children: [
                 Row(
                   children: [
-                    Icon(
-                      Icons.receipt,
-                      color: Colors.indigo.shade600,
-                    ),
+                    Icon(Icons.receipt, color: Colors.indigo.shade600),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -347,7 +343,10 @@ class _InsuranceServicesScreenState extends State<InsuranceServicesScreen> {
                     Chip(
                       label: Text(claim['status']),
                       backgroundColor: _getClaimStatusColor(claim['status']),
-                      labelStyle: const TextStyle(color: Colors.white, fontSize: 12),
+                      labelStyle: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
@@ -365,7 +364,10 @@ class _InsuranceServicesScreenState extends State<InsuranceServicesScreen> {
                 ),
                 if (claim['approvedAmount'] != null) ...[
                   const SizedBox(height: 12),
-                  _buildInfoCard('Approved Amount', '\$${claim['approvedAmount']}'),
+                  _buildInfoCard(
+                    'Approved Amount',
+                    '\$${claim['approvedAmount']}',
+                  ),
                 ],
               ],
             ),
@@ -408,7 +410,12 @@ class _InsuranceServicesScreenState extends State<InsuranceServicesScreen> {
           'HealthFirst Insurance',
           '\$150/month',
           'Comprehensive coverage with low deductible',
-          ['Emergency Care', 'Preventive Care', 'Prescription Drugs', 'Mental Health'],
+          [
+            'Emergency Care',
+            'Preventive Care',
+            'Prescription Drugs',
+            'Mental Health',
+          ],
           Colors.blue,
         ),
         _buildBrowsePlanCard(
@@ -432,14 +439,26 @@ class _InsuranceServicesScreenState extends State<InsuranceServicesScreen> {
           'FamilyCare Insurance',
           '\$200/month',
           'Premium family coverage with extensive benefits',
-          ['All Services', 'Maternity Care', 'Pediatric Care', 'Vision & Dental'],
+          [
+            'All Services',
+            'Maternity Care',
+            'Pediatric Care',
+            'Vision & Dental',
+          ],
           Colors.orange,
         ),
       ],
     );
   }
 
-  Widget _buildBrowsePlanCard(String planName, String provider, String price, String description, List<String> benefits, Color color) {
+  Widget _buildBrowsePlanCard(
+    String planName,
+    String provider,
+    String price,
+    String description,
+    List<String> benefits,
+    Color color,
+  ) {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
@@ -493,10 +512,7 @@ class _InsuranceServicesScreenState extends State<InsuranceServicesScreen> {
             const SizedBox(height: 12),
             Text(
               description,
-              style: TextStyle(
-                color: Colors.grey.shade700,
-                fontSize: 14,
-              ),
+              style: TextStyle(color: Colors.grey.shade700, fontSize: 14),
             ),
             const SizedBox(height: 12),
             Text(
@@ -510,14 +526,18 @@ class _InsuranceServicesScreenState extends State<InsuranceServicesScreen> {
             Wrap(
               spacing: 8,
               runSpacing: 4,
-              children: benefits.map((benefit) => Chip(
-                label: Text(
-                  benefit,
-                  style: const TextStyle(fontSize: 12),
-                ),
-                backgroundColor: color.withOpacity(0.1),
-                labelStyle: TextStyle(color: color),
-              )).toList(),
+              children: benefits
+                  .map(
+                    (benefit) => Chip(
+                      label: Text(
+                        benefit,
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      backgroundColor: color.withOpacity(0.1),
+                      labelStyle: TextStyle(color: color),
+                    ),
+                  )
+                  .toList(),
             ),
             const SizedBox(height: 16),
             Row(
@@ -525,9 +545,7 @@ class _InsuranceServicesScreenState extends State<InsuranceServicesScreen> {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () => _showPlanComparison(planName),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: color,
-                    ),
+                    style: OutlinedButton.styleFrom(foregroundColor: color),
                     child: const Text('Compare'),
                   ),
                 ),
@@ -635,8 +653,8 @@ class _InsuranceServicesScreenState extends State<InsuranceServicesScreen> {
           ),
           ElevatedButton(
             onPressed: () {
-              if (providerController.text.isNotEmpty && 
-                  planController.text.isNotEmpty && 
+              if (providerController.text.isNotEmpty &&
+                  planController.text.isNotEmpty &&
                   policyController.text.isNotEmpty) {
                 _addInsurancePlan(
                   providerController.text,
@@ -660,7 +678,14 @@ class _InsuranceServicesScreenState extends State<InsuranceServicesScreen> {
     );
   }
 
-  void _addInsurancePlan(String provider, String plan, String policy, String group, String deductible, String copay) {
+  void _addInsurancePlan(
+    String provider,
+    String plan,
+    String policy,
+    String group,
+    String deductible,
+    String copay,
+  ) {
     setState(() {
       _insurancePlans.add({
         'providerName': provider,
@@ -739,8 +764,13 @@ class _InsuranceServicesScreenState extends State<InsuranceServicesScreen> {
           ),
           ElevatedButton(
             onPressed: () {
-              if (descriptionController.text.isNotEmpty && amountController.text.isNotEmpty) {
-                _fileClaim(plan, descriptionController.text, amountController.text);
+              if (descriptionController.text.isNotEmpty &&
+                  amountController.text.isNotEmpty) {
+                _fileClaim(
+                  plan,
+                  descriptionController.text,
+                  amountController.text,
+                );
                 Navigator.pop(context);
               }
             },
@@ -755,10 +785,15 @@ class _InsuranceServicesScreenState extends State<InsuranceServicesScreen> {
     );
   }
 
-  void _fileClaim(Map<String, dynamic> plan, String description, String amount) {
-    final claimNumber = 'CLM${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}';
+  void _fileClaim(
+    Map<String, dynamic> plan,
+    String description,
+    String amount,
+  ) {
+    final claimNumber =
+        'CLM${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}';
     final now = DateTime.now();
-    
+
     setState(() {
       _claims.add({
         'claimNumber': claimNumber,
@@ -780,9 +815,7 @@ class _InsuranceServicesScreenState extends State<InsuranceServicesScreen> {
 
   void _showPlanComparison(String planName) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Plan comparison for $planName coming soon'),
-      ),
+      SnackBar(content: Text('Plan comparison for $planName coming soon')),
     );
   }
 
@@ -791,7 +824,9 @@ class _InsuranceServicesScreenState extends State<InsuranceServicesScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text('Enroll in $planName'),
-        content: Text('Would you like to start the enrollment process for $planName from $provider?'),
+        content: Text(
+          'Would you like to start the enrollment process for $planName from $provider?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -802,7 +837,9 @@ class _InsuranceServicesScreenState extends State<InsuranceServicesScreen> {
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Enrollment process started. You will be contacted soon.'),
+                  content: Text(
+                    'Enrollment process started. You will be contacted soon.',
+                  ),
                   backgroundColor: Colors.green,
                 ),
               );

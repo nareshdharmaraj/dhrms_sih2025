@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'screens/splash_screen.dart';
 import 'screens/role_selection_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/patient_dashboard_screen.dart';
@@ -38,7 +39,10 @@ class DHRMSApp extends StatelessWidget {
       ),
       initialRoute: '/',
       routes: {
-        '/': (context) => const RoleSelectionScreen(),
+        '/': (context) => SplashScreen(
+          nextScreen: const RoleSelectionScreen(),
+        ),
+        '/role-selection': (context) => const RoleSelectionScreen(),
         '/login': (context) => const LoginScreen(),
         '/patient-registration': (context) => PatientRegistrationScreen(),
         '/qr-scanner': (context) => QRScannerScreen(),

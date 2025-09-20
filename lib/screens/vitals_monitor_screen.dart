@@ -29,10 +29,19 @@ class _VitalsMonitorScreenState extends State<VitalsMonitorScreen> {
               });
             },
             itemBuilder: (context) => [
-              const PopupMenuItem(value: '24 hours', child: Text('Last 24 Hours')),
+              const PopupMenuItem(
+                value: '24 hours',
+                child: Text('Last 24 Hours'),
+              ),
               const PopupMenuItem(value: '7 days', child: Text('Last 7 Days')),
-              const PopupMenuItem(value: '30 days', child: Text('Last 30 Days')),
-              const PopupMenuItem(value: '3 months', child: Text('Last 3 Months')),
+              const PopupMenuItem(
+                value: '30 days',
+                child: Text('Last 30 Days'),
+              ),
+              const PopupMenuItem(
+                value: '3 months',
+                child: Text('Last 3 Months'),
+              ),
             ],
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -88,10 +97,7 @@ class _VitalsMonitorScreenState extends State<VitalsMonitorScreen> {
           const SizedBox(height: 12),
           Text(
             'Track your vital signs and health metrics',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey.shade600,
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
@@ -137,7 +143,7 @@ class _VitalsMonitorScreenState extends State<VitalsMonitorScreen> {
     if (_vitalRecords.isEmpty) return const SizedBox.shrink();
 
     final latest = _vitalRecords.first;
-    
+
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(20),
@@ -172,26 +178,53 @@ class _VitalsMonitorScreenState extends State<VitalsMonitorScreen> {
             mainAxisSpacing: 12,
             childAspectRatio: 1.5,
             children: [
-              _buildVitalCard('Blood Pressure', '${latest['systolic']}/${latest['diastolic']}', 'mmHg', Icons.favorite, Colors.red),
-              _buildVitalCard('Heart Rate', '${latest['heartRate']}', 'bpm', Icons.monitor_heart, Colors.pink),
-              _buildVitalCard('Temperature', '${latest['temperature']}', '°F', Icons.thermostat, Colors.orange),
-              _buildVitalCard('Weight', '${latest['weight']}', 'lbs', Icons.monitor_weight, Colors.blue),
+              _buildVitalCard(
+                'Blood Pressure',
+                '${latest['systolic']}/${latest['diastolic']}',
+                'mmHg',
+                Icons.favorite,
+                Colors.red,
+              ),
+              _buildVitalCard(
+                'Heart Rate',
+                '${latest['heartRate']}',
+                'bpm',
+                Icons.monitor_heart,
+                Colors.pink,
+              ),
+              _buildVitalCard(
+                'Temperature',
+                '${latest['temperature']}',
+                '°F',
+                Icons.thermostat,
+                Colors.orange,
+              ),
+              _buildVitalCard(
+                'Weight',
+                '${latest['weight']}',
+                'lbs',
+                Icons.monitor_weight,
+                Colors.blue,
+              ),
             ],
           ),
           const SizedBox(height: 12),
           Text(
             'Recorded on ${latest['date']} at ${latest['time']}',
-            style: TextStyle(
-              color: Colors.grey.shade600,
-              fontSize: 12,
-            ),
+            style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildVitalCard(String title, String value, String unit, IconData icon, Color color) {
+  Widget _buildVitalCard(
+    String title,
+    String value,
+    String unit,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -212,20 +245,11 @@ class _VitalsMonitorScreenState extends State<VitalsMonitorScreen> {
               color: color,
             ),
           ),
-          Text(
-            unit,
-            style: TextStyle(
-              fontSize: 12,
-              color: color,
-            ),
-          ),
+          Text(unit, style: TextStyle(fontSize: 12, color: color)),
           const SizedBox(height: 4),
           Text(
             title,
-            style: TextStyle(
-              fontSize: 10,
-              color: Colors.grey.shade700,
-            ),
+            style: TextStyle(fontSize: 10, color: Colors.grey.shade700),
             textAlign: TextAlign.center,
           ),
         ],
@@ -241,10 +265,7 @@ class _VitalsMonitorScreenState extends State<VitalsMonitorScreen> {
         children: [
           Text(
             'History ($_selectedPeriod)',
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
           Expanded(
@@ -312,23 +333,40 @@ class _VitalsMonitorScreenState extends State<VitalsMonitorScreen> {
                         Row(
                           children: [
                             Expanded(
-                              child: _buildMiniVitalCard('BP', '${record['systolic']}/${record['diastolic']}', Colors.red),
+                              child: _buildMiniVitalCard(
+                                'BP',
+                                '${record['systolic']}/${record['diastolic']}',
+                                Colors.red,
+                              ),
                             ),
                             const SizedBox(width: 8),
                             Expanded(
-                              child: _buildMiniVitalCard('HR', '${record['heartRate']} bpm', Colors.pink),
+                              child: _buildMiniVitalCard(
+                                'HR',
+                                '${record['heartRate']} bpm',
+                                Colors.pink,
+                              ),
                             ),
                             const SizedBox(width: 8),
                             Expanded(
-                              child: _buildMiniVitalCard('Temp', '${record['temperature']}°F', Colors.orange),
+                              child: _buildMiniVitalCard(
+                                'Temp',
+                                '${record['temperature']}°F',
+                                Colors.orange,
+                              ),
                             ),
                             const SizedBox(width: 8),
                             Expanded(
-                              child: _buildMiniVitalCard('Weight', '${record['weight']} lbs', Colors.blue),
+                              child: _buildMiniVitalCard(
+                                'Weight',
+                                '${record['weight']} lbs',
+                                Colors.blue,
+                              ),
                             ),
                           ],
                         ),
-                        if (record['notes'] != null && record['notes'].isNotEmpty) ...[
+                        if (record['notes'] != null &&
+                            record['notes'].isNotEmpty) ...[
                           const SizedBox(height: 12),
                           Container(
                             width: double.infinity,
@@ -404,12 +442,24 @@ class _VitalsMonitorScreenState extends State<VitalsMonitorScreen> {
     int? index,
     Map<String, dynamic>? initialData,
   }) {
-    final systolicController = TextEditingController(text: initialData?['systolic']?.toString() ?? '');
-    final diastolicController = TextEditingController(text: initialData?['diastolic']?.toString() ?? '');
-    final heartRateController = TextEditingController(text: initialData?['heartRate']?.toString() ?? '');
-    final temperatureController = TextEditingController(text: initialData?['temperature']?.toString() ?? '');
-    final weightController = TextEditingController(text: initialData?['weight']?.toString() ?? '');
-    final notesController = TextEditingController(text: initialData?['notes'] ?? '');
+    final systolicController = TextEditingController(
+      text: initialData?['systolic']?.toString() ?? '',
+    );
+    final diastolicController = TextEditingController(
+      text: initialData?['diastolic']?.toString() ?? '',
+    );
+    final heartRateController = TextEditingController(
+      text: initialData?['heartRate']?.toString() ?? '',
+    );
+    final temperatureController = TextEditingController(
+      text: initialData?['temperature']?.toString() ?? '',
+    );
+    final weightController = TextEditingController(
+      text: initialData?['weight']?.toString() ?? '',
+    );
+    final notesController = TextEditingController(
+      text: initialData?['notes'] ?? '',
+    );
 
     showDialog(
       context: context,
@@ -463,7 +513,9 @@ class _VitalsMonitorScreenState extends State<VitalsMonitorScreen> {
                         labelText: 'Temperature (°F)',
                         border: OutlineInputBorder(),
                       ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -474,7 +526,9 @@ class _VitalsMonitorScreenState extends State<VitalsMonitorScreen> {
                         labelText: 'Weight (lbs)',
                         border: OutlineInputBorder(),
                       ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                     ),
                   ),
                 ],
@@ -503,7 +557,6 @@ class _VitalsMonitorScreenState extends State<VitalsMonitorScreen> {
                   heartRateController.text.isNotEmpty &&
                   temperatureController.text.isNotEmpty &&
                   weightController.text.isNotEmpty) {
-                
                 if (isEdit && index != null) {
                   _updateRecord(
                     index,
@@ -538,7 +591,14 @@ class _VitalsMonitorScreenState extends State<VitalsMonitorScreen> {
     );
   }
 
-  void _addRecord(int systolic, int diastolic, int heartRate, double temperature, double weight, String notes) {
+  void _addRecord(
+    int systolic,
+    int diastolic,
+    int heartRate,
+    double temperature,
+    double weight,
+    String notes,
+  ) {
     final now = DateTime.now();
     setState(() {
       _vitalRecords.insert(0, {
@@ -549,13 +609,22 @@ class _VitalsMonitorScreenState extends State<VitalsMonitorScreen> {
         'weight': weight,
         'notes': notes,
         'date': '${now.day}/${now.month}/${now.year}',
-        'time': '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}',
+        'time':
+            '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}',
         'timestamp': now,
       });
     });
   }
 
-  void _updateRecord(int index, int systolic, int diastolic, int heartRate, double temperature, double weight, String notes) {
+  void _updateRecord(
+    int index,
+    int systolic,
+    int diastolic,
+    int heartRate,
+    double temperature,
+    double weight,
+    String notes,
+  ) {
     setState(() {
       _vitalRecords[index] = {
         ..._vitalRecords[index],
@@ -574,7 +643,9 @@ class _VitalsMonitorScreenState extends State<VitalsMonitorScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Record'),
-        content: const Text('Are you sure you want to delete this vital record?'),
+        content: const Text(
+          'Are you sure you want to delete this vital record?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -602,7 +673,7 @@ class _VitalsMonitorScreenState extends State<VitalsMonitorScreen> {
     setState(() {
       _vitalRecords.clear();
       final now = DateTime.now();
-      
+
       for (int i = 0; i < 7; i++) {
         final date = now.subtract(Duration(days: i));
         _vitalRecords.add({

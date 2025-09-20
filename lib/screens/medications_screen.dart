@@ -37,13 +37,18 @@ class _MedicationsScreenState extends State<MedicationsScreen> {
             colors: [Colors.teal.shade50, Colors.white],
           ),
         ),
-        child: _medications.isEmpty ? _buildEmptyState() : _buildMedicationsList(),
+        child: _medications.isEmpty
+            ? _buildEmptyState()
+            : _buildMedicationsList(),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showAddMedicationDialog,
         backgroundColor: Colors.teal.shade600,
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Add Medication', style: TextStyle(color: Colors.white)),
+        label: const Text(
+          'Add Medication',
+          style: TextStyle(color: Colors.white),
+        ),
       ),
     );
   }
@@ -70,10 +75,7 @@ class _MedicationsScreenState extends State<MedicationsScreen> {
           const SizedBox(height: 12),
           Text(
             'Keep track of your medications and dosages',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey.shade600,
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
@@ -174,7 +176,8 @@ class _MedicationsScreenState extends State<MedicationsScreen> {
                     ),
                   ],
                 ),
-                if (medication['notes'] != null && medication['notes'].isNotEmpty) ...[
+                if (medication['notes'] != null &&
+                    medication['notes'].isNotEmpty) ...[
                   const SizedBox(height: 12),
                   Container(
                     width: double.infinity,
@@ -224,11 +227,7 @@ class _MedicationsScreenState extends State<MedicationsScreen> {
 
   void _editMedication(int index) {
     final medication = _medications[index];
-    _showMedicationDialog(
-      isEdit: true,
-      index: index,
-      initialData: medication,
-    );
+    _showMedicationDialog(isEdit: true, index: index, initialData: medication);
   }
 
   void _showMedicationDialog({
@@ -236,9 +235,15 @@ class _MedicationsScreenState extends State<MedicationsScreen> {
     int? index,
     Map<String, dynamic>? initialData,
   }) {
-    final nameController = TextEditingController(text: initialData?['name'] ?? '');
-    final dosageController = TextEditingController(text: initialData?['dosage'] ?? '');
-    final notesController = TextEditingController(text: initialData?['notes'] ?? '');
+    final nameController = TextEditingController(
+      text: initialData?['name'] ?? '',
+    );
+    final dosageController = TextEditingController(
+      text: initialData?['dosage'] ?? '',
+    );
+    final notesController = TextEditingController(
+      text: initialData?['notes'] ?? '',
+    );
     String selectedFrequency = initialData?['frequency'] ?? 'Once daily';
     String selectedType = initialData?['type'] ?? 'Tablet';
 
@@ -274,11 +279,26 @@ class _MedicationsScreenState extends State<MedicationsScreen> {
                     border: OutlineInputBorder(),
                   ),
                   items: const [
-                    DropdownMenuItem(value: 'Once daily', child: Text('Once daily')),
-                    DropdownMenuItem(value: 'Twice daily', child: Text('Twice daily')),
-                    DropdownMenuItem(value: 'Three times daily', child: Text('Three times daily')),
-                    DropdownMenuItem(value: 'Four times daily', child: Text('Four times daily')),
-                    DropdownMenuItem(value: 'As needed', child: Text('As needed')),
+                    DropdownMenuItem(
+                      value: 'Once daily',
+                      child: Text('Once daily'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'Twice daily',
+                      child: Text('Twice daily'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'Three times daily',
+                      child: Text('Three times daily'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'Four times daily',
+                      child: Text('Four times daily'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'As needed',
+                      child: Text('As needed'),
+                    ),
                     DropdownMenuItem(value: 'Weekly', child: Text('Weekly')),
                   ],
                   onChanged: (value) {
@@ -298,8 +318,14 @@ class _MedicationsScreenState extends State<MedicationsScreen> {
                     DropdownMenuItem(value: 'Tablet', child: Text('Tablet')),
                     DropdownMenuItem(value: 'Capsule', child: Text('Capsule')),
                     DropdownMenuItem(value: 'Liquid', child: Text('Liquid')),
-                    DropdownMenuItem(value: 'Injection', child: Text('Injection')),
-                    DropdownMenuItem(value: 'Cream/Ointment', child: Text('Cream/Ointment')),
+                    DropdownMenuItem(
+                      value: 'Injection',
+                      child: Text('Injection'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'Cream/Ointment',
+                      child: Text('Cream/Ointment'),
+                    ),
                     DropdownMenuItem(value: 'Inhaler', child: Text('Inhaler')),
                     DropdownMenuItem(value: 'Other', child: Text('Other')),
                   ],
@@ -329,7 +355,8 @@ class _MedicationsScreenState extends State<MedicationsScreen> {
           ),
           ElevatedButton(
             onPressed: () {
-              if (nameController.text.isNotEmpty && dosageController.text.isNotEmpty) {
+              if (nameController.text.isNotEmpty &&
+                  dosageController.text.isNotEmpty) {
                 if (isEdit && index != null) {
                   _updateMedication(
                     index,
@@ -362,7 +389,13 @@ class _MedicationsScreenState extends State<MedicationsScreen> {
     );
   }
 
-  void _addMedication(String name, String dosage, String frequency, String type, String notes) {
+  void _addMedication(
+    String name,
+    String dosage,
+    String frequency,
+    String type,
+    String notes,
+  ) {
     setState(() {
       _medications.add({
         'name': name,
@@ -375,7 +408,14 @@ class _MedicationsScreenState extends State<MedicationsScreen> {
     });
   }
 
-  void _updateMedication(int index, String name, String dosage, String frequency, String type, String notes) {
+  void _updateMedication(
+    int index,
+    String name,
+    String dosage,
+    String frequency,
+    String type,
+    String notes,
+  ) {
     setState(() {
       _medications[index] = {
         'name': name,
@@ -383,7 +423,8 @@ class _MedicationsScreenState extends State<MedicationsScreen> {
         'frequency': frequency,
         'type': type,
         'notes': notes,
-        'startDate': _medications[index]['startDate'], // Keep original start date
+        'startDate':
+            _medications[index]['startDate'], // Keep original start date
       };
     });
   }

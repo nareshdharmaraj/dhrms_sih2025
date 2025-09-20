@@ -969,7 +969,8 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
                       context,
                       MaterialPageRoute(
                         builder: (context) => HospitalsScreen(
-                          patientData: _patientDataFromArgs ?? widget.patientData,
+                          patientData:
+                              _patientDataFromArgs ?? widget.patientData,
                         ),
                       ),
                     );
@@ -984,7 +985,8 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
                       context,
                       MaterialPageRoute(
                         builder: (context) => HealthAlertsScreen(
-                          patientData: _patientDataFromArgs ?? widget.patientData,
+                          patientData:
+                              _patientDataFromArgs ?? widget.patientData,
                         ),
                       ),
                     );
@@ -1031,7 +1033,8 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
                       context,
                       MaterialPageRoute(
                         builder: (context) => MedicationsScreen(
-                          patientData: _patientDataFromArgs ?? widget.patientData,
+                          patientData:
+                              _patientDataFromArgs ?? widget.patientData,
                         ),
                       ),
                     );
@@ -1408,7 +1411,8 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
                       context,
                       MaterialPageRoute(
                         builder: (context) => HospitalsScreen(
-                          patientData: _patientDataFromArgs ?? widget.patientData,
+                          patientData:
+                              _patientDataFromArgs ?? widget.patientData,
                         ),
                       ),
                     );
@@ -1424,7 +1428,8 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
                       context,
                       MaterialPageRoute(
                         builder: (context) => TelemedicineScreen(
-                          patientData: _patientDataFromArgs ?? widget.patientData,
+                          patientData:
+                              _patientDataFromArgs ?? widget.patientData,
                         ),
                       ),
                     );
@@ -1440,7 +1445,8 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
                       context,
                       MaterialPageRoute(
                         builder: (context) => VitalsMonitorScreen(
-                          patientData: _patientDataFromArgs ?? widget.patientData,
+                          patientData:
+                              _patientDataFromArgs ?? widget.patientData,
                         ),
                       ),
                     );
@@ -1465,7 +1471,8 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
                       context,
                       MaterialPageRoute(
                         builder: (context) => InsuranceServicesScreen(
-                          patientData: _patientDataFromArgs ?? widget.patientData,
+                          patientData:
+                              _patientDataFromArgs ?? widget.patientData,
                         ),
                       ),
                     );
@@ -1481,7 +1488,8 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
                       context,
                       MaterialPageRoute(
                         builder: (context) => ProximityAlertsScreen(
-                          patientData: _patientDataFromArgs ?? widget.patientData,
+                          patientData:
+                              _patientDataFromArgs ?? widget.patientData,
                         ),
                       ),
                     );
@@ -1497,7 +1505,8 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
                       context,
                       MaterialPageRoute(
                         builder: (context) => HealthGamificationScreen(
-                          patientData: _patientDataFromArgs ?? widget.patientData,
+                          patientData:
+                              _patientDataFromArgs ?? widget.patientData,
                         ),
                       ),
                     );
@@ -1876,7 +1885,6 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
       ),
     );
   }
-
 
   Widget _buildEnhancedHealthStatsSection() {
     return AnimatedBuilder(

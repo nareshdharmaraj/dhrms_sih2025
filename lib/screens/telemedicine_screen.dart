@@ -41,15 +41,15 @@ class _TelemedicineScreenState extends State<TelemedicineScreen> {
                 indicatorColor: Colors.green.shade600,
                 tabs: const [
                   Tab(text: 'Find Doctors', icon: Icon(Icons.search)),
-                  Tab(text: 'My Appointments', icon: Icon(Icons.calendar_today)),
+                  Tab(
+                    text: 'My Appointments',
+                    icon: Icon(Icons.calendar_today),
+                  ),
                 ],
               ),
               Expanded(
                 child: TabBarView(
-                  children: [
-                    _buildDoctorsTab(),
-                    _buildAppointmentsTab(),
-                  ],
+                  children: [_buildDoctorsTab(), _buildAppointmentsTab()],
                 ),
               ),
             ],
@@ -64,15 +64,24 @@ class _TelemedicineScreenState extends State<TelemedicineScreen> {
       children: [
         _buildSpecialtyFilter(),
         Expanded(
-          child: _doctors.isEmpty ? _buildDoctorsEmptyState() : _buildDoctorsList(),
+          child: _doctors.isEmpty
+              ? _buildDoctorsEmptyState()
+              : _buildDoctorsList(),
         ),
       ],
     );
   }
 
   Widget _buildSpecialtyFilter() {
-    final specialties = ['All', 'General', 'Cardiology', 'Dermatology', 'Psychiatry', 'Pediatrics'];
-    
+    final specialties = [
+      'All',
+      'General',
+      'Cardiology',
+      'Dermatology',
+      'Psychiatry',
+      'Pediatrics',
+    ];
+
     return Container(
       height: 60,
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -82,7 +91,7 @@ class _TelemedicineScreenState extends State<TelemedicineScreen> {
         itemBuilder: (context, index) {
           final specialty = specialties[index];
           final isSelected = _selectedSpecialty == specialty;
-          
+
           return Padding(
             padding: const EdgeInsets.only(right: 8, top: 8, bottom: 8),
             child: FilterChip(
@@ -125,10 +134,7 @@ class _TelemedicineScreenState extends State<TelemedicineScreen> {
           const SizedBox(height: 12),
           Text(
             'Connect with healthcare professionals remotely',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey.shade600,
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
@@ -148,8 +154,8 @@ class _TelemedicineScreenState extends State<TelemedicineScreen> {
   }
 
   Widget _buildDoctorsList() {
-    final filteredDoctors = _selectedSpecialty == 'All' 
-        ? _doctors 
+    final filteredDoctors = _selectedSpecialty == 'All'
+        ? _doctors
         : _doctors.where((d) => d['specialty'] == _selectedSpecialty).toList();
 
     return ListView.builder(
@@ -203,7 +209,9 @@ class _TelemedicineScreenState extends State<TelemedicineScreen> {
                               const SizedBox(width: 4),
                               Text(
                                 doctor['rating'].toString(),
-                                style: const TextStyle(fontWeight: FontWeight.bold),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                               const SizedBox(width: 8),
                               Text(
@@ -219,9 +227,14 @@ class _TelemedicineScreenState extends State<TelemedicineScreen> {
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color: doctor['isAvailable'] ? Colors.green : Colors.red,
+                        color: doctor['isAvailable']
+                            ? Colors.green
+                            : Colors.red,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -263,7 +276,7 @@ class _TelemedicineScreenState extends State<TelemedicineScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: ElevatedButton.icon(
-                        onPressed: doctor['isAvailable'] 
+                        onPressed: doctor['isAvailable']
                             ? () => _bookAppointment(doctor)
                             : null,
                         icon: const Icon(Icons.video_call, size: 16),
@@ -285,7 +298,9 @@ class _TelemedicineScreenState extends State<TelemedicineScreen> {
   }
 
   Widget _buildAppointmentsTab() {
-    return _appointments.isEmpty ? _buildAppointmentsEmptyState() : _buildAppointmentsList();
+    return _appointments.isEmpty
+        ? _buildAppointmentsEmptyState()
+        : _buildAppointmentsList();
   }
 
   Widget _buildAppointmentsEmptyState() {
@@ -310,10 +325,7 @@ class _TelemedicineScreenState extends State<TelemedicineScreen> {
           const SizedBox(height: 12),
           Text(
             'Your telemedicine appointments will appear here',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey.shade600,
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
             textAlign: TextAlign.center,
           ),
         ],
@@ -340,7 +352,10 @@ class _TelemedicineScreenState extends State<TelemedicineScreen> {
                     CircleAvatar(
                       backgroundColor: Colors.green.shade100,
                       child: Text(
-                        appointment['doctorName'].split(' ').map((n) => n[0]).join(''),
+                        appointment['doctorName']
+                            .split(' ')
+                            .map((n) => n[0])
+                            .join(''),
                         style: TextStyle(
                           color: Colors.green.shade600,
                           fontWeight: FontWeight.bold,
@@ -372,23 +387,35 @@ class _TelemedicineScreenState extends State<TelemedicineScreen> {
                     Chip(
                       label: Text(appointment['status']),
                       backgroundColor: _getStatusColor(appointment['status']),
-                      labelStyle: const TextStyle(color: Colors.white, fontSize: 12),
+                      labelStyle: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Icon(Icons.calendar_today, size: 16, color: Colors.grey.shade600),
+                    Icon(
+                      Icons.calendar_today,
+                      size: 16,
+                      color: Colors.grey.shade600,
+                    ),
                     const SizedBox(width: 8),
                     Text(appointment['date']),
                     const SizedBox(width: 16),
-                    Icon(Icons.access_time, size: 16, color: Colors.grey.shade600),
+                    Icon(
+                      Icons.access_time,
+                      size: 16,
+                      color: Colors.grey.shade600,
+                    ),
                     const SizedBox(width: 8),
                     Text(appointment['time']),
                   ],
                 ),
-                if (appointment['notes'] != null && appointment['notes'].isNotEmpty) ...[
+                if (appointment['notes'] != null &&
+                    appointment['notes'].isNotEmpty) ...[
                   const SizedBox(height: 8),
                   Text(
                     'Notes: ${appointment['notes']}',
@@ -456,7 +483,9 @@ class _TelemedicineScreenState extends State<TelemedicineScreen> {
           children: [
             Text('Specialty: ${doctor['specialty']}'),
             Text('Experience: ${doctor['experience']} years'),
-            Text('Rating: ${doctor['rating']}/5.0 (${doctor['reviews']} reviews)'),
+            Text(
+              'Rating: ${doctor['rating']}/5.0 (${doctor['reviews']} reviews)',
+            ),
             Text('Consultation Fee: \$${doctor['fee']}'),
             const SizedBox(height: 8),
             Text('Languages: ${doctor['languages'].join(', ')}'),
@@ -504,7 +533,9 @@ class _TelemedicineScreenState extends State<TelemedicineScreen> {
               ListTile(
                 leading: const Icon(Icons.calendar_today),
                 title: const Text('Date'),
-                subtitle: Text('${selectedDate.day}/${selectedDate.month}/${selectedDate.year}'),
+                subtitle: Text(
+                  '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
+                ),
                 onTap: () async {
                   final date = await showDatePicker(
                     context: context,
@@ -554,7 +585,12 @@ class _TelemedicineScreenState extends State<TelemedicineScreen> {
           ),
           ElevatedButton(
             onPressed: () {
-              _addAppointment(doctor, selectedDate, selectedTime, notesController.text);
+              _addAppointment(
+                doctor,
+                selectedDate,
+                selectedTime,
+                notesController.text,
+              );
               Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(
@@ -568,7 +604,12 @@ class _TelemedicineScreenState extends State<TelemedicineScreen> {
     );
   }
 
-  void _addAppointment(Map<String, dynamic> doctor, DateTime date, TimeOfDay time, String notes) {
+  void _addAppointment(
+    Map<String, dynamic> doctor,
+    DateTime date,
+    TimeOfDay time,
+    String notes,
+  ) {
     setState(() {
       _appointments.add({
         'doctorName': doctor['name'],
@@ -594,7 +635,9 @@ class _TelemedicineScreenState extends State<TelemedicineScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Join Video Call'),
-        content: Text('Starting video call with Dr. ${appointment['doctorName']}...'),
+        content: Text(
+          'Starting video call with Dr. ${appointment['doctorName']}...',
+        ),
         actions: [
           ElevatedButton(
             onPressed: () => Navigator.pop(context),
@@ -614,7 +657,9 @@ class _TelemedicineScreenState extends State<TelemedicineScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Cancel Appointment'),
-        content: const Text('Are you sure you want to cancel this appointment?'),
+        content: const Text(
+          'Are you sure you want to cancel this appointment?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),

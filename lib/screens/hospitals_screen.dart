@@ -40,7 +40,9 @@ class _HospitalsScreenState extends State<HospitalsScreen> {
           children: [
             _buildFilterChips(),
             Expanded(
-              child: _hospitals.isEmpty ? _buildEmptyState() : _buildHospitalsList(),
+              child: _hospitals.isEmpty
+                  ? _buildEmptyState()
+                  : _buildHospitalsList(),
             ),
           ],
         ),
@@ -49,14 +51,17 @@ class _HospitalsScreenState extends State<HospitalsScreen> {
         onPressed: _addSampleHospitals,
         backgroundColor: Colors.blue.shade600,
         icon: const Icon(Icons.refresh, color: Colors.white),
-        label: const Text('Load Sample Data', style: TextStyle(color: Colors.white)),
+        label: const Text(
+          'Load Sample Data',
+          style: TextStyle(color: Colors.white),
+        ),
       ),
     );
   }
 
   Widget _buildFilterChips() {
     final filters = ['All', 'Emergency', 'General', 'Specialist', 'Private'];
-    
+
     return Container(
       height: 60,
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -66,7 +71,7 @@ class _HospitalsScreenState extends State<HospitalsScreen> {
         itemBuilder: (context, index) {
           final filter = filters[index];
           final isSelected = _selectedFilter == filter;
-          
+
           return Padding(
             padding: const EdgeInsets.only(right: 8, top: 8, bottom: 8),
             child: FilterChip(
@@ -109,10 +114,7 @@ class _HospitalsScreenState extends State<HospitalsScreen> {
           const SizedBox(height: 12),
           Text(
             'Enable location to find nearby hospitals',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey.shade600,
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
@@ -132,8 +134,8 @@ class _HospitalsScreenState extends State<HospitalsScreen> {
   }
 
   Widget _buildHospitalsList() {
-    final filteredHospitals = _selectedFilter == 'All' 
-        ? _hospitals 
+    final filteredHospitals = _selectedFilter == 'All'
+        ? _hospitals
         : _hospitals.where((h) => h['type'] == _selectedFilter).toList();
 
     return ListView.builder(
@@ -187,7 +189,9 @@ class _HospitalsScreenState extends State<HospitalsScreen> {
                     ),
                     Chip(
                       label: Text(hospital['type']),
-                      backgroundColor: _getHospitalTypeColor(hospital['type']).withOpacity(0.1),
+                      backgroundColor: _getHospitalTypeColor(
+                        hospital['type'],
+                      ).withOpacity(0.1),
                       labelStyle: TextStyle(
                         color: _getHospitalTypeColor(hospital['type']),
                         fontSize: 12,
@@ -205,7 +209,11 @@ class _HospitalsScreenState extends State<HospitalsScreen> {
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(width: 16),
-                    Icon(Icons.location_on, color: Colors.grey.shade600, size: 16),
+                    Icon(
+                      Icons.location_on,
+                      color: Colors.grey.shade600,
+                      size: 16,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       '${hospital['distance']} km away',
@@ -213,7 +221,10 @@ class _HospitalsScreenState extends State<HospitalsScreen> {
                     ),
                     const Spacer(),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: hospital['isOpen'] ? Colors.green : Colors.red,
                         borderRadius: BorderRadius.circular(12),
@@ -337,10 +348,16 @@ class _HospitalsScreenState extends State<HospitalsScreen> {
             _buildDetailRow('Phone', hospital['phone']),
             _buildDetailRow('Distance', '${hospital['distance']} km'),
             _buildDetailRow('Rating', '${hospital['rating']}/5.0'),
-            _buildDetailRow('Status', hospital['isOpen'] ? 'Open 24/7' : 'Closed'),
+            _buildDetailRow(
+              'Status',
+              hospital['isOpen'] ? 'Open 24/7' : 'Closed',
+            ),
             if (hospital['specialties'] != null) ...[
               const SizedBox(height: 8),
-              const Text('Specialties:', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text(
+                'Specialties:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               Text(hospital['specialties'].join(', ')),
             ],
           ],
@@ -389,10 +406,7 @@ class _HospitalsScreenState extends State<HospitalsScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Opening directions to ${hospital['name']}'),
-        action: SnackBarAction(
-          label: 'OK',
-          onPressed: () {},
-        ),
+        action: SnackBarAction(label: 'OK', onPressed: () {}),
       ),
     );
   }

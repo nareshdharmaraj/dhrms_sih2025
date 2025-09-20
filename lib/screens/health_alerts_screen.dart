@@ -62,10 +62,7 @@ class _HealthAlertsScreenState extends State<HealthAlertsScreen> {
           const SizedBox(height: 12),
           Text(
             'Stay on top of your health with personalized alerts',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey.shade600,
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
@@ -96,10 +93,7 @@ class _HealthAlertsScreenState extends State<HealthAlertsScreen> {
           child: ListTile(
             leading: CircleAvatar(
               backgroundColor: _getAlertColor(alert['type']),
-              child: Icon(
-                _getAlertIcon(alert['type']),
-                color: Colors.white,
-              ),
+              child: Icon(_getAlertIcon(alert['type']), color: Colors.white),
             ),
             title: Text(
               alert['title'],
@@ -112,10 +106,7 @@ class _HealthAlertsScreenState extends State<HealthAlertsScreen> {
                 const SizedBox(height: 4),
                 Text(
                   'Scheduled: ${alert['time']}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 ),
               ],
             ),
@@ -213,8 +204,14 @@ class _HealthAlertsScreenState extends State<HealthAlertsScreen> {
                 ),
                 items: const [
                   DropdownMenuItem(value: 'general', child: Text('General')),
-                  DropdownMenuItem(value: 'medication', child: Text('Medication')),
-                  DropdownMenuItem(value: 'appointment', child: Text('Appointment')),
+                  DropdownMenuItem(
+                    value: 'medication',
+                    child: Text('Medication'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'appointment',
+                    child: Text('Appointment'),
+                  ),
                   DropdownMenuItem(value: 'exercise', child: Text('Exercise')),
                   DropdownMenuItem(value: 'vital', child: Text('Vital Check')),
                 ],
@@ -272,7 +269,12 @@ class _HealthAlertsScreenState extends State<HealthAlertsScreen> {
     );
   }
 
-  void _addAlert(String title, String description, String type, TimeOfDay time) {
+  void _addAlert(
+    String title,
+    String description,
+    String type,
+    TimeOfDay time,
+  ) {
     setState(() {
       _alerts.add({
         'title': title,

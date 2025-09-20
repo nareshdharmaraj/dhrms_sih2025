@@ -6,13 +6,14 @@ class HealthGamificationScreen extends StatefulWidget {
   const HealthGamificationScreen({super.key, this.patientData});
 
   @override
-  State<HealthGamificationScreen> createState() => _HealthGamificationScreenState();
+  State<HealthGamificationScreen> createState() =>
+      _HealthGamificationScreenState();
 }
 
 class _HealthGamificationScreenState extends State<HealthGamificationScreen>
     with TickerProviderStateMixin {
   late TabController _tabController;
-  
+
   final List<Map<String, dynamic>> _challenges = [];
   final List<Map<String, dynamic>> _achievements = [];
   final Map<String, int> _streaks = {
@@ -21,7 +22,7 @@ class _HealthGamificationScreenState extends State<HealthGamificationScreen>
     'meditation': 0,
     'sleep': 0,
   };
-  
+
   int _totalPoints = 0;
   int _currentLevel = 1;
 
@@ -192,7 +193,7 @@ class _HealthGamificationScreenState extends State<HealthGamificationScreen>
 
   Widget _buildLevelCard() {
     double progressPercentage = (_totalPoints % 100) / 100;
-    
+
     return Card(
       elevation: 4,
       child: Container(
@@ -293,29 +294,57 @@ class _HealthGamificationScreenState extends State<HealthGamificationScreen>
           children: [
             Row(
               children: [
-                Icon(Icons.local_fire_department, color: Colors.orange.shade600),
+                Icon(
+                  Icons.local_fire_department,
+                  color: Colors.orange.shade600,
+                ),
                 const SizedBox(width: 8),
                 const Text(
                   'Current Streaks',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
             const SizedBox(height: 16),
             Row(
               children: [
-                Expanded(child: _buildStreakItem('Steps', _streaks['steps']!, Icons.directions_walk, Colors.green)),
-                Expanded(child: _buildStreakItem('Water', _streaks['water']!, Icons.local_drink, Colors.blue)),
+                Expanded(
+                  child: _buildStreakItem(
+                    'Steps',
+                    _streaks['steps']!,
+                    Icons.directions_walk,
+                    Colors.green,
+                  ),
+                ),
+                Expanded(
+                  child: _buildStreakItem(
+                    'Water',
+                    _streaks['water']!,
+                    Icons.local_drink,
+                    Colors.blue,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(child: _buildStreakItem('Meditation', _streaks['meditation']!, Icons.self_improvement, Colors.purple)),
-                Expanded(child: _buildStreakItem('Sleep', _streaks['sleep']!, Icons.bedtime, Colors.indigo)),
+                Expanded(
+                  child: _buildStreakItem(
+                    'Meditation',
+                    _streaks['meditation']!,
+                    Icons.self_improvement,
+                    Colors.purple,
+                  ),
+                ),
+                Expanded(
+                  child: _buildStreakItem(
+                    'Sleep',
+                    _streaks['sleep']!,
+                    Icons.bedtime,
+                    Colors.indigo,
+                  ),
+                ),
               ],
             ),
           ],
@@ -324,7 +353,12 @@ class _HealthGamificationScreenState extends State<HealthGamificationScreen>
     );
   }
 
-  Widget _buildStreakItem(String title, int streak, IconData icon, Color color) {
+  Widget _buildStreakItem(
+    String title,
+    int streak,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 4),
       padding: const EdgeInsets.all(12),
@@ -344,13 +378,7 @@ class _HealthGamificationScreenState extends State<HealthGamificationScreen>
               color: color,
             ),
           ),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 12,
-              color: color,
-            ),
-          ),
+          Text(title, style: TextStyle(fontSize: 12, color: color)),
         ],
       ),
     );
@@ -366,19 +394,24 @@ class _HealthGamificationScreenState extends State<HealthGamificationScreen>
           children: [
             const Text(
               'Quick Stats',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
-                  child: _buildStatItem('Challenges Completed', '23', Colors.green),
+                  child: _buildStatItem(
+                    'Challenges Completed',
+                    '23',
+                    Colors.green,
+                  ),
                 ),
                 Expanded(
-                  child: _buildStatItem('Achievements Unlocked', '1', Colors.amber),
+                  child: _buildStatItem(
+                    'Achievements Unlocked',
+                    '1',
+                    Colors.amber,
+                  ),
                 ),
               ],
             ),
@@ -386,7 +419,11 @@ class _HealthGamificationScreenState extends State<HealthGamificationScreen>
             Row(
               children: [
                 Expanded(
-                  child: _buildStatItem('This Week Points', '180', Colors.purple),
+                  child: _buildStatItem(
+                    'This Week Points',
+                    '180',
+                    Colors.purple,
+                  ),
                 ),
                 Expanded(
                   child: _buildStatItem('Best Streak', '7 days', Colors.orange),
@@ -419,10 +456,7 @@ class _HealthGamificationScreenState extends State<HealthGamificationScreen>
           ),
           Text(
             title,
-            style: TextStyle(
-              fontSize: 12,
-              color: color,
-            ),
+            style: TextStyle(fontSize: 12, color: color),
             textAlign: TextAlign.center,
           ),
         ],
@@ -431,8 +465,11 @@ class _HealthGamificationScreenState extends State<HealthGamificationScreen>
   }
 
   Widget _buildDailyChallengesPreview() {
-    final dailyChallenges = _challenges.where((c) => c['type'] == 'daily').take(3).toList();
-    
+    final dailyChallenges = _challenges
+        .where((c) => c['type'] == 'daily')
+        .take(3)
+        .toList();
+
     return Card(
       elevation: 2,
       child: Padding(
@@ -445,10 +482,7 @@ class _HealthGamificationScreenState extends State<HealthGamificationScreen>
               children: [
                 const Text(
                   'Today\'s Challenges',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 TextButton(
                   onPressed: () => _tabController.animateTo(1),
@@ -457,7 +491,9 @@ class _HealthGamificationScreenState extends State<HealthGamificationScreen>
               ],
             ),
             const SizedBox(height: 12),
-            ...dailyChallenges.map((challenge) => _buildChallengePreviewItem(challenge)),
+            ...dailyChallenges.map(
+              (challenge) => _buildChallengePreviewItem(challenge),
+            ),
           ],
         ),
       ),
@@ -465,8 +501,11 @@ class _HealthGamificationScreenState extends State<HealthGamificationScreen>
   }
 
   Widget _buildChallengePreviewItem(Map<String, dynamic> challenge) {
-    double progress = (challenge['progress'] / challenge['target']).clamp(0.0, 1.0);
-    
+    double progress = (challenge['progress'] / challenge['target']).clamp(
+      0.0,
+      1.0,
+    );
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
@@ -521,9 +560,12 @@ class _HealthGamificationScreenState extends State<HealthGamificationScreen>
   }
 
   Widget _buildChallengeCard(Map<String, dynamic> challenge) {
-    double progress = (challenge['progress'] / challenge['target']).clamp(0.0, 1.0);
+    double progress = (challenge['progress'] / challenge['target']).clamp(
+      0.0,
+      1.0,
+    );
     bool isCompleted = challenge['isCompleted'];
-    
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
@@ -569,7 +611,10 @@ class _HealthGamificationScreenState extends State<HealthGamificationScreen>
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: challenge['color'].withOpacity(0.1),
                     borderRadius: BorderRadius.circular(16),
@@ -630,7 +675,10 @@ class _HealthGamificationScreenState extends State<HealthGamificationScreen>
                 const Spacer(),
                 if (isCompleted)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.green.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(16),
@@ -672,7 +720,9 @@ class _HealthGamificationScreenState extends State<HealthGamificationScreen>
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          ..._achievements.map((achievement) => _buildAchievementCard(achievement)),
+          ..._achievements.map(
+            (achievement) => _buildAchievementCard(achievement),
+          ),
         ],
       ),
     );
@@ -680,7 +730,7 @@ class _HealthGamificationScreenState extends State<HealthGamificationScreen>
 
   Widget _buildAchievementCard(Map<String, dynamic> achievement) {
     bool isUnlocked = achievement['isUnlocked'];
-    
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
@@ -695,7 +745,7 @@ class _HealthGamificationScreenState extends State<HealthGamificationScreen>
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isUnlocked 
+                color: isUnlocked
                     ? achievement['color'].withOpacity(0.1)
                     : Colors.grey.shade300,
                 borderRadius: BorderRadius.circular(50),
@@ -722,7 +772,9 @@ class _HealthGamificationScreenState extends State<HealthGamificationScreen>
                   Text(
                     achievement['description'],
                     style: TextStyle(
-                      color: isUnlocked ? Colors.grey.shade600 : Colors.grey.shade500,
+                      color: isUnlocked
+                          ? Colors.grey.shade600
+                          : Colors.grey.shade500,
                       fontSize: 14,
                     ),
                   ),
@@ -740,7 +792,7 @@ class _HealthGamificationScreenState extends State<HealthGamificationScreen>
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: isUnlocked 
+                color: isUnlocked
                     ? achievement['color'].withOpacity(0.1)
                     : Colors.grey.shade200,
                 borderRadius: BorderRadius.circular(16),
@@ -748,7 +800,9 @@ class _HealthGamificationScreenState extends State<HealthGamificationScreen>
               child: Text(
                 '${achievement['points']} pts',
                 style: TextStyle(
-                  color: isUnlocked ? achievement['color'] : Colors.grey.shade500,
+                  color: isUnlocked
+                      ? achievement['color']
+                      : Colors.grey.shade500,
                   fontWeight: FontWeight.bold,
                   fontSize: 12,
                 ),
@@ -762,13 +816,48 @@ class _HealthGamificationScreenState extends State<HealthGamificationScreen>
 
   Widget _buildLeaderboardTab() {
     final leaderboardData = [
-      {'name': 'You', 'points': _totalPoints, 'rank': 5, 'avatar': Icons.person},
-      {'name': 'Sarah Johnson', 'points': 1250, 'rank': 1, 'avatar': Icons.person_2},
-      {'name': 'Mike Chen', 'points': 1180, 'rank': 2, 'avatar': Icons.person_3},
-      {'name': 'Emily Davis', 'points': 920, 'rank': 3, 'avatar': Icons.person_4},
-      {'name': 'David Wilson', 'points': 680, 'rank': 4, 'avatar': Icons.person},
-      {'name': 'Lisa Brown', 'points': 320, 'rank': 6, 'avatar': Icons.person_2},
-      {'name': 'Tom Garcia', 'points': 280, 'rank': 7, 'avatar': Icons.person_3},
+      {
+        'name': 'You',
+        'points': _totalPoints,
+        'rank': 5,
+        'avatar': Icons.person,
+      },
+      {
+        'name': 'Sarah Johnson',
+        'points': 1250,
+        'rank': 1,
+        'avatar': Icons.person_2,
+      },
+      {
+        'name': 'Mike Chen',
+        'points': 1180,
+        'rank': 2,
+        'avatar': Icons.person_3,
+      },
+      {
+        'name': 'Emily Davis',
+        'points': 920,
+        'rank': 3,
+        'avatar': Icons.person_4,
+      },
+      {
+        'name': 'David Wilson',
+        'points': 680,
+        'rank': 4,
+        'avatar': Icons.person,
+      },
+      {
+        'name': 'Lisa Brown',
+        'points': 320,
+        'rank': 6,
+        'avatar': Icons.person_2,
+      },
+      {
+        'name': 'Tom Garcia',
+        'points': 280,
+        'rank': 7,
+        'avatar': Icons.person_3,
+      },
     ];
 
     return SingleChildScrollView(
@@ -778,10 +867,7 @@ class _HealthGamificationScreenState extends State<HealthGamificationScreen>
         children: [
           const Text(
             'Weekly Leaderboard',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           ...leaderboardData.map((user) => _buildLeaderboardItem(user)),
@@ -793,7 +879,7 @@ class _HealthGamificationScreenState extends State<HealthGamificationScreen>
   Widget _buildLeaderboardItem(Map<String, dynamic> user) {
     bool isCurrentUser = user['name'] == 'You';
     Color rankColor = _getRankColor(user['rank']);
-    
+
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       elevation: isCurrentUser ? 4 : 1,
@@ -802,7 +888,9 @@ class _HealthGamificationScreenState extends State<HealthGamificationScreen>
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
           color: isCurrentUser ? Colors.purple.shade50 : null,
-          border: isCurrentUser ? Border.all(color: Colors.purple.shade300) : null,
+          border: isCurrentUser
+              ? Border.all(color: Colors.purple.shade300)
+              : null,
         ),
         child: Row(
           children: [
@@ -831,7 +919,9 @@ class _HealthGamificationScreenState extends State<HealthGamificationScreen>
                 user['name'],
                 style: TextStyle(
                   fontSize: 16,
-                  fontWeight: isCurrentUser ? FontWeight.bold : FontWeight.normal,
+                  fontWeight: isCurrentUser
+                      ? FontWeight.bold
+                      : FontWeight.normal,
                 ),
               ),
             ),
