@@ -9,6 +9,14 @@ import 'digital_health_card_screen.dart';
 import 'wearables_screen_simple.dart';
 import 'advanced_sos_screen.dart';
 import 'settings_screen.dart';
+import 'health_alerts_screen.dart';
+import 'medications_screen.dart';
+import 'hospitals_screen.dart';
+import 'telemedicine_screen.dart';
+import 'vitals_monitor_screen.dart';
+import 'insurance_services_screen.dart';
+import 'proximity_alerts_screen.dart';
+import 'health_gamification_screen.dart';
 import 'dart:ui';
 
 class PatientDashboardScreen extends StatefulWidget {
@@ -25,10 +33,6 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
     with TickerProviderStateMixin {
   // Store patient data from navigation arguments
   Map<String, dynamic>? _patientDataFromArgs;
-  late AnimationController _sosController;
-  late Animation<double> _sosScaleAnimation;
-  late AnimationController _sosRippleController;
-  late Animation<double> _sosRippleAnimation;
 
   // New animation controllers for enhanced interactivity
   late AnimationController _cardHoverController;
@@ -336,15 +340,6 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
     );
 
     // Initialize all animations immediately to prevent null errors
-    _sosController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
-      vsync: this,
-    );
-    _sosRippleController = AnimationController(
-      duration: const Duration(milliseconds: 2000),
-      vsync: this,
-    );
-
     // Initialize new animation controllers
     _cardHoverController = AnimationController(
       duration: const Duration(milliseconds: 200),
@@ -359,24 +354,12 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
       vsync: this,
     );
 
-    // Initialize all animation values
-    _sosScaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.15,
-    ).animate(CurvedAnimation(parent: _sosController, curve: Curves.easeInOut));
-
-    _sosRippleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _sosRippleController, curve: Curves.easeOut),
-    );
-
     // Initialize new animations
     _healthStatsAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _healthStatsController, curve: Curves.elasticOut),
     );
 
     // Start animations with staggered delays for better effect
-    _sosController.repeat(reverse: true);
-    _sosRippleController.repeat();
     _healthStatsController.forward();
     _quickActionsController.forward();
 
@@ -414,8 +397,6 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
 
   @override
   void dispose() {
-    _sosController.dispose();
-    _sosRippleController.dispose();
     _cardHoverController.dispose();
     _healthStatsController.dispose();
     _quickActionsController.dispose();
@@ -678,10 +659,6 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
         error = null;
       });
 
-      // Start animations after data is loaded
-      _sosController.repeat(reverse: true);
-      _sosRippleController.repeat();
-
       // Delayed animations for sections
       Future.delayed(const Duration(milliseconds: 500), () {
         if (mounted) _healthStatsController.forward();
@@ -851,9 +828,8 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
         ],
       ),
       bottomNavigationBar: _buildBottomNavigationBar(),
-      floatingActionButton: _currentTabIndex == 0 || _currentTabIndex == 3
-          ? _buildEnhancedFloatingSOSButton()
-          : null,
+      // Removed floating SOS button since Emergency SOS is already in the grid
+      floatingActionButton: null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
@@ -989,9 +965,12 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
                   title: 'Nearby Hospitals',
                   color: Colors.blue.shade600,
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Nearby Hospitals feature coming soon'),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => HospitalsScreen(
+                          patientData: _patientDataFromArgs ?? widget.patientData,
+                        ),
                       ),
                     );
                   },
@@ -1001,9 +980,12 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
                   title: 'Health Alerts',
                   color: Colors.orange.shade600,
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Health Alerts feature coming soon'),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => HealthAlertsScreen(
+                          patientData: _patientDataFromArgs ?? widget.patientData,
+                        ),
                       ),
                     );
                   },
@@ -1045,9 +1027,12 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
                   title: 'Medications',
                   color: Colors.teal.shade600,
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Medications feature coming soon'),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => MedicationsScreen(
+                          patientData: _patientDataFromArgs ?? widget.patientData,
+                        ),
                       ),
                     );
                   },
@@ -1055,7 +1040,7 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
               ],
             ),
 
-            const SizedBox(height: 100), // Space for floating button
+            const SizedBox(height: 30), // Normal bottom spacing
           ],
         ),
       ),
@@ -1235,8 +1220,7 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
                               contact['relationship'],
                               contact['phone'],
                             ),
-                          )
-                          ,
+                          ),
                     ],
                   ],
                 ),
@@ -1420,9 +1404,12 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
                   subtitle: 'Find nearby hospitals',
                   color: Colors.blue.shade600,
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Hospital services coming soon'),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => HospitalsScreen(
+                          patientData: _patientDataFromArgs ?? widget.patientData,
+                        ),
                       ),
                     );
                   },
@@ -1433,9 +1420,12 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
                   subtitle: 'Video consultations',
                   color: Colors.green.shade600,
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Telemedicine feature coming soon'),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => TelemedicineScreen(
+                          patientData: _patientDataFromArgs ?? widget.patientData,
+                        ),
                       ),
                     );
                   },
@@ -1446,9 +1436,12 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
                   subtitle: 'Track vital signs',
                   color: Colors.purple.shade600,
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Vitals Monitor feature coming soon'),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => VitalsMonitorScreen(
+                          patientData: _patientDataFromArgs ?? widget.patientData,
+                        ),
                       ),
                     );
                   },
@@ -1468,9 +1461,12 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
                   subtitle: 'Manage policies',
                   color: Colors.teal.shade600,
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Insurance Services feature coming soon'),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => InsuranceServicesScreen(
+                          patientData: _patientDataFromArgs ?? widget.patientData,
+                        ),
                       ),
                     );
                   },
@@ -1481,9 +1477,12 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
                   subtitle: 'Health warnings',
                   color: Colors.amber.shade600,
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Proximity Alerts feature coming soon'),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ProximityAlertsScreen(
+                          patientData: _patientDataFromArgs ?? widget.patientData,
+                        ),
                       ),
                     );
                   },
@@ -1494,10 +1493,11 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
                   subtitle: 'Wellness rewards',
                   color: Colors.pink.shade600,
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Health Gamification feature coming soon',
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => HealthGamificationScreen(
+                          patientData: _patientDataFromArgs ?? widget.patientData,
                         ),
                       ),
                     );
@@ -1623,14 +1623,28 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: color.withOpacity(0.2)),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.white,
+              color.withOpacity(0.05),
+              color.withOpacity(0.1),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: color.withOpacity(0.3), width: 1.5),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
+              color: color.withOpacity(0.2),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+              spreadRadius: 1,
+            ),
+            BoxShadow(
+              color: Colors.white.withOpacity(0.8),
+              blurRadius: 6,
+              offset: const Offset(-2, -2),
             ),
           ],
         ),
@@ -1638,20 +1652,47 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    color.withOpacity(0.8),
+                    color,
+                    color.withOpacity(0.9),
+                  ],
+                ),
                 shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withOpacity(0.4),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
               ),
-              child: Icon(icon, color: color, size: 24),
+              child: Icon(
+                icon,
+                color: Colors.white,
+                size: 26,
+                shadows: [
+                  Shadow(
+                    color: Colors.black.withOpacity(0.3),
+                    offset: const Offset(1, 1),
+                    blurRadius: 2,
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Text(
               title,
               style: TextStyle(
                 fontSize: 12,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
                 color: Colors.grey.shade800,
+                letterSpacing: 0.3,
               ),
               textAlign: TextAlign.center,
               maxLines: 2,
@@ -1836,106 +1877,6 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
     );
   }
 
-  Widget _buildEnhancedFloatingSOSButton() {
-    return AnimatedBuilder(
-      animation: Listenable.merge([_sosScaleAnimation, _sosRippleAnimation]),
-      builder: (context, child) {
-        return Stack(
-          alignment: Alignment.center,
-          children: [
-            // Enhanced outer ripple effect with multiple rings
-            for (int i = 0; i < 3; i++)
-              Container(
-                width: 80 + (_sosRippleAnimation.value * 40) + (i * 15),
-                height: 80 + (_sosRippleAnimation.value * 40) + (i * 15),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.red.withOpacity(
-                      ((0.3 * (1 - _sosRippleAnimation.value)) / (i + 1)).clamp(
-                        0.0,
-                        1.0,
-                      ),
-                    ),
-                    width: 2,
-                  ),
-                ),
-              ),
-            // Main enhanced SOS button
-            Transform.scale(
-              scale: _sosScaleAnimation.value,
-              child: Container(
-                width: 85,
-                height: 85,
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    colors: [
-                      Colors.red.shade300,
-                      Colors.red.shade600,
-                      Colors.red.shade800,
-                      Colors.red.shade900,
-                    ],
-                    stops: const [0.0, 0.3, 0.7, 1.0],
-                  ),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.red.withOpacity(
-                        0.5 + (_sosScaleAnimation.value - 1.0) * 3,
-                      ),
-                      blurRadius: 20 + (_sosScaleAnimation.value - 1.0) * 40,
-                      spreadRadius: 5 + (_sosScaleAnimation.value - 1.0) * 15,
-                    ),
-                    BoxShadow(
-                      color: Colors.red.withOpacity(0.3),
-                      blurRadius: 30,
-                      spreadRadius: 10,
-                    ),
-                  ],
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(42.5),
-                    onTap: _handleSOSPress,
-                    onLongPress: _handleSOSLongPress,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 3),
-                      ),
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.sos,
-                              color: Colors.white,
-                              size: 30 + (_sosScaleAnimation.value - 1.0) * 10,
-                            ),
-                            Text(
-                              'SOS',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize:
-                                    11 + (_sosScaleAnimation.value - 1.0) * 3,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 2,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
 
   Widget _buildEnhancedHealthStatsSection() {
     return AnimatedBuilder(
@@ -2399,21 +2340,19 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
               ),
               const SizedBox(height: 12),
               if (healthTips.isNotEmpty) ...[
-                ...healthTips
-                    .map(
-                      (tip) => Padding(
-                        padding: const EdgeInsets.only(bottom: 4.0),
-                        child: Text(
-                          '• $tip',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.teal.shade700,
-                            height: 1.5,
-                          ),
-                        ),
+                ...healthTips.map(
+                  (tip) => Padding(
+                    padding: const EdgeInsets.only(bottom: 4.0),
+                    child: Text(
+                      '• $tip',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.teal.shade700,
+                        height: 1.5,
                       ),
-                    )
-                    ,
+                    ),
+                  ),
+                ),
               ] else ...[
                 Text(
                   'No health tips available at the moment.',
@@ -2429,54 +2368,6 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
         ),
       ],
     );
-  }
-
-  // Emergency SOS Methods
-  void _handleSOSPress() {
-    HapticFeedback.mediumImpact();
-
-    // Add a visual feedback by briefly changing the animation
-    _sosController.stop();
-    _sosRippleController.stop();
-    _sosController.forward().then((_) {
-      _sosController.repeat(reverse: true);
-      _sosRippleController.repeat();
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Row(
-          children: [
-            Icon(Icons.info_outline, color: Colors.white),
-            SizedBox(width: 8),
-            Text('Hold SOS button for emergency'),
-          ],
-        ),
-        backgroundColor: Colors.orange.shade600,
-        duration: const Duration(seconds: 3),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    );
-  }
-
-  void _handleSOSLongPress() {
-    HapticFeedback.heavyImpact();
-
-    // Stop the animation during navigation
-    _sosController.stop();
-    _sosRippleController.stop();
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const AdvancedSOSScreen()),
-    ).then((_) {
-      // Restart animation when returning
-      if (mounted) {
-        _sosController.repeat(reverse: true);
-        _sosRippleController.repeat();
-      }
-    });
   }
 
   void _showLogoutDialog() {

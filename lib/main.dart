@@ -26,7 +26,7 @@ class DHRMSApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'DHRMS - Digital Health Record Management System',
+      title: 'My Health - Digital Health Record Management System',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
