@@ -10,7 +10,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
 
 class CardDownloadService {
   /// Downloads the digital health card as an image
@@ -21,69 +20,159 @@ class CardDownloadService {
     required BuildContext context,
   }) async {
     try {
-      // Capture the card as an image
-      RenderRepaintBoundary boundary = 
-          cardKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-      ui.Image image = await boundary.toImage(pixelRatio: 3.0);
-      ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      
+      // Add a small delay to ensure the widget is fully rendered
+      await Future.delayed(Duration(milliseconds: 200));
+
+      // Get the RepaintBoundary
+      final RenderObject? renderObject = cardKey.currentContext
+          ?.findRenderObject();
+      if (renderObject == null) {
+        throw Exception('Could not find the card widget. Please try again.');
+      }
+
+      if (renderObject is! RenderRepaintBoundary) {
+        throw Exception(
+          'Widget is not properly set up for capture. Please try again.',
+        );
+      }
+
+      final RenderRepaintBoundary boundary = renderObject;
+
+      // Ensure the boundary is properly laid out
+      if (!boundary.hasSize || boundary.size.isEmpty) {
+        throw Exception(
+          'Card is not properly rendered. Please scroll to view the full card and try again.',
+        );
+      }
+
+      // Capture with appropriate pixel ratio for good quality but manageable size
+      ui.Image image = await boundary.toImage(pixelRatio: 2.5);
+      ByteData? byteData = await image.toByteData(
+        format: ui.ImageByteFormat.png,
+      );
+
       if (byteData != null) {
         Uint8List imageBytes = byteData.buffer.asUint8List();
-        
+
         if (kIsWeb) {
           // Web download implementation
           return await _downloadOnWeb(imageBytes, patientName, uhid, context);
         } else {
           // Mobile download implementation
-          return await _downloadOnMobile(imageBytes, patientName, uhid, context);
+          return await _downloadOnMobile(
+            imageBytes,
+            patientName,
+            uhid,
+            context,
+          );
         }
+      } else {
+        throw Exception('Failed to generate image data');
       }
-      return false;
     } catch (e) {
       _showErrorMessage(context, 'Error downloading card: $e');
       return false;
     }
   }
 
-  /// Download implementation for web platform  
+  /// Download implementation for web platform
   static Future<bool> _downloadOnWeb(
-    Uint8List imageBytes, 
-    String patientName, 
-    String uhid, 
-    BuildContext context
+    Uint8List imageBytes,
+    String patientName,
+    String uhid,
+    BuildContext context,
   ) async {
     try {
-      // Web download not supported in mobile builds
-      _showErrorMessage(context, 'Web download is not supported in this build');
-      return false;
+      if (kIsWeb) {
+        // For web, we'll use Share functionality instead of direct download
+        // Create a temporary file and share it
+        final fileName =
+            'HealthCard_${patientName.replaceAll(' ', '_')}_$uhid.png';
+
+        // Use the mobile share functionality which works better for web
+        await Share.shareXFiles([
+          XFile.fromData(imageBytes, name: fileName, mimeType: 'image/png'),
+        ], text: 'Digital Health Card - $patientName (UHID: $uhid)');
+
+        _showSuccessMessage(context, 'Digital Health Card ready to download!');
+        return true;
+      } else {
+        _showErrorMessage(
+          context,
+          'Web download is only available in web builds',
+        );
+        return false;
+      }
     } catch (e) {
       _showErrorMessage(context, 'Web download failed: $e');
       return false;
     }
-  }  /// Download implementation for mobile platform
+  }
+
+  /// Download implementation for mobile platform
   static Future<bool> _downloadOnMobile(
-    Uint8List imageBytes, 
-    String patientName, 
-    String uhid, 
-    BuildContext context
+    Uint8List imageBytes,
+    String patientName,
+    String uhid,
+    BuildContext context,
   ) async {
     try {
-      // Get temporary directory for sharing
-      final tempDir = await getTemporaryDirectory();
-      final fileName = 'HealthCard_${patientName.replaceAll(' ', '_')}_$uhid.png';
-      final file = File('${tempDir.path}/$fileName');
-      
-      // Write image bytes to file
-      await file.writeAsBytes(imageBytes);
-      
-      // Share the file
-      await Share.shareXFiles(
-        [XFile(file.path)],
-        text: 'Digital Health Card - $patientName (UHID: $uhid)',
-      );
+      if (!kIsWeb) {
+        // Get appropriate directory for saving files
+        Directory? directory;
+        if (Platform.isAndroid) {
+          // For Android, try to get the Downloads directory
+          directory = await getExternalStorageDirectory();
+          if (directory != null) {
+            // Navigate to Downloads folder
+            String newPath = "";
+            List<String> folders = directory.path.split("/");
+            for (int i = 1; i < folders.length; i++) {
+              String folder = folders[i];
+              if (folder != "Android") {
+                newPath += "/$folder";
+              } else {
+                break;
+              }
+            }
+            newPath = "$newPath/Download";
+            directory = Directory(newPath);
+          }
+        } else {
+          // For iOS and other platforms, use documents directory
+          directory = await getApplicationDocumentsDirectory();
+        }
 
-      _showSuccessMessage(context, 'Digital Health Card shared successfully!');
-      return true;
+        if (directory != null) {
+          // Create directory if it doesn't exist
+          if (!await directory.exists()) {
+            await directory.create(recursive: true);
+          }
+
+          final fileName =
+              'HealthCard_${patientName.replaceAll(' ', '_')}_$uhid.png';
+          final file = File('${directory.path}/$fileName');
+
+          // Write image bytes to file
+          await file.writeAsBytes(imageBytes);
+
+          // Also share the file for immediate access
+          await Share.shareXFiles([
+            XFile(file.path),
+          ], text: 'Digital Health Card - $patientName (UHID: $uhid)');
+
+          _showSuccessMessage(
+            context,
+            'Digital Health Card saved to Downloads and shared!',
+          );
+          return true;
+        } else {
+          throw Exception('Could not access storage directory');
+        }
+      } else {
+        // Fallback for web
+        return await _downloadOnWeb(imageBytes, patientName, uhid, context);
+      }
     } catch (e) {
       _showErrorMessage(context, 'Mobile download failed: $e');
       return false;
@@ -98,7 +187,7 @@ class CardDownloadService {
     try {
       // Create PDF document
       final pdf = pw.Document();
-      
+
       // Add page with card content
       pdf.addPage(
         pw.Page(
@@ -112,7 +201,7 @@ class CardDownloadService {
                   end: pw.Alignment.bottomRight,
                   colors: [
                     PdfColors.indigo800, // Government Indigo
-                    PdfColors.green800,  // Government Green
+                    PdfColors.green800, // Government Green
                   ],
                 ),
                 borderRadius: pw.BorderRadius.circular(15),
@@ -124,7 +213,11 @@ class CardDownloadService {
                   // Header
                   pw.Row(
                     children: [
-                      pw.Icon(pw.IconData(0xe328), size: 40, color: PdfColors.white), // Hospital icon
+                      pw.Icon(
+                        pw.IconData(0xe328),
+                        size: 40,
+                        color: PdfColors.white,
+                      ), // Hospital icon
                       pw.SizedBox(width: 15),
                       pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -149,9 +242,9 @@ class CardDownloadService {
                       ),
                     ],
                   ),
-                  
+
                   pw.SizedBox(height: 30),
-                  
+
                   // Patient Information
                   pw.Container(
                     padding: pw.EdgeInsets.all(15),
@@ -162,23 +255,50 @@ class CardDownloadService {
                     child: pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
-                        _buildPDFDetailRow('Name', cardData['name'] ?? 'N/A'),
+                        _buildPDFDetailRow(
+                          'Name',
+                          cardData['patientName'] ?? 'N/A',
+                        ),
                         _buildPDFDetailRow('UHID', cardData['uhid'] ?? 'N/A'),
-                        _buildPDFDetailRow('Blood Group', cardData['bloodGroup'] ?? 'N/A'),
+                        _buildPDFDetailRow(
+                          'Date of Birth',
+                          _formatDateForPDF(cardData['dateOfBirth']),
+                        ),
+                        _buildPDFDetailRow(
+                          'Gender',
+                          cardData['gender']?.toString().toUpperCase() ?? 'N/A',
+                        ),
+                        _buildPDFDetailRow(
+                          'Blood Group',
+                          cardData['bloodGroup'] ?? 'N/A',
+                        ),
                         _buildPDFDetailRow('Phone', cardData['phone'] ?? 'N/A'),
                         if (cardData['address'] != null)
-                          _buildPDFDetailRow('Address', cardData['address']['fullAddress'] ?? 'N/A'),
+                          _buildPDFDetailRow(
+                            'Address',
+                            _formatAddressForPDF(cardData['address']),
+                          ),
                         if (cardData['homeState'] != null)
-                          _buildPDFDetailRow('Home State', cardData['homeState']),
-                        if (cardData['emergencyContact'] != null)
-                          _buildPDFDetailRow('Emergency Contact', cardData['emergencyContact']),
-                        _buildPDFDetailRow('Issue Date', _formatDateForPDF(cardData['issueDate'])),
+                          _buildPDFDetailRow(
+                            'Home State',
+                            cardData['homeState'],
+                          ),
+                        if (cardData['emergencyContact'] != null &&
+                            cardData['emergencyContact'] != 'Not provided')
+                          _buildPDFDetailRow(
+                            'Emergency Contact',
+                            '${cardData['emergencyContactName'] ?? ''} - ${cardData['emergencyContact']}',
+                          ),
+                        _buildPDFDetailRow(
+                          'Issue Date',
+                          _formatDateForPDF(cardData['issueDate']),
+                        ),
                       ],
                     ),
                   ),
-                  
+
                   pw.SizedBox(height: 20),
-                  
+
                   // QR Code section
                   if (cardData['qrCodeData'] != null) ...[
                     pw.Text(
@@ -202,16 +322,13 @@ class CardDownloadService {
                       ),
                     ),
                   ],
-                  
+
                   pw.Spacer(),
-                  
+
                   // Footer
                   pw.Text(
                     'Generated on: ${DateTime.now().toString().split('.')[0]}',
-                    style: pw.TextStyle(
-                      color: PdfColors.white,
-                      fontSize: 10,
-                    ),
+                    style: pw.TextStyle(color: PdfColors.white, fontSize: 10),
                   ),
                 ],
               ),
@@ -222,18 +339,32 @@ class CardDownloadService {
 
       // Save and share PDF
       final bytes = await pdf.save();
-      final tempDir = await getTemporaryDirectory();
-      final fileName = 'HealthCard_${cardData['name']?.replaceAll(' ', '_')}_${cardData['uhid']}.pdf';
-      final file = File('${tempDir.path}/$fileName');
-      await file.writeAsBytes(bytes);
+      final fileName =
+          'HealthCard_${cardData['patientName']?.replaceAll(' ', '_')}_${cardData['uhid']}.pdf';
 
-      // Share PDF
-      await Share.shareXFiles(
-        [XFile(file.path)],
-        text: 'Digital Health Card PDF - ${cardData['name']} (UHID: ${cardData['uhid']})',
-      );
+      if (kIsWeb) {
+        // Web implementation - use XFile with bytes
+        await Share.shareXFiles(
+          [XFile.fromData(bytes, name: fileName, mimeType: 'application/pdf')],
+          text:
+              'Digital Health Card PDF - ${cardData['patientName']} (UHID: ${cardData['uhid']})',
+        );
+        _showSuccessMessage(context, 'PDF Health Card ready to download!');
+      } else {
+        // Mobile implementation - save to file then share
+        final tempDir = await getTemporaryDirectory();
+        final file = File('${tempDir.path}/$fileName');
+        await file.writeAsBytes(bytes);
 
-      _showSuccessMessage(context, 'PDF Health Card shared successfully!');
+        // Share PDF
+        await Share.shareXFiles(
+          [XFile(file.path)],
+          text:
+              'Digital Health Card PDF - ${cardData['patientName']} (UHID: ${cardData['uhid']})',
+        );
+        _showSuccessMessage(context, 'PDF Health Card shared successfully!');
+      }
+
       return true;
     } catch (e) {
       _showErrorMessage(context, 'Error generating PDF: $e');
@@ -252,18 +383,10 @@ class CardDownloadService {
             width: 100,
             child: pw.Text(
               '$label:',
-              style: pw.TextStyle(
-                fontWeight: pw.FontWeight.bold,
-                fontSize: 12,
-              ),
+              style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 12),
             ),
           ),
-          pw.Expanded(
-            child: pw.Text(
-              value,
-              style: pw.TextStyle(fontSize: 12),
-            ),
-          ),
+          pw.Expanded(child: pw.Text(value, style: pw.TextStyle(fontSize: 12))),
         ],
       ),
     );
@@ -280,6 +403,27 @@ class CardDownloadService {
     }
   }
 
+  /// Format address for PDF
+  static String _formatAddressForPDF(Map<String, dynamic>? address) {
+    if (address == null) return 'N/A';
+
+    List<String> addressParts = [];
+    if (address['street'] != null && address['street'].isNotEmpty) {
+      addressParts.add(address['street']);
+    }
+    if (address['city'] != null && address['city'].isNotEmpty) {
+      addressParts.add(address['city']);
+    }
+    if (address['state'] != null && address['state'].isNotEmpty) {
+      addressParts.add(address['state']);
+    }
+    if (address['zipCode'] != null && address['zipCode'].isNotEmpty) {
+      addressParts.add(address['zipCode']);
+    }
+
+    return addressParts.isNotEmpty ? addressParts.join(', ') : 'N/A';
+  }
+
   /// Downloads card data as JSON file
   static Future<bool> downloadCardData({
     required Map<String, dynamic> cardData,
@@ -292,20 +436,59 @@ class CardDownloadService {
         'digitalHealthCard': cardData,
         'exportedAt': DateTime.now().toIso8601String(),
         'version': '1.0.0',
-        'format': 'DHRMS_DIGITAL_CARD'
+        'format': 'DHRMS_DIGITAL_CARD',
       };
-      
+
       final jsonString = const JsonEncoder.withIndent('  ').convert(jsonData);
-      
+      final fileName =
+          'HealthCard_Data_${patientName.replaceAll(' ', '_')}_$uhid.json';
+
       if (kIsWeb) {
-        // Web JSON download not supported in mobile builds
-        _showErrorMessage(context, 'Web JSON download is not supported in this build');
-        return false;
-      } else {
-        // Mobile - copy to clipboard
-        await Clipboard.setData(ClipboardData(text: jsonString));
-        _showSuccessMessage(context, 'Card data copied to clipboard as JSON!');
+        // For web, use share functionality
+        await Share.shareXFiles(
+          [
+            XFile.fromData(
+              Uint8List.fromList(utf8.encode(jsonString)),
+              name: fileName,
+              mimeType: 'application/json',
+            ),
+          ],
+          text: 'Digital Health Card Data (JSON) - $patientName (UHID: $uhid)',
+        );
+
+        _showSuccessMessage(context, 'Card data ready to download!');
         return true;
+      } else {
+        // Mobile - save to file and also copy to clipboard
+        try {
+          final tempDir = await getTemporaryDirectory();
+          final file = File('${tempDir.path}/$fileName');
+          await file.writeAsString(jsonString);
+
+          // Share the JSON file
+          await Share.shareXFiles(
+            [XFile(file.path)],
+            text:
+                'Digital Health Card Data (JSON) - $patientName (UHID: $uhid)',
+          );
+
+          // Also copy to clipboard for easy access
+          await Clipboard.setData(ClipboardData(text: jsonString));
+
+          _showSuccessMessage(
+            context,
+            'Card data saved and copied to clipboard!',
+          );
+          return true;
+        } catch (e) {
+          // If file operations fail, fallback to clipboard only
+          await Clipboard.setData(ClipboardData(text: jsonString));
+          _showSuccessMessage(
+            context,
+            'Card data copied to clipboard as JSON!',
+          );
+          return true;
+        }
       }
     } catch (e) {
       _showErrorMessage(context, 'Failed to download card data: $e');
@@ -355,9 +538,65 @@ For verification, visit: https://dhrms.gov.in/verify/$uhid
         issueDate: issueDate,
       );
 
-      await Clipboard.setData(ClipboardData(text: shareText));
-      
-      _showSuccessMessage(context, 'Health card details copied to clipboard!');
+      // Show dialog with options
+      await showDialog(
+        context: context,
+        builder: (BuildContext dialogContext) {
+          return AlertDialog(
+            title: Row(
+              children: [
+                Icon(Icons.share, color: Colors.deepOrange, size: 24),
+                SizedBox(width: 8),
+                Text('Share Options'),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Choose how you want to share:'),
+                SizedBox(height: 20),
+
+                // Copy to Clipboard
+                ListTile(
+                  leading: Icon(Icons.content_copy, color: Colors.blue),
+                  title: Text('Copy to Clipboard'),
+                  subtitle: Text('Copy card details to clipboard'),
+                  onTap: () async {
+                    Navigator.of(dialogContext).pop();
+                    await Clipboard.setData(ClipboardData(text: shareText));
+                    _showSuccessMessage(
+                      context,
+                      'Health card details copied to clipboard!',
+                    );
+                  },
+                ),
+
+                Divider(),
+
+                // Share via Platform
+                ListTile(
+                  leading: Icon(Icons.share, color: Colors.deepOrange),
+                  title: Text('Share via Apps'),
+                  subtitle: Text('Share using other apps'),
+                  onTap: () async {
+                    Navigator.of(dialogContext).pop();
+                    await Share.share(
+                      shareText,
+                      subject: 'Digital Health Card - $patientName',
+                    );
+                  },
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: Text('Cancel'),
+              ),
+            ],
+          );
+        },
+      );
     } catch (e) {
       _showErrorMessage(context, 'Failed to share card: $e');
     }
@@ -442,7 +681,7 @@ For verification, visit: https://dhrms.gov.in/verify/$uhid
                 style: TextStyle(color: Colors.grey.shade700),
               ),
               SizedBox(height: 20),
-              
+
               // Download as Image
               _buildDownloadOption(
                 icon: Icons.image,
@@ -459,9 +698,9 @@ For verification, visit: https://dhrms.gov.in/verify/$uhid
                   );
                 },
               ),
-              
+
               SizedBox(height: 12),
-              
+
               // Download as PDF
               _buildDownloadOption(
                 icon: Icons.picture_as_pdf,
@@ -470,15 +709,12 @@ For verification, visit: https://dhrms.gov.in/verify/$uhid
                 color: Colors.red,
                 onTap: () async {
                   Navigator.of(context).pop();
-                  await downloadCardAsPDF(
-                    cardData: cardData,
-                    context: context,
-                  );
+                  await downloadCardAsPDF(cardData: cardData, context: context);
                 },
               ),
-              
+
               SizedBox(height: 12),
-              
+
               // Download Card Data
               _buildDownloadOption(
                 icon: Icons.data_object,
@@ -495,9 +731,9 @@ For verification, visit: https://dhrms.gov.in/verify/$uhid
                   );
                 },
               ),
-              
+
               SizedBox(height: 12),
-              
+
               // Share Card Info
               _buildDownloadOption(
                 icon: Icons.share,
@@ -572,10 +808,7 @@ For verification, visit: https://dhrms.gov.in/verify/$uhid
                   ),
                   Text(
                     subtitle,
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
                   ),
                 ],
               ),
