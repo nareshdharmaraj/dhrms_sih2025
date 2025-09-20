@@ -8,11 +8,12 @@ import '../utils/environment_config.dart';
 
 class DigitalHealthCardScreen extends StatefulWidget {
   final String uhid;
-  
+
   const DigitalHealthCardScreen({super.key, required this.uhid});
 
   @override
-  _DigitalHealthCardScreenState createState() => _DigitalHealthCardScreenState();
+  _DigitalHealthCardScreenState createState() =>
+      _DigitalHealthCardScreenState();
 }
 
 class _DigitalHealthCardScreenState extends State<DigitalHealthCardScreen> {
@@ -33,7 +34,7 @@ class _DigitalHealthCardScreenState extends State<DigitalHealthCardScreen> {
       final apiBaseUrl = EnvironmentConfig.getApiBaseUrl();
       print('🔍 Loading digital card for UHID: ${widget.uhid}');
       print('🌐 Using API URL: $apiBaseUrl');
-      
+
       final response = await http.get(
         Uri.parse('$apiBaseUrl/patients/digital-card/${widget.uhid}'),
         headers: {'Content-Type': 'application/json'},
@@ -59,7 +60,8 @@ class _DigitalHealthCardScreenState extends State<DigitalHealthCardScreen> {
         }
       } else {
         setState(() {
-          error = 'Failed to load digital card (Status: ${response.statusCode})';
+          error =
+              'Failed to load digital card (Status: ${response.statusCode})';
           isLoading = false;
         });
         print('❌ HTTP error: ${response.statusCode}');
@@ -98,8 +100,8 @@ class _DigitalHealthCardScreenState extends State<DigitalHealthCardScreen> {
       body: isLoading
           ? Center(child: CircularProgressIndicator())
           : error != null
-              ? _buildErrorWidget()
-              : _buildDigitalCard(),
+          ? _buildErrorWidget()
+          : _buildDigitalCard(),
     );
   }
 
@@ -156,462 +158,604 @@ class _DigitalHealthCardScreenState extends State<DigitalHealthCardScreen> {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    spreadRadius: 3,
-                    blurRadius: 15,
-                    offset: Offset(0, 8),
+                    color: Colors.black.withOpacity(0.15),
+                    spreadRadius: 2,
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
                   ),
                 ],
               ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFF1A237E), // Deep Government Indigo
-                      Color(0xFF283593), // Medium Indigo
-                      Color(0xFF1B5E20), // Government Green
-                    ],
-                    stops: [0.0, 0.6, 1.0],
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    // Card Header
-                    Container(
-                      padding: EdgeInsets.all(20),
-                      child: Row(
-                        children: [
-                          // Government Emblem
-                          Container(
-                            padding: EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
-                            ),
-                            child: Icon(
-                              Icons.account_balance,
-                              color: Colors.white,
-                              size: 32,
-                            ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  decoration: BoxDecoration(color: Colors.white),
+                  child: Column(
+                    children: [
+                      // Top Bar
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 15,
+                        ),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                            colors: [
+                              Color(0xFF1565C0), // Medical Blue
+                              Color(0xFF0D47A1), // Darker Blue
+                            ],
                           ),
-                          SizedBox(width: 15),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            // Left: Issuing details
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                'Issued by Digital Health Mission',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                            // Center: Title
+                            Expanded(
+                              flex: 3,
+                              child: Text(
+                                'Digital Health Card',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
+                            // Right: Home State
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                cardData!['homeState'] ?? 'Kerala',
+                                textAlign: TextAlign.right,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Profile Section with Photo and QR Code
+                      Container(
+                        padding: EdgeInsets.all(20),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            // Profile Photo Section
+                            Column(
                               children: [
-                                Text(
-                                  'भारत सरकार • Government of India',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
+                                // Circular Profile Photo
+                                Container(
+                                  width: 100,
+                                  height: 100,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Color(0xFF1565C0),
+                                      width: 3,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.1),
+                                        spreadRadius: 2,
+                                        blurRadius: 8,
+                                        offset: Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: ClipOval(
+                                    child: cardData!['photo'] != null
+                                        ? Image.memory(
+                                            base64Decode(cardData!['photo']),
+                                            fit: BoxFit.cover,
+                                          )
+                                        : Container(
+                                            color: Colors.grey.shade200,
+                                            child: Icon(
+                                              Icons.person,
+                                              size: 50,
+                                              color: Colors.grey.shade500,
+                                            ),
+                                          ),
                                   ),
                                 ),
-                                SizedBox(height: 4),
-                                Text(
-                                  'DIGITAL HEALTH CARD',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 1.5,
+                                SizedBox(height: 12),
+                                // Full Name
+                                Container(
+                                  width: 140,
+                                  child: Text(
+                                    cardData!['patientName'] ?? 'Unknown',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.grey.shade800,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                                Text(
-                                  'Ministry of Health & Family Welfare',
-                                  style: TextStyle(
-                                    color: Colors.white.withOpacity(0.9),
-                                    fontSize: 10,
-                                    fontStyle: FontStyle.italic,
+                                SizedBox(height: 8),
+                                // UHID
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Color(0xFF1565C0).withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(15),
+                                    border: Border.all(
+                                      color: Color(0xFF1565C0).withOpacity(0.3),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'UHID: ${cardData!['uhid'] ?? 'N/A'}',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF1565C0),
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                          Container(
-                            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(15),
+
+                            // QR Code Section
+                            Column(
+                              children: [
+                                Container(
+                                  width: 100,
+                                  height: 100,
+                                  padding: EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: Color(0xFF1565C0),
+                                      width: 2,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.1),
+                                        spreadRadius: 2,
+                                        blurRadius: 8,
+                                        offset: Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: cardData!['qrCode'] != null
+                                      ? ClipRRect(
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                          child: Image.memory(
+                                            base64Decode(
+                                              cardData!['qrCode']
+                                                  .split(',')
+                                                  .last,
+                                            ),
+                                            fit: BoxFit.contain,
+                                          ),
+                                        )
+                                      : Icon(
+                                          Icons.qr_code,
+                                          color: Colors.grey.shade600,
+                                          size: 60,
+                                        ),
+                                ),
+                                SizedBox(height: 12),
+                                Container(
+                                  width: 140,
+                                  child: Text(
+                                    'Digital Health ID',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF1565C0),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Container(
+                                  width: 140,
+                                  child: Text(
+                                    'Scan at Healthcare Facilities',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                    maxLines: 2,
+                                  ),
+                                ),
+                              ],
                             ),
-                            child: Text(
-                              cardData!['isActive'] ? 'ACTIVE' : 'INACTIVE',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    
-                    // Card Body
-                    Container(
-                      padding: EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.only(
-                          bottomLeft: Radius.circular(20),
-                          bottomRight: Radius.circular(20),
+                          ],
                         ),
                       ),
-                      child: Column(
-                        children: [
-                          // Patient Photo and Basic Info
-                          Row(
-                            children: [
-                              // Photo
-                              Container(
-                                width: 80,
-                                height: 80,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(15),
-                                  border: Border.all(color: Colors.grey.shade300, width: 2),
-                                  color: Colors.grey.shade100,
-                                ),
-                                child: cardData!['photo'] != null
-                                    ? ClipRRect(
-                                        borderRadius: BorderRadius.circular(13),
-                                        child: Image.memory(
-                                          base64Decode(cardData!['photo']),
-                                          fit: BoxFit.cover,
-                                        ),
-                                      )
-                                    : Icon(
-                                        Icons.person,
-                                        size: 40,
-                                        color: Colors.grey.shade500,
-                                      ),
+
+                      // Details Section
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 15,
+                        ),
+                        child: Column(
+                          children: [
+                            // Details Header
+                            Container(
+                              width: double.infinity,
+                              padding: EdgeInsets.symmetric(vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                              SizedBox(width: 20),
-                              // Patient Info
+                              child: Text(
+                                'Personal Details',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey.shade700,
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 15),
+
+                            // Details in 2x3 grid
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    children: [
+                                      // Date of Birth
+                                      _buildDetailItem(
+                                        Icons.calendar_today,
+                                        'Date of Birth',
+                                        _formatDate(cardData!['dateOfBirth']),
+                                        Color(0xFF4CAF50),
+                                      ),
+                                      SizedBox(height: 12),
+
+                                      // Phone Number
+                                      _buildDetailItem(
+                                        Icons.phone,
+                                        'Phone Number',
+                                        cardData!['phone'] ?? 'Not provided',
+                                        Color(0xFF2196F3),
+                                      ),
+                                      SizedBox(height: 12),
+
+                                      // Address
+                                      _buildDetailItem(
+                                        Icons.location_on,
+                                        'Address',
+                                        _formatAddress(cardData!['address']),
+                                        Color(0xFF607D8B),
+                                        maxLines: 2,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                SizedBox(width: 20),
+                                Expanded(
+                                  child: Column(
+                                    children: [
+                                      // Gender
+                                      _buildDetailItem(
+                                        _getGenderIcon(cardData!['gender']),
+                                        'Gender',
+                                        '${_getGenderSymbol(cardData!['gender'])} ${cardData!['gender']?.toString().toUpperCase() ?? 'Not specified'}',
+                                        Color(0xFF9C27B0),
+                                      ),
+                                      SizedBox(height: 12),
+
+                                      // Blood Group (highlighted in red)
+                                      Container(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.red.shade50,
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.red.shade300,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.water_drop,
+                                              color: Colors.red.shade600,
+                                              size: 14,
+                                            ),
+                                            SizedBox(width: 6),
+                                            Text(
+                                              'Blood Group',
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: Colors.red.shade600,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                            SizedBox(width: 8),
+                                            Container(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 6,
+                                                vertical: 2,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: Colors.red.shade600,
+                                                borderRadius:
+                                                    BorderRadius.circular(6),
+                                              ),
+                                              child: Text(
+                                                cardData!['bloodGroup'] ??
+                                                    'Unknown',
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      SizedBox(height: 12),
+
+                                      // Issue Date
+                                      _buildDetailItem(
+                                        Icons.date_range,
+                                        'Issue Date',
+                                        _formatDate(cardData!['issueDate']),
+                                        Color(0xFF795548),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Emergency Section (Bottom highlighted bar)
+                      if (cardData!['emergencyContact'] != null ||
+                          cardData!['emergencyContactName'] != null)
+                        Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(15),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.red.shade600,
+                                Colors.orange.shade600,
+                              ],
+                            ),
+                            borderRadius: BorderRadius.only(
+                              bottomLeft: Radius.circular(20),
+                              bottomRight: Radius.circular(20),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.emergency,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                              SizedBox(width: 12),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      cardData!['patientName'] ?? 'Unknown',
+                                      'Emergency Contact',
                                       style: TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.grey.shade800,
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
-                                    SizedBox(height: 8),
-                                    Container(
-                                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: Colors.red.shade50,
-                                        borderRadius: BorderRadius.circular(20),
-                                        border: Border.all(color: Colors.red.shade200),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(Icons.bloodtype, color: Colors.red.shade600, size: 16),
-                                          SizedBox(width: 4),
-                                          Text(
-                                            'Blood: ${cardData!['bloodGroup'] ?? 'Unknown'}',
-                                            style: TextStyle(
-                                              color: Colors.red.shade600,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          
-                          SizedBox(height: 20),
-                          
-                          // UHID and Card Number
-                          Container(
-                            padding: EdgeInsets.all(15),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [Colors.blue.shade50, Colors.teal.shade50],
-                              ),
-                              borderRadius: BorderRadius.circular(15),
-                              border: Border.all(color: Colors.blue.shade200),
-                            ),
-                            child: Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'UHID',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.grey.shade600,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    Text(
-                                      'Card Number',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.grey.shade600,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 5),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      cardData!['uhid'] ?? 'N/A',
-                                      style: TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.blue.shade700,
-                                        letterSpacing: 2,
-                                      ),
-                                    ),
-                                    Text(
-                                      cardData!['cardNumber'] ?? 'N/A',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.teal.shade700,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          
-                          SizedBox(height: 20),
-                          
-                          // Patient Details Section
-                          Container(
-                            padding: EdgeInsets.all(15),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade50,
-                              borderRadius: BorderRadius.circular(15),
-                              border: Border.all(color: Colors.grey.shade200),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Patient Details',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.grey.shade800,
-                                  ),
-                                ),
-                                SizedBox(height: 12),
-                                _buildDetailRow('Date of Birth', _formatDate(cardData!['dateOfBirth'])),
-                                _buildDetailRow('Gender', cardData!['gender']?.toString().toUpperCase() ?? 'Not specified'),
-                                _buildDetailRow('Phone', cardData!['phone'] ?? 'Not provided'),
-                                if (cardData!['address'] != null) ...[
-                                  SizedBox(height: 8),
-                                  Text(
-                                    'Address:',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.grey.shade600,
-                                    ),
-                                  ),
-                                  SizedBox(height: 4),
-                                  Text(
-                                    cardData!['address']['fullAddress'] ?? 'Address not available',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: Colors.grey.shade700,
-                                    ),
-                                  ),
-                                ],
-                                if (cardData!['homeState'] != null) ...[
-                                  SizedBox(height: 8),
-                                  _buildDetailRow('Home State', cardData!['homeState']),
-                                ],
-                              ],
-                            ),
-                          ),
-                          
-                          SizedBox(height: 20),
-                          
-                          // Emergency Contact
-                          if (cardData!['emergencyContact'] != null || cardData!['emergencyContactName'] != null)
-                            Container(
-                              padding: EdgeInsets.all(15),
-                              decoration: BoxDecoration(
-                                color: Colors.red.shade50,
-                                borderRadius: BorderRadius.circular(15),
-                                border: Border.all(color: Colors.red.shade200),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.emergency, color: Colors.red.shade600, size: 24),
-                                  SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                    SizedBox(height: 2),
+                                    Row(
                                       children: [
-                                        Text(
-                                          'Emergency Contact',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.red.shade600,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                        if (cardData!['emergencyContactName'] != null && cardData!['emergencyContactName'] != 'Not provided')
-                                          Text(
-                                            cardData!['emergencyContactName'],
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: Colors.red.shade800,
-                                              fontWeight: FontWeight.bold,
+                                        if (cardData!['emergencyContactName'] !=
+                                                null &&
+                                            cardData!['emergencyContactName'] !=
+                                                'Not provided')
+                                          Expanded(
+                                            child: Text(
+                                              cardData!['emergencyContactName'],
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                             ),
                                           ),
+                                        SizedBox(width: 10),
                                         Text(
-                                          cardData!['emergencyContact'] ?? 'Not provided',
+                                          cardData!['emergencyContact'] ??
+                                              'Not provided',
                                           style: TextStyle(
-                                            fontSize: 14,
-                                            color: Colors.red.shade800,
+                                            color: Colors.white,
+                                            fontSize: 13,
                                             fontWeight: FontWeight.w600,
                                           ),
                                         ),
                                       ],
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
+                              // Small QR code in bottom-right
+                              Container(
+                                width: 50,
+                                height: 50,
+                                padding: EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  Icons.qr_code,
+                                  color: Colors.grey.shade700,
+                                  size: 24,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                      // If no emergency contact, still show QR at bottom
+                      if (cardData!['emergencyContact'] == null &&
+                          cardData!['emergencyContactName'] == null)
+                        Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(15),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.only(
+                              bottomLeft: Radius.circular(20),
+                              bottomRight: Radius.circular(20),
                             ),
-                          
-                          SizedBox(height: 20),
-                          
-                          // Issue Date
-                          Row(
+                          ),
+                          child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
                                 'Issued: ${_formatDate(cardData!['issueDate'])}',
                                 style: TextStyle(
-                                  fontSize: 12,
+                                  fontSize: 11,
                                   color: Colors.grey.shade600,
                                 ),
                               ),
+                              Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: Colors.grey.shade300,
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.qr_code,
+                                  color: Colors.grey.shade700,
+                                  size: 20,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                      // Emergency Contact Section
+                      if (cardData!['emergencyContact'] != null &&
+                          cardData!['emergencyContact'] != 'Not provided')
+                        Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(15),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.red.shade600,
+                                Colors.red.shade700,
+                              ],
+                            ),
+                            borderRadius: BorderRadius.only(
+                              bottomLeft: Radius.circular(20),
+                              bottomRight: Radius.circular(20),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                               Row(
                                 children: [
-                                  Icon(Icons.verified, color: Colors.green.shade600, size: 16),
-                                  SizedBox(width: 4),
+                                  Icon(
+                                    Icons.emergency,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
+                                  SizedBox(width: 8),
                                   Text(
-                                    'Verified',
+                                    'Emergency Contact',
                                     style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.green.shade600,
-                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  if (cardData!['emergencyContactName'] !=
+                                          null &&
+                                      cardData!['emergencyContactName'] !=
+                                          'Not provided')
+                                    Expanded(
+                                      child: Text(
+                                        cardData!['emergencyContactName'],
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  Text(
+                                    cardData!['emergencyContact'],
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                 ],
                               ),
                             ],
                           ),
-                          
-                          SizedBox(height: 20),
-                          
-                          // QR Code Section (Now inside the card for download)
-                          Container(
-                            padding: EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade50,
-                              borderRadius: BorderRadius.circular(15),
-                              border: Border.all(color: Colors.grey.shade200),
-                            ),
-                            child: Column(
-                              children: [
-                                Text(
-                                  'QR Code for Quick Access',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.grey.shade800,
-                                  ),
-                                ),
-                                SizedBox(height: 15),
-                                Container(
-                                  padding: EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: Colors.grey.shade300),
-                                  ),
-                                  child: cardData!['qrCode'] != null
-                                      ? ClipRRect(
-                                          borderRadius: BorderRadius.circular(8),
-                                          child: Image.memory(
-                                            base64Decode(cardData!['qrCode'].split(',').last),
-                                            width: 120,
-                                            height: 120,
-                                            fit: BoxFit.contain,
-                                          ),
-                                        )
-                                      : Container(
-                                          width: 120,
-                                          height: 120,
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey.shade200,
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Center(
-                                            child: Column(
-                                              mainAxisAlignment: MainAxisAlignment.center,
-                                              children: [
-                                                Icon(Icons.qr_code, size: 40, color: Colors.grey.shade400),
-                                                SizedBox(height: 5),
-                                                Text('QR Code\nUnavailable', 
-                                                     textAlign: TextAlign.center,
-                                                     style: TextStyle(fontSize: 10, color: Colors.grey.shade500))
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                ),
-                                SizedBox(height: 10),
-                                Text(
-                                  'Scan at any healthcare facility',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.grey.shade600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
-          ),
-          
+
           SizedBox(height: 30),
-          
+
           // Action Buttons
           Row(
             children: [
@@ -670,7 +814,7 @@ class _DigitalHealthCardScreenState extends State<DigitalHealthCardScreen> {
               ),
             ],
           ),
-          
+
           SizedBox(height: 20),
         ],
       ),
@@ -686,36 +830,78 @@ class _DigitalHealthCardScreenState extends State<DigitalHealthCardScreen> {
       return dateString;
     }
   }
-  
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 80,
-            child: Text(
-              '$label:',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade600,
-                fontWeight: FontWeight.w600,
+
+  // New helper methods for the redesigned card
+  Widget _buildDetailItem(
+    IconData icon,
+    String label,
+    String value,
+    Color color, {
+    int maxLines = 1,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: color, size: 16),
+        SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.grey.shade600,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey.shade800,
-                fontWeight: FontWeight.w500,
+              SizedBox(height: 2),
+              Text(
+                value,
+                maxLines: maxLines,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey.shade800,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
+  }
+
+  IconData _getGenderIcon(String? gender) {
+    switch (gender?.toLowerCase()) {
+      case 'male':
+        return Icons.man;
+      case 'female':
+        return Icons.woman;
+      default:
+        return Icons.person;
+    }
+  }
+
+  String _getGenderSymbol(String? gender) {
+    switch (gender?.toLowerCase()) {
+      case 'male':
+        return '♂';
+      case 'female':
+        return '♀';
+      default:
+        return '⚧';
+    }
+  }
+
+  String _formatAddress(dynamic address) {
+    if (address == null) return 'Address not provided';
+    if (address is String) return address;
+    if (address is Map) {
+      return address['fullAddress'] ?? 'Address not available';
+    }
+    return 'Address not available';
   }
 }

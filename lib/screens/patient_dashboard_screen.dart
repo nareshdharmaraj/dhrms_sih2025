@@ -1012,11 +1012,7 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
                   title: 'QR Scanner',
                   color: Colors.green.shade600,
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('QR Scanner feature coming soon'),
-                      ),
-                    );
+                    Navigator.pushNamed(context, '/qr-scanner');
                   },
                 ),
                 _buildQuickActionButton(
