@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
 import 'dart:async';
+import '../utils/emergency_dialer.dart';
 
 class AdvancedSOSScreen extends StatefulWidget {
-  const AdvancedSOSScreen({super.key});
+  final Map<String, dynamic>? patientData;
+  
+  const AdvancedSOSScreen({super.key, this.patientData});
 
   @override
   State<AdvancedSOSScreen> createState() => _AdvancedSOSScreenState();
@@ -23,12 +26,13 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
   bool _isCountingDown = false;
   int _countdown = 10;
   Timer? _countdownTimer;
+  String? _emergencyContactNumber;
   
   final List<SOSAction> _sosActions = [
     SOSAction(
       title: 'Emergency Call',
-      description: 'Call 108 (Ambulance)',
-      icon: Icons.local_hospital,
+      description: 'Call emergency contact',
+      icon: Icons.phone,
       color: Colors.red,
       isCompleted: false,
     ),
@@ -59,6 +63,30 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
   void initState() {
     super.initState();
     _initializeAnimations();
+    _extractEmergencyContact();
+  }
+
+  void _extractEmergencyContact() {
+    if (widget.patientData != null) {
+      // Try multiple possible emergency contact fields
+      if (widget.patientData!['emergencyContact'] != null) {
+        if (widget.patientData!['emergencyContact'] is Map) {
+          _emergencyContactNumber = widget.patientData!['emergencyContact']['phone'];
+        } else {
+          _emergencyContactNumber = widget.patientData!['emergencyContact'].toString();
+        }
+      } else if (widget.patientData!['emergencyContacts'] != null &&
+                 widget.patientData!['emergencyContacts'] is List &&
+                 (widget.patientData!['emergencyContacts'] as List).isNotEmpty) {
+        final firstContact = (widget.patientData!['emergencyContacts'] as List).first;
+        if (firstContact is Map && firstContact['phone'] != null) {
+          _emergencyContactNumber = firstContact['phone'];
+        }
+      }
+    }
+    
+    // Fallback to a default emergency number if none found
+    _emergencyContactNumber ??= '108'; // Default ambulance number
   }
 
   void _initializeAnimations() {
@@ -315,7 +343,9 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
           const SizedBox(height: 16),
           _buildInstructionStep('1', 'Press and hold the SOS button', 'Long press for 3 seconds to activate'),
           _buildInstructionStep('2', '10-second countdown begins', 'You can cancel during this time'),
-          _buildInstructionStep('3', 'Emergency services contacted', 'Automatic call to 108'),
+          _buildInstructionStep('3', 'Emergency contact called', _emergencyContactNumber != null 
+              ? 'Automatic call to $_emergencyContactNumber' 
+              : 'Automatic call to emergency number'),
           _buildInstructionStep('4', 'Location and contacts notified', 'Live location shared with emergency contacts'),
         ],
       ),
@@ -468,10 +498,12 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
             children: [
               Expanded(
                 child: _buildQuickActionButton(
-                  'Call 108',
-                  Icons.local_hospital,
+                  _emergencyContactNumber != null 
+                    ? 'Call $_emergencyContactNumber' 
+                    : 'Call Emergency',
+                  Icons.phone,
                   Colors.red,
-                  () => _makeEmergencyCall('108'),
+                  () => _makeEmergencyCall(_emergencyContactNumber ?? '108'),
                 ),
               ),
               const SizedBox(width: 12),
@@ -876,12 +908,32 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
       _isCountingDown = false;
     });
     
-    // Simulate executing emergency actions
-    _simulateEmergencyActions();
+    // Execute emergency actions including automatic dialing
+    _executeEmergencyActions();
   }
 
-  void _simulateEmergencyActions() async {
-    for (int i = 0; i < _sosActions.length; i++) {
+  void _executeEmergencyActions() async {
+    // First action: Automatic emergency call
+    if (_emergencyContactNumber != null) {
+      try {
+        await EmergencyDialer.dial(_emergencyContactNumber!);
+        setState(() {
+          _sosActions[0].isCompleted = true;
+        });
+        HapticFeedback.lightImpact();
+      } catch (e) {
+        print('Error dialing emergency number: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not dial $_emergencyContactNumber: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+    
+    // Simulate other emergency actions
+    for (int i = 1; i < _sosActions.length; i++) {
       await Future.delayed(const Duration(seconds: 2));
       setState(() {
         _sosActions[i].isCompleted = true;
@@ -908,8 +960,8 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
             const Text('Emergency Alert Sent'),
           ],
         ),
-        content: const Text(
-          'Emergency services have been contacted and your emergency contacts have been notified with your location.',
+        content: Text(
+          'Emergency contact $_emergencyContactNumber has been called automatically, and your emergency contacts have been notified with your location.',
         ),
         actions: [
           ElevatedButton(
@@ -928,14 +980,24 @@ class _AdvancedSOSScreenState extends State<AdvancedSOSScreen>
     );
   }
 
-  void _makeEmergencyCall(String number) {
+  void _makeEmergencyCall(String number) async {
     HapticFeedback.mediumImpact();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Calling $number...'),
-        backgroundColor: Colors.green,
-      ),
-    );
+    try {
+      await EmergencyDialer.dial(number);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Calling $number...'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Could not dial $number: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   void _shareLocation() {
