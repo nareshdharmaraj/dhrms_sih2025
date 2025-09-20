@@ -302,7 +302,7 @@ class _HospitalRegisterScreenState extends State<HospitalRegisterScreen> {
                         ),
                         const SizedBox(height: AppConstants.smallPadding),
                         DropdownButtonFormField<String>(
-                          value: _selectedStaffType,
+                          initialValue: _selectedStaffType,
                           decoration: const InputDecoration(
                             border: InputBorder.none,
                           ),

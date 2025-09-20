@@ -17,7 +17,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen>
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
-  List<EmergencyContact> _emergencyContacts = [];
+  final List<EmergencyContact> _emergencyContacts = [];
   bool _isLoading = true;
 
   final List<PredefinedEmergencyService> _emergencyServices = [
