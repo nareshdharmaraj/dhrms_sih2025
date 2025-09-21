@@ -1459,11 +1459,7 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
                   subtitle: 'Health assistant',
                   color: Colors.orange.shade600,
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('AI HealthBot feature coming soon'),
-                      ),
-                    );
+                    Navigator.pushNamed(context, '/ai-health-chatbot');
                   },
                 ),
                 _buildServiceCard(
@@ -2353,19 +2349,21 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
               ),
               const SizedBox(height: 12),
               if (healthTips.isNotEmpty) ...[
-                ...healthTips.map(
-                  (tip) => Padding(
-                    padding: const EdgeInsets.only(bottom: 4.0),
-                    child: Text(
-                      '• $tip',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.teal.shade700,
-                        height: 1.5,
+                ...healthTips
+                    .map(
+                      (tip) => Padding(
+                        padding: const EdgeInsets.only(bottom: 4.0),
+                        child: Text(
+                          '• $tip',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.teal.shade700,
+                            height: 1.5,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                ).toList(),
+                    )
+                    .toList(),
               ] else ...[
                 Text(
                   'No health tips available at the moment.',
