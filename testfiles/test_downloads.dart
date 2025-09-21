@@ -6,6 +6,8 @@ void main() {
 }
 
 class TestDownloadsApp extends StatelessWidget {
+  const TestDownloadsApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(title: 'Test Downloads', home: TestDownloadsScreen());
@@ -27,6 +29,8 @@ class TestDownloadsScreen extends StatelessWidget {
     'issueDate': DateTime.now(),
     'qrCodeData': 'TEST_QR_CODE_DATA_123',
   };
+
+  const TestDownloadsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

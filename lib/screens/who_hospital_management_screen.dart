@@ -175,7 +175,7 @@ class _WhoHospitalManagementScreenState extends State<WhoHospitalManagementScree
             children: [
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: selectedState,
+                  initialValue: selectedState,
                   decoration: InputDecoration(
                     labelText: 'State',
                     border: OutlineInputBorder(
@@ -202,7 +202,7 @@ class _WhoHospitalManagementScreenState extends State<WhoHospitalManagementScree
               SizedBox(width: 12),
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: selectedStatus,
+                  initialValue: selectedStatus,
                   decoration: InputDecoration(
                     labelText: 'Status',
                     border: OutlineInputBorder(
@@ -431,8 +431,8 @@ class _WhoHospitalManagementScreenState extends State<WhoHospitalManagementScree
                     icon: Icon(Icons.more_vert),
                     itemBuilder: (context) => [
                       PopupMenuItem(
-                        child: Text('View Details'),
                         value: 'view',
+                        child: Text('View Details'),
                       ),
                     ],
                     onSelected: (value) {

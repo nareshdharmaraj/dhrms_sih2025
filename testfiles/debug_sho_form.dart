@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class DebugSHOForm extends StatefulWidget {
+  const DebugSHOForm({super.key});
+
   @override
   _DebugSHOFormState createState() => _DebugSHOFormState();
 }
@@ -53,7 +55,7 @@ class _DebugSHOFormState extends State<DebugSHOForm> {
               ),
               SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: _selectedState,
+                initialValue: _selectedState,
                 decoration: InputDecoration(labelText: 'State'),
                 items: ['Andhra Pradesh', 'Tamil Nadu', 'Karnataka'].map((state) {
                   return DropdownMenuItem(value: state, child: Text(state));

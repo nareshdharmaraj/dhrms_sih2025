@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import '../services/configuration_manager.dart';
 import '../utils/environment_config.dart';
 

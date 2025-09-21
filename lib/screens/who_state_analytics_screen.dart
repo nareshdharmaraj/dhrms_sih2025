@@ -153,7 +153,7 @@ class _WhoStateAnalyticsScreenState extends State<WhoStateAnalyticsScreen>
       padding: EdgeInsets.all(16),
       color: Colors.white,
       child: DropdownButtonFormField<String>(
-        value: selectedState,
+        initialValue: selectedState,
         decoration: InputDecoration(
           labelText: 'Select State for Detailed View',
           border: OutlineInputBorder(
@@ -406,7 +406,7 @@ class _WhoStateAnalyticsScreenState extends State<WhoStateAnalyticsScreen>
             Expanded(
               child: _buildSummaryCard(
                 'Avg. Age',
-                '${averageAge.toStringAsFixed(1)}',
+                averageAge.toStringAsFixed(1),
                 Icons.cake,
                 Colors.purple,
               ),

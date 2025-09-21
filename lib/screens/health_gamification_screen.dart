@@ -24,7 +24,7 @@ class _HealthGamificationScreenState extends State<HealthGamificationScreen>
   };
 
   int _totalPoints = 0;
-  int _currentLevel = 1;
+  final int _currentLevel = 1;
 
   @override
   void initState() {

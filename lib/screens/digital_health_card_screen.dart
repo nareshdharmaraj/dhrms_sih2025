@@ -31,7 +31,7 @@ class _DigitalHealthCardScreenState extends State<DigitalHealthCardScreen> {
   Future<void> _loadDigitalCard() async {
     try {
       // Get the current API base URL from environment config
-      final apiBaseUrl = await EnvironmentConfig.getApiBaseUrl();
+      final apiBaseUrl = EnvironmentConfig.getApiBaseUrl();
       print('🔍 Loading digital card for UHID: ${widget.uhid}');
       print('🌐 Using API URL: $apiBaseUrl');
 
@@ -279,7 +279,7 @@ class _DigitalHealthCardScreenState extends State<DigitalHealthCardScreen> {
                                 ),
                                 SizedBox(height: 12),
                                 // Full Name
-                                Container(
+                                SizedBox(
                                   width: 140,
                                   child: Text(
                                     cardData!['patientName'] ?? 'Unknown',
@@ -363,7 +363,7 @@ class _DigitalHealthCardScreenState extends State<DigitalHealthCardScreen> {
                                         ),
                                 ),
                                 SizedBox(height: 12),
-                                Container(
+                                SizedBox(
                                   width: 140,
                                   child: Text(
                                     'Digital Health ID',
@@ -376,7 +376,7 @@ class _DigitalHealthCardScreenState extends State<DigitalHealthCardScreen> {
                                   ),
                                 ),
                                 SizedBox(height: 4),
-                                Container(
+                                SizedBox(
                                   width: 140,
                                   child: Text(
                                     'Scan at Healthcare Facilities',

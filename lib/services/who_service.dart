@@ -7,7 +7,7 @@ class WhoService {
   static String? _authToken;
   
   static Future<String> getApiBaseUrl() async {
-    return await EnvironmentConfig.getApiBaseUrl();
+    return EnvironmentConfig.getApiBaseUrl();
   }
 
   static void setAuthToken(String token) {

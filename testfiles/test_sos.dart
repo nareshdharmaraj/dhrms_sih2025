@@ -6,6 +6,8 @@ void main() {
 }
 
 class TestSOSApp extends StatelessWidget {
+  const TestSOSApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -25,6 +27,8 @@ class TestSOSScreen extends StatelessWidget {
       'phone': '9876543210',
     },
   };
+
+  const TestSOSScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -52,12 +56,12 @@ class TestSOSScreen extends StatelessWidget {
                   ),
                 );
               },
-              child: Text('Test Emergency SOS Screen'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
                 foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
               ),
+              child: Text('Test Emergency SOS Screen'),
             ),
           ],
         ),
