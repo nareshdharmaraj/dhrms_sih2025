@@ -242,7 +242,7 @@ class _ProximityAlertsScreenState extends State<ProximityAlertsScreen> {
                     Switch(
                       value: alert['isEnabled'],
                       onChanged: (value) => _toggleAlert(index, value),
-                      activeColor: Colors.cyan.shade600,
+                      activeThumbColor: Colors.cyan.shade600,
                     ),
                   ],
                 ),
@@ -453,7 +453,7 @@ class _ProximityAlertsScreenState extends State<ProximityAlertsScreen> {
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
-                  value: selectedType,
+                  initialValue: selectedType,
                   decoration: const InputDecoration(
                     labelText: 'Location Type',
                     border: OutlineInputBorder(),

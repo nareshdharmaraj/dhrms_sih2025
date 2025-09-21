@@ -105,6 +105,7 @@ dependencies:
   
   # Device info
   device_info_plus: ^9.1.1
+  package_info_plus: ^4.2.0
   
   # Biometric authentication
   flutter_secure_storage: ^9.0.0

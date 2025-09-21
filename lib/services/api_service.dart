@@ -1,69 +1,39 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../utils/app_constants.dart';
+import 'api_client.dart';
 
 class ApiService {
-  // Use dynamic base URL from AppConstants
-  static String get baseUrl => AppConstants.apiBaseUrl;
-  
-  // Universal login method - works for all roles (Patient, Hospital Staff, Regional Officer)
-  static Future<Map<String, dynamic>> login(String username, String password) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/roles/login'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'username': username,
-          'password': password,
-        }),
-      ).timeout(
-        Duration(seconds: 30), // Increased timeout for mobile networks
-        onTimeout: () {
-          throw Exception('Login request timed out after 30 seconds. Please check your internet connection.');
-        },
-      );
+  // Use the centralized API client
+  static ApiClient get _client => ApiClient.instance;
 
-      if (response.statusCode == 200 || response.statusCode == 401) {
-        return jsonDecode(response.body);
-      } else {
-        return {
-          'success': false,
-          'message': 'Server error: ${response.statusCode}'
-        };
-      }
+  // Token management (delegated to ApiClient)
+  static Future<void> setAuthToken(String token) =>
+      ApiClient.setAuthToken(token);
+  static Future<void> clearAuthToken() => ApiClient.clearAuthToken();
+
+  // Legacy compatibility - use ApiClient baseUrl
+  static String get baseUrl => _client.baseUrl;
+
+  // Universal login method - works for all roles (Patient, Hospital Staff, Regional Officer)
+  static Future<Map<String, dynamic>> login(
+    String username,
+    String password,
+  ) async {
+    try {
+      // Use the centralized API client for login
+      return await _client.login(username, password);
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Network error: $e'
-      };
+      return {'success': false, 'message': 'Network error: $e'};
     }
   }
 
   // Get all patients
   static Future<Map<String, dynamic>> getAllPatients() async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/roles/patients'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        return {
-          'success': false,
-          'message': 'Server error: ${response.statusCode}'
-        };
-      }
+      final response = await _client.get('/roles/patients');
+      return _client.parseResponse(response);
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Network error: $e'
-      };
+      return {'success': false, 'message': 'Network error: $e'};
     }
   }
 
@@ -72,9 +42,7 @@ class ApiService {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/roles/hospital-staff'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
       );
 
       if (response.statusCode == 200) {
@@ -82,14 +50,11 @@ class ApiService {
       } else {
         return {
           'success': false,
-          'message': 'Server error: ${response.statusCode}'
+          'message': 'Server error: ${response.statusCode}',
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Network error: $e'
-      };
+      return {'success': false, 'message': 'Network error: $e'};
     }
   }
 
@@ -98,9 +63,7 @@ class ApiService {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/roles/regional-officers'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
       );
 
       if (response.statusCode == 200) {
@@ -108,14 +71,11 @@ class ApiService {
       } else {
         return {
           'success': false,
-          'message': 'Server error: ${response.statusCode}'
+          'message': 'Server error: ${response.statusCode}',
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Network error: $e'
-      };
+      return {'success': false, 'message': 'Network error: $e'};
     }
   }
 
@@ -124,9 +84,7 @@ class ApiService {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/roles/search/$username'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
       );
 
       if (response.statusCode == 200 || response.statusCode == 404) {
@@ -134,14 +92,11 @@ class ApiService {
       } else {
         return {
           'success': false,
-          'message': 'Server error: ${response.statusCode}'
+          'message': 'Server error: ${response.statusCode}',
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Network error: $e'
-      };
+      return {'success': false, 'message': 'Network error: $e'};
     }
   }
 
@@ -150,9 +105,7 @@ class ApiService {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/roles/stats'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
       );
 
       if (response.statusCode == 200) {
@@ -160,14 +113,11 @@ class ApiService {
       } else {
         return {
           'success': false,
-          'message': 'Server error: ${response.statusCode}'
+          'message': 'Server error: ${response.statusCode}',
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Network error: $e'
-      };
+      return {'success': false, 'message': 'Network error: $e'};
     }
   }
 
@@ -186,9 +136,7 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/auth/register/patient'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'firstName': firstName,
           'lastName': lastName,
@@ -211,9 +159,7 @@ class ApiService {
       return {
         'success': false,
         'statusCode': 500,
-        'data': {
-          'message': 'Network error: $e',
-        },
+        'data': {'message': 'Network error: $e'},
       };
     }
   }
@@ -239,9 +185,7 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/auth/register/hospital-staff'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'firstName': firstName,
           'lastName': lastName,
@@ -270,9 +214,7 @@ class ApiService {
       return {
         'success': false,
         'statusCode': 500,
-        'data': {
-          'message': 'Network error: $e',
-        },
+        'data': {'message': 'Network error: $e'},
       };
     }
   }
@@ -295,9 +237,7 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/auth/register/regional-officer'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'firstName': firstName,
           'lastName': lastName,
@@ -323,9 +263,7 @@ class ApiService {
       return {
         'success': false,
         'statusCode': 500,
-        'data': {
-          'message': 'Network error: $e',
-        },
+        'data': {'message': 'Network error: $e'},
       };
     }
   }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'dart:typed_data';
 import '../utils/app_constants.dart';
 import '../widgets/custom_button.dart';
 import 'digital_health_card_screen.dart';
@@ -17,7 +16,6 @@ import 'vitals_monitor_screen.dart';
 import 'insurance_services_screen.dart';
 import 'proximity_alerts_screen.dart';
 import 'health_gamification_screen.dart';
-import 'dart:ui';
 
 class PatientDashboardScreen extends StatefulWidget {
   final String? uhid;

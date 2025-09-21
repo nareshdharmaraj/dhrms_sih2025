@@ -13,6 +13,12 @@ import 'screens/wearable_data_screen.dart';
 import 'screens/ai_health_chatbot_screen.dart';
 import 'screens/who_login_screen.dart';
 import 'screens/sho_login_screen.dart';
+import 'screens/hospital_registration_screen.dart';
+import 'screens/hospital_admin_login_screen.dart';
+import 'screens/hospital_admin_dashboard_screen.dart';
+import 'screens/hospital_role_selection_screen.dart';
+import 'screens/hospital_doctor_login_screen.dart';
+import 'screens/hospital_assistant_login_screen.dart';
 import 'utils/environment_config.dart';
 import 'widgets/configuration_switcher.dart';
 
@@ -46,11 +52,15 @@ class DHRMSApp extends StatelessWidget {
         '/': (context) => SplashScreen(
           nextScreen: _wrapWithConfigSwitcher(const RoleSelectionScreen()),
         ),
-        '/role-selection': (context) => _wrapWithConfigSwitcher(const RoleSelectionScreen()),
+        '/role-selection': (context) =>
+            _wrapWithConfigSwitcher(const RoleSelectionScreen()),
         '/login': (context) => _wrapWithConfigSwitcher(const LoginScreen()),
-        '/who-login': (context) => _wrapWithConfigSwitcher(const WhoLoginScreen()),
-        '/sho-login': (context) => _wrapWithConfigSwitcher(const ShoLoginScreen()),
-        '/patient-registration': (context) => _wrapWithConfigSwitcher(PatientRegistrationScreen()),
+        '/who-login': (context) =>
+            _wrapWithConfigSwitcher(const WhoLoginScreen()),
+        '/sho-login': (context) =>
+            _wrapWithConfigSwitcher(const ShoLoginScreen()),
+        '/patient-registration': (context) =>
+            _wrapWithConfigSwitcher(PatientRegistrationScreen()),
         '/qr-scanner': (context) => _wrapWithConfigSwitcher(QRScannerScreen()),
         '/patient-dashboard': (context) {
           final userData =
@@ -62,34 +72,57 @@ class DHRMSApp extends StatelessWidget {
               userData?['UHID'] ??
               userData?['patientId'] ??
               userData?['patient_id'];
-          return _wrapWithConfigSwitcher(PatientDashboardScreen(
-            uhid: uhid?.toString(),
-            patientData: userData,
-          ));
+          return _wrapWithConfigSwitcher(
+            PatientDashboardScreen(
+              uhid: uhid?.toString(),
+              patientData: userData,
+            ),
+          );
         },
         '/hospital-staff-dashboard': (context) {
           final userData =
               ModalRoute.of(context)?.settings.arguments
                   as Map<String, dynamic>?;
-          return _wrapWithConfigSwitcher(HospitalStaffDashboard(userData: userData ?? {}));
+          return _wrapWithConfigSwitcher(
+            HospitalStaffDashboard(userData: userData ?? {}),
+          );
         },
         '/regional-officer-dashboard': (context) {
           final userData =
               ModalRoute.of(context)?.settings.arguments
                   as Map<String, dynamic>?;
-          return _wrapWithConfigSwitcher(RegionalOfficerDashboard(userData: userData ?? {}));
+          return _wrapWithConfigSwitcher(
+            RegionalOfficerDashboard(userData: userData ?? {}),
+          );
         },
         '/digital-card': (context) {
           final uhid = ModalRoute.of(context)?.settings.arguments as String?;
-          return _wrapWithConfigSwitcher(DigitalHealthCardScreen(uhid: uhid ?? ''));
+          return _wrapWithConfigSwitcher(
+            DigitalHealthCardScreen(uhid: uhid ?? ''),
+          );
         },
         '/wearable-data': (context) {
           final userData =
               ModalRoute.of(context)?.settings.arguments
                   as Map<String, dynamic>?;
-          return _wrapWithConfigSwitcher(WearableDataScreen(userData: userData ?? {}));
+          return _wrapWithConfigSwitcher(
+            WearableDataScreen(userData: userData ?? {}),
+          );
         },
-        '/ai-health-chatbot': (context) => _wrapWithConfigSwitcher(const AIHealthChatBotScreen()),
+        '/ai-health-chatbot': (context) =>
+            _wrapWithConfigSwitcher(const AIHealthChatBotScreen()),
+        '/hospital-registration': (context) =>
+            _wrapWithConfigSwitcher(HospitalRegistrationScreen()),
+        '/hospital-admin-login': (context) =>
+            _wrapWithConfigSwitcher(HospitalAdminLoginScreen()),
+        '/hospital-admin-dashboard': (context) =>
+            _wrapWithConfigSwitcher(HospitalAdminDashboardScreen()),
+        '/hospital-role-selection': (context) =>
+            _wrapWithConfigSwitcher(const HospitalRoleSelectionScreen()),
+        '/hospital-doctor-login': (context) =>
+            _wrapWithConfigSwitcher(HospitalDoctorLoginScreen()),
+        '/hospital-assistant-login': (context) =>
+            _wrapWithConfigSwitcher(HospitalAssistantLoginScreen()),
       },
     );
   }

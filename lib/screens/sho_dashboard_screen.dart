@@ -4,6 +4,7 @@ import 'dart:convert';
 import '../models/sho.dart';
 import '../utils/colors.dart';
 import '../services/sho_service.dart';
+import '../widgets/sho_buttons.dart';
 import 'sho/regional_health_officer_screen.dart';
 
 class ShoDashboardScreen extends StatefulWidget {
@@ -15,15 +16,52 @@ class ShoDashboardScreen extends StatefulWidget {
   _ShoDashboardScreenState createState() => _ShoDashboardScreenState();
 }
 
-class _ShoDashboardScreenState extends State<ShoDashboardScreen> {
-  int _selectedIndex = 0;
+class _ShoDashboardScreenState extends State<ShoDashboardScreen>
+    with TickerProviderStateMixin {
+  int _currentIndex = 0;
   bool _isLoading = true;
   Map<String, dynamic> _dashboardData = {};
+
+  // Animation controllers
+  late AnimationController _fadeController;
+  late AnimationController _slideController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
     super.initState();
+    
+    // Initialize animation controllers
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _slideController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    // Initialize animations
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
+    );
+    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+      CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic),
+    );
+
     _loadDashboardData();
+    
+    // Start animations
+    _fadeController.forward();
+    _slideController.forward();
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    _slideController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadDashboardData() async {
@@ -164,24 +202,46 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('SHO Dashboard - ${widget.sho.assignedState}'),
+        title: const Row(
+          children: [
+            Icon(Icons.local_hospital, color: Colors.white),
+            SizedBox(width: 12),
+            Text(
+              'My Health - SHO',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
         backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+        elevation: 8,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: _loadDashboardData,
           ),
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.logout, color: Colors.white),
             onPressed: () => _logout(),
           ),
         ],
       ),
       body: _isLoading ? _buildLoadingScreen() : _buildDashboard(),
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
+        currentIndex: _currentIndex,
+        onTap: (index) => setState(() => _currentIndex = index),
         type: BottomNavigationBarType.fixed,
         selectedItemColor: AppColors.primary,
         unselectedItemColor: Colors.grey,
@@ -229,7 +289,14 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen> {
   }
 
   Widget _buildDashboard() {
-    switch (_selectedIndex) {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 300),
+      child: _buildTabContent(),
+    );
+  }
+
+  Widget _buildTabContent() {
+    switch (_currentIndex) {
       case 0:
         return _buildOverviewTab();
       case 1:
@@ -269,117 +336,91 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen> {
   }
 
   Widget _buildWelcomeCard() {
-    return Card(
-      elevation: 4,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          gradient: LinearGradient(
-            colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Welcome, ${widget.sho.fullName}',
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: SlideTransition(
+        position: _slideAnimation,
+        child: Card(
+          elevation: 4,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              gradient: LinearGradient(
+                colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              'State Health Officer - ${widget.sho.assignedState}',
-              style: const TextStyle(fontSize: 16, color: Colors.white70),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Welcome, ${widget.sho.fullName}',
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'State Health Officer - ${widget.sho.assignedState}',
+                  style: const TextStyle(fontSize: 16, color: Colors.white70),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Overseeing ${_dashboardData['totalRegions'] ?? 0} districts in ${widget.sho.assignedState}',
+                  style: const TextStyle(fontSize: 14, color: Colors.white60),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Overseeing ${_dashboardData['totalRegions'] ?? 0} districts in ${widget.sho.assignedState}',
-              style: const TextStyle(fontSize: 14, color: Colors.white60),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildStatsGrid() {
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 16,
-      mainAxisSpacing: 16,
-      children: [
-        _buildStatCard(
-          'Total RHOs',
-          '${_dashboardData['totalRHOs'] ?? 0}',
-          Icons.people,
-          AppColors.primary,
-        ),
-        _buildStatCard(
-          'Active RHOs',
-          '${_dashboardData['activeRHOs'] ?? 0}',
-          Icons.check_circle,
-          AppColors.success,
-        ),
-        _buildStatCard(
-          'Total Districts',
-          '${_dashboardData['totalRegions'] ?? 0}',
-          Icons.location_city,
-          AppColors.info,
-        ),
-        _buildStatCard(
-          'Total Staff',
-          '${_dashboardData['totalStaff'] ?? 0}',
-          Icons.group,
-          Colors.purple,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatCard(
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Card(
-      elevation: 3,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.3)),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: SlideTransition(
+        position: _slideAnimation,
+        child: GridView.count(
+          crossAxisCount: 2,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
           children: [
-            Icon(icon, size: 32, color: color),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
+            ShoStatCard(
+              title: 'Total RHOs',
+              value: '${_dashboardData['totalRHOs'] ?? 0}',
+              icon: Icons.people,
+              color: AppColors.primary,
+              index: 0,
             ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.textSecondary,
-              ),
+            ShoStatCard(
+              title: 'Active RHOs',
+              value: '${_dashboardData['activeRHOs'] ?? 0}',
+              icon: Icons.check_circle,
+              color: AppColors.success,
+              index: 1,
+            ),
+            ShoStatCard(
+              title: 'Total Districts',
+              value: '${_dashboardData['totalRegions'] ?? 0}',
+              icon: Icons.location_city,
+              color: AppColors.info,
+              index: 2,
+            ),
+            ShoStatCard(
+              title: 'Total Staff',
+              value: '${_dashboardData['totalStaff'] ?? 0}',
+              icon: Icons.group,
+              color: AppColors.warning,
+              index: 3,
             ),
           ],
         ),
@@ -387,106 +428,83 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen> {
     );
   }
 
-  Widget _buildQuickActions() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Quick Actions',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildActionButton(
-                'Manage RHOs',
-                Icons.people_alt,
-                () => setState(() => _selectedIndex = 1),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildActionButton(
-                'View Analytics',
-                Icons.analytics,
-                () => setState(() => _selectedIndex = 2),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
 
-  Widget _buildActionButton(String title, IconData icon, VoidCallback onTap) {
-    return Card(
-      elevation: 2,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
+  Widget _buildQuickActions() {
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Quick Actions',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
             children: [
-              Icon(icon, size: 32, color: AppColors.primary),
-              const SizedBox(height: 8),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+              Expanded(
+                child: ShoActionButton(
+                  title: 'Manage RHOs',
+                  subtitle: 'View and manage officers',
+                  icon: Icons.people_alt,
+                  color: AppColors.primary,
+                  onTap: () => setState(() => _currentIndex = 1),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ShoActionButton(
+                  title: 'View Analytics',
+                  subtitle: 'Performance metrics',
+                  icon: Icons.analytics,
+                  color: AppColors.info,
+                  onTap: () => setState(() => _currentIndex = 2),
                 ),
               ),
             ],
           ),
-        ),
+        ],
       ),
     );
   }
 
+
+
   Widget _buildRecentActivity() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Recent Activity',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+    return SlideTransition(
+      position: _slideAnimation,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Recent Activity',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
           ),
-        ),
-        const SizedBox(height: 12),
-        Card(
-          elevation: 2,
-          child: ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: (_dashboardData['recentActivity'] as List?)?.length ?? 0,
-            separatorBuilder: (context, index) => const Divider(height: 1),
-            itemBuilder: (context, index) {
-              final activities = _dashboardData['recentActivity'] as List? ?? [];
-              if (index >= activities.length) return const SizedBox.shrink();
-              final activity = activities[index];
-              return ListTile(
-                leading: const Icon(Icons.history, color: AppColors.primary),
-                title: Text(activity['action']?.toString() ?? 'Unknown activity'),
-                subtitle: Text(activity['time']?.toString() ?? 'Unknown time'),
-                trailing: const Icon(
-                  Icons.chevron_right,
-                  color: AppColors.textSecondary,
+          const SizedBox(height: 12),
+          ...((_dashboardData['recentActivity'] as List?) ?? []).asMap().entries.map(
+            (entry) {
+              final index = entry.key;
+              final activity = entry.value;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: ShoActivityCard(
+                  action: activity['action']?.toString() ?? 'Unknown activity',
+                  time: activity['time']?.toString() ?? 'Unknown time',
+                  index: index,
                 ),
               );
             },
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -672,20 +690,22 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen> {
     return Row(
       children: [
         Expanded(
-          child: _buildStatCard(
-            'Total RHOs',
-            '${staffData['totalRHOs'] ?? 0}',
-            Icons.local_hospital,
-            Colors.blue,
+          child: ShoStatCard(
+            title: 'Total RHOs',
+            value: '${staffData['totalRHOs'] ?? 0}',
+            icon: Icons.local_hospital,
+            color: Colors.blue,
+            index: 0,
           ),
         ),
         const SizedBox(width: 16),
         Expanded(
-          child: _buildStatCard(
-            'Active Staff',
-            '${staffData['totalStaff'] ?? 0}',
-            Icons.group,
-            Colors.green,
+          child: ShoStatCard(
+            title: 'Active Staff',
+            value: '${staffData['totalStaff'] ?? 0}',
+            icon: Icons.group,
+            color: Colors.green,
+            index: 1,
           ),
         ),
       ],
@@ -751,20 +771,22 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen> {
         Row(
           children: [
             Expanded(
-              child: _buildStatCard(
-                'Total Migrants',
-                '${migrantData['totalMigrants'] ?? 0}',
-                Icons.people,
-                Colors.orange,
+              child: ShoStatCard(
+                title: 'Total Migrants',
+                value: '${migrantData['totalMigrants'] ?? 0}',
+                icon: Icons.people,
+                color: Colors.orange,
+                index: 0,
               ),
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: _buildStatCard(
-                'Inter-State',
-                '${migrantData['interStateMigrants'] ?? 0}',
-                Icons.transfer_within_a_station,
-                Colors.purple,
+              child: ShoStatCard(
+                title: 'Inter-State',
+                value: '${migrantData['interStateMigrants'] ?? 0}',
+                icon: Icons.transfer_within_a_station,
+                color: Colors.purple,
+                index: 1,
               ),
             ),
           ],
@@ -773,20 +795,22 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen> {
         Row(
           children: [
             Expanded(
-              child: _buildStatCard(
-                'Local Migrants',
-                '${migrantData['localMigrants'] ?? 0}',
-                Icons.location_on,
-                Colors.teal,
+              child: ShoStatCard(
+                title: 'Local Migrants',
+                value: '${migrantData['localMigrants'] ?? 0}',
+                icon: Icons.location_on,
+                color: Colors.teal,
+                index: 2,
               ),
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: _buildStatCard(
-                'Recent Arrivals',
-                '${migrantData['recentArrivals'] ?? 0}',
-                Icons.new_releases,
-                Colors.red,
+              child: ShoStatCard(
+                title: 'Recent Arrivals',
+                value: '${migrantData['recentArrivals'] ?? 0}',
+                icon: Icons.new_releases,
+                color: Colors.red,
+                index: 3,
               ),
             ),
           ],
