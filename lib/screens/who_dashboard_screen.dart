@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/who_admin.dart';
 import '../services/who_service.dart';
+import '../widgets/who_buttons.dart';
 import 'who_hospital_management_screen.dart';
 import 'sho_management_screen.dart';
 
@@ -13,18 +14,65 @@ class WhoDashboardScreen extends StatefulWidget {
   _WhoDashboardScreenState createState() => _WhoDashboardScreenState();
 }
 
-class _WhoDashboardScreenState extends State<WhoDashboardScreen> {
+class _WhoDashboardScreenState extends State<WhoDashboardScreen>
+    with TickerProviderStateMixin {
   bool isLoading = true;
   Map<String, dynamic> dashboardStats = {};
   List<StateStatistics> stateStats = [];
   String? error;
 
+  // Animation controllers
+  late AnimationController _fadeController;
+  late AnimationController _slideController;
+  late AnimationController _scaleController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _scaleAnimation;
+
+  // Bottom navigation index
+  int _currentIndex = 0;
+
   @override
   void initState() {
     super.initState();
+    
+    // Initialize animation controllers
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _slideController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _scaleController = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
+
+    // Initialize animations
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeOut),
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _slideController, curve: Curves.easeOut));
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut),
+    );
+
     print('🔍 WhoDashboardScreen initState called for admin: ${widget.whoAdmin.fullName}');
     print('🔍 Admin permissions: ${widget.whoAdmin.permissions}');
     _loadDashboardData();
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    _slideController.dispose();
+    _scaleController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadDashboardData() async {
@@ -41,6 +89,15 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen> {
           dashboardStats = result['statistics'];
           stateStats = result['stateStats'];
           isLoading = false;
+        });
+        
+        // Start animations after data is loaded
+        _fadeController.forward();
+        Future.delayed(const Duration(milliseconds: 200), () {
+          _slideController.forward();
+        });
+        Future.delayed(const Duration(milliseconds: 400), () {
+          _scaleController.forward();
         });
       } else {
         setState(() {
@@ -59,18 +116,120 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
-      appBar: AppBar(
-        title: Text('WHO Dashboard'),
-        backgroundColor: Colors.blue.shade800,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.refresh),
-            onPressed: _loadDashboardData,
+      backgroundColor: Colors.grey.shade50,
+      appBar: _buildEnhancedAppBar(),
+      body: isLoading
+          ? _buildLoadingWidget()
+          : error != null
+          ? _buildErrorWidget()
+          : _buildTabContent(),
+      bottomNavigationBar: _buildBottomNavigationBar(),
+    );
+  }
+
+  PreferredSizeWidget _buildEnhancedAppBar() {
+    return AppBar(
+      elevation: 0,
+      backgroundColor: Colors.transparent,
+      flexibleSpace: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.blue.shade800,
+              Colors.blue.shade600,
+              Colors.cyan.shade500,
+            ],
           ),
-          PopupMenuButton<String>(
+        ),
+      ),
+      title: Row(
+        children: [
+          // App Logo
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.asset(
+                'assets/applogo.png',
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Icon(
+                    Icons.health_and_safety,
+                    color: Colors.blue.shade600,
+                    size: 24,
+                  );
+                },
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          // App Name & Dashboard Title
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'My Health',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                Text(
+                  'WHO Dashboard',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        // Refresh Button
+        Container(
+          margin: const EdgeInsets.only(right: 8),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: IconButton(
+            icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+            onPressed: _loadDashboardData,
+            tooltip: 'Refresh Data',
+          ),
+        ),
+        // Menu Button
+        Container(
+          margin: const EdgeInsets.only(right: 16),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert_rounded, color: Colors.white),
+            color: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             onSelected: (value) {
               switch (value) {
                 case 'profile':
@@ -85,374 +244,579 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen> {
               }
             },
             itemBuilder: (context) => [
-              PopupMenuItem(value: 'profile', child: Text('Profile')),
-              PopupMenuItem(value: 'settings', child: Text('Settings')),
-              PopupMenuItem(value: 'logout', child: Text('Logout')),
-            ],
-          ),
-        ],
-      ),
-      body: isLoading
-          ? Center(child: CircularProgressIndicator())
-          : error != null
-          ? _buildErrorWidget()
-          : _buildDashboardContent(),
-    );
-  }
-
-  Widget _buildErrorWidget() {
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.all(20),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 80, color: Colors.red.shade300),
-            SizedBox(height: 20),
-            Text(
-              'Error Loading Dashboard',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 10),
-            Text(
-              error!,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey.shade600),
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _loadDashboardData,
-              child: Text('Retry'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDashboardContent() {
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Welcome Section
-          _buildWelcomeCard(),
-          SizedBox(height: 20),
-
-          // Quick Stats Cards
-          _buildQuickStatsRow(),
-          SizedBox(height: 20),
-
-          // Action Buttons
-          _buildActionButtons(),
-          SizedBox(height: 20),
-
-          // Charts Section
-          _buildChartsSection(),
-          SizedBox(height: 20),
-
-          // Recent Activity
-          _buildRecentActivity(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWelcomeCard() {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.blue.shade800, Colors.blue.shade600],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            spreadRadius: 2,
-            blurRadius: 8,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                child: Icon(
-                  Icons.public,
-                  color: Colors.white,
-                  size: 30,
+              PopupMenuItem(
+                value: 'profile',
+                child: Row(
+                  children: [
+                    Icon(Icons.person_outline, color: Colors.blue.shade600),
+                    const SizedBox(width: 8),
+                    const Text('Profile'),
+                  ],
                 ),
               ),
-              SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              PopupMenuItem(
+                value: 'settings',
+                child: Row(
                   children: [
-                    Text(
-                      'Welcome, ${widget.whoAdmin.fullName}',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      widget.whoAdmin.designation,
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
-                        fontSize: 14,
-                      ),
-                    ),
-                    Text(
-                      'Region: ${widget.whoAdmin.region}',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.8),
-                        fontSize: 12,
-                      ),
-                    ),
+                    Icon(Icons.settings_outlined, color: Colors.blue.shade600),
+                    const SizedBox(width: 8),
+                    const Text('Settings'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'logout',
+                child: Row(
+                  children: [
+                    Icon(Icons.logout_rounded, color: Colors.red.shade600),
+                    const SizedBox(width: 8),
+                    const Text('Logout'),
                   ],
                 ),
               ),
             ],
           ),
-          SizedBox(height: 16),
-          Text(
-            'Manage State Health Officers and monitor health statistics across all states',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.9),
-              fontSize: 14,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuickStatsRow() {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStatCard(
-            'Total States',
-            '${dashboardStats['totalStates'] ?? 0}',
-            Icons.location_on,
-            Colors.green,
-          ),
-        ),
-        SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            'Total Hospitals',
-            '${dashboardStats['totalHospitals'] ?? 0}',
-            Icons.local_hospital,
-            Colors.blue,
-          ),
-        ),
-        SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            'Total Patients',
-            '${dashboardStats['totalPatients'] ?? 0}',
-            Icons.people,
-            Colors.orange,
-          ),
-        ),
-        SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            'State Health Officers',
-            '${dashboardStats['totalStateOfficers'] ?? 0}',
-            Icons.admin_panel_settings,
-            Colors.purple,
-          ),
         ),
       ],
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildBottomNavigationBar() {
     return Container(
-      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            spreadRadius: 1,
-            blurRadius: 6,
-            offset: Offset(0, 2),
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, -4),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
+      child: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.white,
+        selectedItemColor: Colors.blue.shade600,
+        unselectedItemColor: Colors.grey.shade500,
+        selectedLabelStyle: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+        unselectedLabelStyle: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
+        ),
+        items: [
+          BottomNavigationBarItem(
+            icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: _currentIndex == 0 ? Colors.blue.shade50 : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.dashboard_rounded,
+                color: _currentIndex == 0 ? Colors.blue.shade600 : Colors.grey.shade500,
+              ),
             ),
-            child: Icon(icon, color: color, size: 20),
+            label: 'Overview',
           ),
-          SizedBox(height: 12),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey.shade800,
+          BottomNavigationBarItem(
+            icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: _currentIndex == 1 ? Colors.purple.shade50 : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.admin_panel_settings_rounded,
+                color: _currentIndex == 1 ? Colors.purple.shade600 : Colors.grey.shade500,
+              ),
             ),
+            label: 'Officers',
           ),
-          SizedBox(height: 4),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey.shade600,
+          BottomNavigationBarItem(
+            icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: _currentIndex == 2 ? Colors.blue.shade50 : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.local_hospital_rounded,
+                color: _currentIndex == 2 ? Colors.blue.shade600 : Colors.grey.shade500,
+              ),
             ),
+            label: 'Hospitals',
+          ),
+          BottomNavigationBarItem(
+            icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: _currentIndex == 3 ? Colors.green.shade50 : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.analytics_rounded,
+                color: _currentIndex == 3 ? Colors.green.shade600 : Colors.grey.shade500,
+              ),
+            ),
+            label: 'Analytics',
+          ),
+          BottomNavigationBarItem(
+            icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: _currentIndex == 4 ? Colors.grey.shade100 : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.settings_rounded,
+                color: _currentIndex == 4 ? Colors.grey.shade700 : Colors.grey.shade500,
+              ),
+            ),
+            label: 'Settings',
           ),
         ],
       ),
     );
   }
 
-  Widget _buildActionButtons() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Management Tools',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey.shade800,
-          ),
+  Widget _buildTabContent() {
+    switch (_currentIndex) {
+      case 0:
+        return _buildOverviewTab();
+      case 1:
+        return _buildOfficersTab();
+      case 2:
+        return _buildHospitalsTab();
+      case 3:
+        return _buildAnalyticsTab();
+      case 4:
+        return _buildSettingsTab();
+      default:
+        return _buildOverviewTab();
+    }
+  }
+
+  Widget _buildLoadingWidget() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Colors.blue.shade50, Colors.white],
         ),
-        SizedBox(height: 16),
-        Row(
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Expanded(
-              child: _buildActionButton(
-                'State Health Officers',
-                'Manage State Health Officers across states',
-                Icons.admin_panel_settings,
-                Colors.purple,
-                () => _navigateToStateHealthOfficers(),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.blue.withOpacity(0.1),
+                    blurRadius: 20,
+                    spreadRadius: 2,
+                  ),
+                ],
               ),
-            ),
-            SizedBox(width: 12),
-            Expanded(
-              child: _buildActionButton(
-                'Hospitals',
-                'View hospital statistics and information',
-                Icons.local_hospital,
-                Colors.blue,
-                () => _navigateToHospitals(),
+              child: Column(
+                children: [
+                  CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue.shade600),
+                    strokeWidth: 3,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Loading Dashboard...',
+                    style: TextStyle(
+                      color: Colors.blue.shade600,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
         ),
-        SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildActionButton(
-                'State Analytics',
-                'Detailed state-wise analytics',
-                Icons.analytics,
-                Colors.green,
-                () => _navigateToStateAnalytics(),
-              ),
-            ),
-            SizedBox(width: 12),
-            Expanded(
-              child: _buildActionButton(
-                'Export Data',
-                'Export statistics and reports',
-                Icons.download,
-                Colors.orange,
-                () => _showExportDialog(),
-              ),
-            ),
-          ],
-        ),
-      ],
+      ),
     );
   }
 
-  Widget _buildActionButton(
-    String title,
-    String subtitle,
-    IconData icon,
-    Color color,
-    VoidCallback onTap,
-  ) {
-    return GestureDetector(
-      onTap: onTap,
+  Widget _buildErrorWidget() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Colors.red.shade50, Colors.white],
+        ),
+      ),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: AnimatedScale(
+            scale: _scaleAnimation.value,
+            duration: const Duration(milliseconds: 400),
+            child: Container(
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.red.withOpacity(0.1),
+                    blurRadius: 20,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(50),
+                    ),
+                    child: Icon(
+                      Icons.error_outline_rounded,
+                      size: 60,
+                      color: Colors.red.shade400,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Oops! Something went wrong',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade800,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    error!,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: 14,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    onPressed: _loadDashboardData,
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: const Text('Retry'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue.shade600,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWelcomeCard() {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 600),
       child: Container(
-        padding: EdgeInsets.all(16),
+        width: double.infinity,
+        padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.blue.shade700,
+              Colors.blue.shade800,
+            ],
+          ),
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              spreadRadius: 1,
-              blurRadius: 6,
-              offset: Offset(0, 2),
+              color: Colors.blue.withOpacity(0.3),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Row(
+              children: [
+                Container(
+                  width: 70,
+                  height: 70,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.3),
+                      width: 2,
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.public_rounded,
+                    color: Colors.white,
+                    size: 36,
+                  ),
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Welcome back',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.9),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        widget.whoAdmin.fullName,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: Text(
+                          widget.whoAdmin.designation,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
             Container(
-              width: 50,
-              height: 50,
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(25),
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.2),
+                  width: 1,
+                ),
               ),
-              child: Icon(icon, color: color, size: 24),
-            ),
-            SizedBox(height: 12),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey.shade800,
-              ),
-            ),
-            SizedBox(height: 4),
-            Text(
-              subtitle,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade600,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.location_on_rounded,
+                        color: Colors.white.withOpacity(0.9),
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Region: ${widget.whoAdmin.region}',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.9),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Manage State Health Officers and monitor health statistics across all states',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.8),
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildQuickStatsRow() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Quick Statistics',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.grey.shade800,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: WhoStatCard(
+                title: 'Total States',
+                value: '${dashboardStats['totalStates'] ?? 0}',
+                icon: Icons.location_on_rounded,
+                color: Colors.green,
+                index: 0,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: WhoStatCard(
+                title: 'Total Hospitals',
+                value: '${dashboardStats['totalHospitals'] ?? 0}',
+                icon: Icons.local_hospital_rounded,
+                color: Colors.blue,
+                index: 1,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: WhoStatCard(
+                title: 'Total Patients',
+                value: '${dashboardStats['totalPatients'] ?? 0}',
+                icon: Icons.people_rounded,
+                color: Colors.orange,
+                index: 2,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: WhoStatCard(
+                title: 'State Officers',
+                value: '${dashboardStats['totalStateOfficers'] ?? 0}',
+                icon: Icons.admin_panel_settings_rounded,
+                color: Colors.purple,
+                index: 3,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatCard(String title, String value, IconData icon, Color color, int index) {
+    return AnimatedBuilder(
+      animation: _fadeAnimation,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, (1 - _fadeAnimation.value) * 20),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: color.withOpacity(0.1),
+                  spreadRadius: 2,
+                  blurRadius: 15,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+              border: Border.all(
+                color: color.withOpacity(0.1),
+                width: 1,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        color.withOpacity(0.8),
+                        color,
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(15),
+                    boxShadow: [
+                      BoxShadow(
+                        color: color.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    icon,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey.shade800,
+                    height: 1.0,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -460,8 +824,53 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen> {
     if (stateStats.isEmpty) {
       return Container(
         height: 200,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
         child: Center(
-          child: Text('No statistics available'),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(50),
+                ),
+                child: Icon(
+                  Icons.bar_chart_rounded,
+                  size: 40,
+                  color: Colors.blue.shade400,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'No statistics available',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Statistics will appear here once data is loaded',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade500,
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -477,23 +886,73 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen> {
             color: Colors.grey.shade800,
           ),
         ),
-        SizedBox(height: 16),
+        const SizedBox(height: 16),
         Container(
-          height: 300,
-          padding: EdgeInsets.all(16),
+          height: 350,
+          padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Colors.blue.withOpacity(0.1),
+              width: 1,
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                spreadRadius: 1,
-                blurRadius: 6,
-                offset: Offset(0, 2),
+                color: Colors.blue.withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
               ),
             ],
           ),
-          child: _buildHospitalsChart(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.blue.shade600, Colors.blue.shade700],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.bar_chart_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Hospital Distribution',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade800,
+                          ),
+                        ),
+                        Text(
+                          'Across states',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Expanded(child: _buildHospitalsChart()),
+            ],
+          ),
         ),
       ],
     );
@@ -563,72 +1022,135 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen> {
             color: Colors.grey.shade800,
           ),
         ),
-        SizedBox(height: 16),
+        const SizedBox(height: 16),
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Colors.grey.withOpacity(0.1),
+              width: 1,
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                spreadRadius: 1,
-                blurRadius: 6,
-                offset: Offset(0, 2),
+                color: Colors.grey.withOpacity(0.1),
+                blurRadius: 15,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
-          child: ListView.builder(
-            shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(),
-            itemCount: 5,
-            itemBuilder: (context, index) {
-              final activities = [
-                {
-                  'title': 'New SHO created for Maharashtra',
-                  'subtitle': 'Dr. Rajesh Sharma appointed',
-                  'time': '2 hours ago',
-                  'icon': Icons.admin_panel_settings,
-                  'color': Colors.green,
+          child: Column(
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade100,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        Icons.notifications_active_rounded,
+                        color: Colors.blue.shade600,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Latest Updates',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade800,
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {},
+                      child: Text(
+                        'View All',
+                        style: TextStyle(
+                          color: Colors.blue.shade600,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Activity List
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: 5,
+                separatorBuilder: (context, index) => Divider(
+                  height: 1,
+                  color: Colors.grey.shade200,
+                  indent: 20,
+                  endIndent: 20,
+                ),
+                itemBuilder: (context, index) {
+                  final activities = [
+                    {
+                      'title': 'New SHO created for Maharashtra',
+                      'subtitle': 'Dr. Rajesh Sharma appointed',
+                      'time': '2 hours ago',
+                      'icon': Icons.admin_panel_settings_rounded,
+                      'color': Colors.green,
+                    },
+                    {
+                      'title': 'SHO activated in Karnataka',
+                      'subtitle': 'Dr. Priya Nair activated',
+                      'time': '4 hours ago',
+                      'icon': Icons.check_circle_rounded,
+                      'color': Colors.blue,
+                    },
+                    {
+                      'title': 'New hospital registered in Kerala',
+                      'subtitle': 'Government Medical College',
+                      'time': '6 hours ago',
+                      'icon': Icons.local_hospital_rounded,
+                      'color': Colors.green,
+                    },
+                    {
+                      'title': 'SHO password reset in Tamil Nadu',
+                      'subtitle': 'Security update completed',
+                      'time': '8 hours ago',
+                      'icon': Icons.security_rounded,
+                      'color': Colors.orange,
+                    },
+                    {
+                      'title': 'Monthly report generated',
+                      'subtitle': 'All states statistics compiled',
+                      'time': '1 day ago',
+                      'icon': Icons.analytics_rounded,
+                      'color': Colors.purple,
+                    },
+                  ];
+                  
+                  final activity = activities[index];
+                  return _buildActivityItem(
+                    activity['title'] as String,
+                    activity['subtitle'] as String,
+                    activity['time'] as String,
+                    activity['icon'] as IconData,
+                    activity['color'] as Color,
+                    index,
+                  );
                 },
-                {
-                  'title': 'SHO activated in Karnataka',
-                  'subtitle': 'Dr. Priya Nair activated',
-                  'time': '4 hours ago',
-                  'icon': Icons.check_circle,
-                  'color': Colors.blue,
-                },
-                {
-                  'title': 'New hospital registered in Kerala',
-                  'subtitle': 'Government Medical College',
-                  'time': '6 hours ago',
-                  'icon': Icons.local_hospital,
-                  'color': Colors.green,
-                },
-                {
-                  'title': 'SHO password reset in Tamil Nadu',
-                  'subtitle': 'Security update completed',
-                  'time': '8 hours ago',
-                  'icon': Icons.security,
-                  'color': Colors.orange,
-                },
-                {
-                  'title': 'Monthly report generated',
-                  'subtitle': 'All states statistics compiled',
-                  'time': '1 day ago',
-                  'icon': Icons.analytics,
-                  'color': Colors.purple,
-                },
-              ];
-              
-              final activity = activities[index];
-              return _buildActivityItem(
-                activity['title'] as String,
-                activity['subtitle'] as String,
-                activity['time'] as String,
-                activity['icon'] as IconData,
-                activity['color'] as Color,
-              );
-            },
+              ),
+            ],
           ),
         ),
       ],
@@ -641,29 +1163,86 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen> {
     String time,
     IconData icon,
     Color color,
+    int index,
   ) {
-    return ListTile(
-      leading: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Icon(icon, color: color, size: 20),
-      ),
-      title: Text(
-        title,
-        style: TextStyle(fontWeight: FontWeight.w600),
-      ),
-      subtitle: Text(subtitle),
-      trailing: Text(
-        time,
-        style: TextStyle(
-          fontSize: 12,
-          color: Colors.grey.shade600,
-        ),
-      ),
+    return AnimatedBuilder(
+      animation: _fadeAnimation,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, (1 - _fadeAnimation.value) * 10),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        color.withOpacity(0.8),
+                        color,
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(15),
+                    boxShadow: [
+                      BoxShadow(
+                        color: color.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    icon,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey.shade800,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    time,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -747,6 +1326,440 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen> {
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Tab Content Methods
+  Widget _buildOverviewTab() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Colors.blue.shade50, Colors.white],
+        ),
+      ),
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SlideTransition(
+          position: _slideAnimation,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildWelcomeCard(),
+                const SizedBox(height: 20),
+                _buildQuickStatsRow(),
+                const SizedBox(height: 20),
+                _buildRecentActivity(),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOfficersTab() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Colors.purple.shade50, Colors.white],
+        ),
+      ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'State Health Officers Management',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey.shade800,
+              ),
+            ),
+            const SizedBox(height: 16),
+            WhoActionButton(
+              title: 'Manage State Health Officers',
+              subtitle: 'Add, edit, and monitor State Health Officers across all states',
+              icon: Icons.admin_panel_settings_rounded,
+              color: Colors.purple,
+              onTap: () => _navigateToStateHealthOfficers(),
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Officer Statistics',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade800,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: WhoStatCard(
+                          title: 'Total Officers',
+                          value: '${dashboardStats['totalStateOfficers'] ?? 0}',
+                          icon: Icons.admin_panel_settings_rounded,
+                          color: Colors.purple,
+                          index: 0,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: WhoStatCard(
+                          title: 'Active States',
+                          value: '${dashboardStats['totalStates'] ?? 0}',
+                          icon: Icons.location_on_rounded,
+                          color: Colors.green,
+                          index: 1,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHospitalsTab() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Colors.blue.shade50, Colors.white],
+        ),
+      ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Hospital Management',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey.shade800,
+              ),
+            ),
+            const SizedBox(height: 16),
+            WhoActionButton(
+              title: 'Hospital Statistics',
+              subtitle: 'View detailed hospital information and statistics',
+              icon: Icons.local_hospital_rounded,
+              color: Colors.blue,
+              onTap: () => _navigateToHospitals(),
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Hospital Statistics',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade800,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: WhoStatCard(
+                          title: 'Total Hospitals',
+                          value: '${dashboardStats['totalHospitals'] ?? 0}',
+                          icon: Icons.local_hospital_rounded,
+                          color: Colors.blue,
+                          index: 0,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: WhoStatCard(
+                          title: 'Total Patients',
+                          value: '${dashboardStats['totalPatients'] ?? 0}',
+                          icon: Icons.people_rounded,
+                          color: Colors.orange,
+                          index: 1,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAnalyticsTab() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Colors.green.shade50, Colors.white],
+        ),
+      ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Analytics & Reports',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey.shade800,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: WhoActionButton(
+                    title: 'State Analytics',
+                    subtitle: 'Detailed state-wise analytics and insights',
+                    icon: Icons.analytics_rounded,
+                    color: Colors.green,
+                    onTap: () => _navigateToStateAnalytics(),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: WhoActionButton(
+                    title: 'Export Data',
+                    subtitle: 'Export statistics and generate reports',
+                    icon: Icons.download_rounded,
+                    color: Colors.orange,
+                    onTap: () => _showExportDialog(),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            _buildChartsSection(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSettingsTab() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Colors.grey.shade50, Colors.white],
+        ),
+      ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Settings & Profile',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey.shade800,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Profile Information',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade800,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  WhoProfileItem(label: 'Name', value: widget.whoAdmin.fullName, icon: Icons.person_rounded),
+                  WhoProfileItem(label: 'Email', value: widget.whoAdmin.email, icon: Icons.email_rounded),
+                  WhoProfileItem(label: 'Designation', value: widget.whoAdmin.designation, icon: Icons.work_rounded),
+                  WhoProfileItem(label: 'Region', value: widget.whoAdmin.region, icon: Icons.location_on_rounded),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Quick Actions',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade800,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade100,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(Icons.refresh_rounded, color: Colors.blue.shade600),
+                    ),
+                    title: const Text('Refresh Data'),
+                    subtitle: const Text('Reload dashboard statistics'),
+                    onTap: _loadDashboardData,
+                  ),
+                  ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade100,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(Icons.settings_rounded, color: Colors.green.shade600),
+                    ),
+                    title: const Text('App Settings'),
+                    subtitle: const Text('Configure application preferences'),
+                    onTap: _showSettingsDialog,
+                  ),
+                  ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade100,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(Icons.logout_rounded, color: Colors.red.shade600),
+                    ),
+                    title: const Text('Logout'),
+                    subtitle: const Text('Sign out of your account'),
+                    onTap: _logout,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileItem(String label, String value, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade100,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: Colors.blue.shade600, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey.shade800,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
