@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/regional_health_officer.dart';
+import '../../models/sho.dart';
 import '../../services/regional_health_officer_service.dart';
 import '../../utils/colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -7,7 +8,9 @@ import 'create_regional_health_officer_screen.dart';
 import 'regional_health_officer_details_screen.dart';
 
 class RegionalHealthOfficerScreen extends StatefulWidget {
-  const RegionalHealthOfficerScreen({super.key});
+  final SHO? sho;
+  
+  const RegionalHealthOfficerScreen({super.key, this.sho});
 
   @override
   State<RegionalHealthOfficerScreen> createState() => _RegionalHealthOfficerScreenState();
@@ -48,13 +51,23 @@ class _RegionalHealthOfficerScreenState extends State<RegionalHealthOfficerScree
       final result = await RegionalHealthOfficerService.getRHOs(token);
 
       if (result['success']) {
+        List<RegionalHealthOfficer> rhoData = result['data'] as List<RegionalHealthOfficer>;
+        
+        // Backend now filters by state, so no need for frontend filtering
+        print('🔍 Received ${rhoData.length} RHOs from backend');
+        rhoData.forEach((rho) {
+          print('🔍 RHO: ${rho.officerId} - ${rho.fullName} (${rho.assignedDistrict})');
+        });
+        
         setState(() {
-          rhos = result['data'] as List<RegionalHealthOfficer>;
+          rhos = rhoData;
           statistics = result['statistics'] != null
               ? RHOStatistics.fromJson(result['statistics'])
               : null;
           isLoading = false;
         });
+        
+        print('🔍 Total RHOs loaded: ${rhos.length}');
       } else {
         setState(() {
           error = result['message'];
@@ -70,6 +83,11 @@ class _RegionalHealthOfficerScreenState extends State<RegionalHealthOfficerScree
   }
 
   List<RegionalHealthOfficer> get filteredRHOs {
+    print('🔍 filteredRHOs getter called');
+    print('🔍 Total rhos: ${rhos.length}');
+    print('🔍 Selected filter: $selectedFilter');
+    print('🔍 Search query: "$searchQuery"');
+    
     List<RegionalHealthOfficer> filtered = rhos;
 
     // Apply filter
@@ -84,6 +102,7 @@ class _RegionalHealthOfficerScreenState extends State<RegionalHealthOfficerScree
             return true;
         }
       }).toList();
+      print('🔍 After filter by status: ${filtered.length}');
     }
 
     // Apply search
@@ -91,15 +110,47 @@ class _RegionalHealthOfficerScreenState extends State<RegionalHealthOfficerScree
       filtered = filtered.where((rho) {
         return rho.fullName.toLowerCase().contains(searchQuery.toLowerCase()) ||
             rho.officerId.toLowerCase().contains(searchQuery.toLowerCase()) ||
-            rho.assignedRegion.toLowerCase().contains(searchQuery.toLowerCase()) ||
-            rho.email.toLowerCase().contains(searchQuery.toLowerCase());
+            rho.assignedDistrict.toLowerCase().contains(searchQuery.toLowerCase()) ||
+            rho.email.toLowerCase().contains(searchQuery.toLowerCase()) ||
+            rho.assignedAreaNames.any((area) => 
+              area.toLowerCase().contains(searchQuery.toLowerCase()));
       }).toList();
+      print('🔍 After search filter: ${filtered.length}');
     }
 
+    print('🔍 Final filtered count: ${filtered.length}');
     return filtered;
   }
 
   Future<void> toggleRHOStatus(RegionalHealthOfficer rho) async {
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('${rho.isActive ? 'Deactivate' : 'Activate'} Regional Health Officer'),
+        content: Text(
+          rho.isActive 
+              ? 'Are you sure you want to deactivate ${rho.fullName}? This will prevent them from accessing the system.'
+              : 'Are you sure you want to activate ${rho.fullName}? This will allow them to access the system.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: rho.isActive ? Colors.orange : Colors.green,
+            ),
+            child: Text(rho.isActive ? 'Deactivate' : 'Activate'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('auth_token');
@@ -282,7 +333,11 @@ class _RegionalHealthOfficerScreenState extends State<RegionalHealthOfficerScree
   }
 
   Widget _buildRHOCard(RegionalHealthOfficer rho) {
-    return Card(
+    try {
+      print('🔍 Building card for: ${rho.officerId} - ${rho.fullName}');
+      print('🔍 RHO details: district=${rho.assignedDistrict}, region=${rho.assignedRegion}, active=${rho.isActive}');
+      
+      return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -394,6 +449,19 @@ class _RegionalHealthOfficerScreenState extends State<RegionalHealthOfficerScree
             const SizedBox(height: 4),
             Row(
               children: [
+                Icon(Icons.map, size: 16, color: Colors.grey[600]),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    'Areas: ${rho.assignedAreasText}',
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
                 Icon(Icons.email, size: 16, color: Colors.grey[600]),
                 const SizedBox(width: 4),
                 Expanded(
@@ -426,6 +494,22 @@ class _RegionalHealthOfficerScreenState extends State<RegionalHealthOfficerScree
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
+                    color: rho.hasSpecificAreaAssignment ? Colors.purple[100] : Colors.indigo[100],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    rho.assignmentTypeText,
+                    style: TextStyle(
+                      color: rho.hasSpecificAreaAssignment ? Colors.purple[800] : Colors.indigo[800],
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
                     color: Colors.blue[100],
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -439,6 +523,24 @@ class _RegionalHealthOfficerScreenState extends State<RegionalHealthOfficerScree
                   ),
                 ),
                 const SizedBox(width: 8),
+                if (rho.totalAssignedPopulation > 0) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.green[100],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      rho.assignedPopulationText,
+                      style: TextStyle(
+                        color: Colors.green[800],
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
@@ -446,7 +548,7 @@ class _RegionalHealthOfficerScreenState extends State<RegionalHealthOfficerScree
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    '${rho.staffUtilizationText}',
+                    rho.staffUtilizationText,
                     style: TextStyle(
                       color: Colors.orange[800],
                       fontSize: 12,
@@ -460,6 +562,24 @@ class _RegionalHealthOfficerScreenState extends State<RegionalHealthOfficerScree
         ),
       ),
     );
+    } catch (e, stackTrace) {
+      print('❌ Error building RHO card for ${rho.officerId}: $e');
+      print('❌ Stack trace: $stackTrace');
+      // Return error card to help debug
+      return Card(
+        margin: const EdgeInsets.only(bottom: 16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              Icon(Icons.error, color: Colors.red),
+              Text('Error displaying RHO: ${rho.officerId}'),
+              Text('Error: $e', style: TextStyle(fontSize: 12, color: Colors.grey)),
+            ],
+          ),
+        ),
+      );
+    }
   }
 
   @override
@@ -548,28 +668,39 @@ class _RegionalHealthOfficerScreenState extends State<RegionalHealthOfficerScree
                         ),
                         const SizedBox(height: 16),
                         Expanded(
-                          child: filteredRHOs.isEmpty
-                              ? Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.people_outline, size: 64, color: Colors.grey[400]),
-                                      const SizedBox(height: 16),
-                                      Text(
-                                        searchQuery.isNotEmpty || selectedFilter != 'All'
-                                            ? 'No RHOs found matching your criteria'
-                                            : 'No Regional Health Officers found',
-                                        style: const TextStyle(fontSize: 16),
+                          child: Builder(
+                            builder: (context) {
+                              print('🔍 Building list - filteredRHOs.isEmpty: ${filteredRHOs.isEmpty}');
+                              print('🔍 Building list - filteredRHOs.length: ${filteredRHOs.length}');
+                              if (filteredRHOs.isNotEmpty) {
+                                print('🔍 First RHO: ${filteredRHOs.first.officerId} - ${filteredRHOs.first.fullName}');
+                              }
+                              
+                              return filteredRHOs.isEmpty
+                                  ? Center(
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(Icons.people_outline, size: 64, color: Colors.grey[400]),
+                                          const SizedBox(height: 16),
+                                          Text(
+                                            searchQuery.isNotEmpty || selectedFilter != 'All'
+                                                ? 'No RHOs found matching your criteria'
+                                                : 'No Regional Health Officers found',
+                                            style: const TextStyle(fontSize: 16),
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
-                                )
-                              : ListView.builder(
-                                  itemCount: filteredRHOs.length,
-                                  itemBuilder: (context, index) {
-                                    return _buildRHOCard(filteredRHOs[index]);
-                                  },
-                                ),
+                                    )
+                                  : ListView.builder(
+                                      itemCount: filteredRHOs.length,
+                                      itemBuilder: (context, index) {
+                                        print('🔍 Building card for index $index: ${filteredRHOs[index].officerId}');
+                                        return _buildRHOCard(filteredRHOs[index]);
+                                      },
+                                    );
+                            },
+                          ),
                         ),
                       ],
                     ),
@@ -580,7 +711,9 @@ class _RegionalHealthOfficerScreenState extends State<RegionalHealthOfficerScree
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const CreateRegionalHealthOfficerScreen(),
+              builder: (context) => CreateRegionalHealthOfficerScreen(
+                preferredState: widget.sho?.assignedState,
+              ),
             ),
           ).then((_) => loadRHOs());
         },

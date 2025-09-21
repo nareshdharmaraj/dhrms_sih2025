@@ -6,6 +6,8 @@ void main() {
 }
 
 class TestDownloadsApp extends StatelessWidget {
+  const TestDownloadsApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(title: 'Test Downloads', home: TestDownloadsScreen());
@@ -16,7 +18,7 @@ class TestDownloadsScreen extends StatelessWidget {
   final Map<String, dynamic> testCardData = {
     'patientName': 'Test Patient',
     'uhid': 'TEST123',
-    'dateOfBirth': DateTime.now().subtract(Duration(days: 10000)),
+    'dateOfBirth': DateTime(1990, 1, 1), // Fixed date instead of DateTime.now()
     'gender': 'male',
     'bloodGroup': 'O+',
     'phone': '9876543210',
@@ -24,9 +26,11 @@ class TestDownloadsScreen extends StatelessWidget {
     'homeState': 'Test State',
     'emergencyContact': '9876543211',
     'emergencyContactName': 'Emergency Contact',
-    'issueDate': DateTime.now(),
+    'issueDate': DateTime(2024, 1, 1), // Fixed date instead of DateTime.now()
     'qrCodeData': 'TEST_QR_CODE_DATA_123',
   };
+
+  TestDownloadsScreen({super.key}); // Removed const keyword
 
   @override
   Widget build(BuildContext context) {

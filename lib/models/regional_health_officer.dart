@@ -1,3 +1,58 @@
+// Model for area assignments within districts
+class AssignedArea {
+  final String name;
+  final String code;
+  final String type; // 'area' or 'full-district'
+  final int population;
+  final double areaKm2;
+
+  AssignedArea({
+    required this.name,
+    required this.code,
+    required this.type,
+    required this.population,
+    required this.areaKm2,
+  });
+
+  factory AssignedArea.fromJson(Map<String, dynamic> json) {
+    return AssignedArea(
+      name: json['name'] ?? '',
+      code: json['code'] ?? '',
+      type: json['type'] ?? 'area',
+      population: json['population'] ?? 0,
+      areaKm2: (json['areaKm2'] ?? 0).toDouble(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'code': code,
+      'type': type,
+      'population': population,
+      'areaKm2': areaKm2,
+    };
+  }
+
+  // Display formatted area name
+  String get displayName {
+    if (type == 'full-district') {
+      return 'Full District';
+    }
+    return name;
+  }
+
+  // Population text with formatting
+  String get populationText {
+    if (population >= 1000000) {
+      return '${(population / 1000000).toStringAsFixed(1)}M';
+    } else if (population >= 1000) {
+      return '${(population / 1000).toStringAsFixed(0)}K';
+    }
+    return population.toString();
+  }
+}
+
 class RegionalHealthOfficer {
   final String id;
   final String officerId;
@@ -5,8 +60,11 @@ class RegionalHealthOfficer {
   final String email;
   final String phone;
   final String assignedState;
+  final String assignedDistrict;
   final String assignedRegion;
   final String regionCode;
+  final String districtCode;
+  final List<AssignedArea> assignedAreas;  // New field for area assignments
   final String parentSHO;
   final Map<String, dynamic> permissions;
   final Map<String, dynamic> staffLimits;
@@ -27,8 +85,11 @@ class RegionalHealthOfficer {
     required this.email,
     required this.phone,
     required this.assignedState,
+    required this.assignedDistrict,
     required this.assignedRegion,
     required this.regionCode,
+    required this.districtCode,
+    required this.assignedAreas,
     required this.parentSHO,
     required this.permissions,
     required this.staffLimits,
@@ -44,28 +105,44 @@ class RegionalHealthOfficer {
   });
 
   factory RegionalHealthOfficer.fromJson(Map<String, dynamic> json) {
-    return RegionalHealthOfficer(
-      id: json['_id'] ?? '',
-      officerId: json['officerId'] ?? '',
-      fullName: json['fullName'] ?? '',
-      email: json['email'] ?? '',
-      phone: json['phone'] ?? '',
-      assignedState: json['assignedState'] ?? '',
-      assignedRegion: json['assignedRegion'] ?? '',
-      regionCode: json['regionCode'] ?? '',
-      parentSHO: json['parentSHO'] ?? '',
-      permissions: json['permissions'] ?? {},
-      staffLimits: json['staffLimits'] ?? {},
-      coverage: json['coverage'] ?? {},
-      statistics: json['statistics'] ?? {},
-      officeAddress: json['officeAddress'] ?? {},
-      officePhone: json['officePhone'],
-      emergencyContact: json['emergencyContact'],
-      isActive: json['isActive'] ?? true,
-      lastLogin: json['lastLogin'] != null ? DateTime.parse(json['lastLogin']) : null,
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
-    );
+    try {
+      return RegionalHealthOfficer(
+        id: json['_id'] ?? '',
+        officerId: json['officerId'] ?? '',
+        fullName: json['fullName'] ?? '',
+        email: json['email'] ?? '',
+        phone: json['phone'] ?? '',
+        assignedState: json['assignedState'] ?? '',
+        assignedDistrict: json['assignedDistrict'] ?? '',
+        assignedRegion: json['assignedRegion'] ?? '',
+        regionCode: json['regionCode'] ?? '',
+        districtCode: json['districtCode'] ?? '',
+        assignedAreas: (json['assignedAreas'] as List?)
+            ?.map((area) => AssignedArea.fromJson(area))
+            .toList() ?? [],
+        parentSHO: json['parentSHO'] is String 
+            ? json['parentSHO'] 
+            : (json['parentSHO'] as Map<String, dynamic>?)?['_id'] ?? '',
+        permissions: Map<String, dynamic>.from(json['permissions'] ?? {}),
+        staffLimits: Map<String, dynamic>.from(json['staffLimits'] ?? {}),
+        coverage: Map<String, dynamic>.from(json['coverage'] ?? {}),
+        statistics: Map<String, dynamic>.from(json['statistics'] ?? {}),
+        officeAddress: Map<String, dynamic>.from(json['officeAddress'] ?? {}),
+        officePhone: json['officePhone'],
+        emergencyContact: json['emergencyContact'] != null 
+            ? Map<String, dynamic>.from(json['emergencyContact']) 
+            : null,
+        isActive: json['isActive'] ?? true,
+        lastLogin: json['lastLogin'] != null ? DateTime.parse(json['lastLogin']) : null,
+        createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
+        updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : DateTime.now(),
+      );
+    } catch (e, stackTrace) {
+      print('❌ Error in RegionalHealthOfficer.fromJson: $e');
+      print('❌ Stack trace: $stackTrace');
+      print('❌ JSON that caused error: $json');
+      rethrow;
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -76,8 +153,11 @@ class RegionalHealthOfficer {
       'email': email,
       'phone': phone,
       'assignedState': assignedState,
+      'assignedDistrict': assignedDistrict,
       'assignedRegion': assignedRegion,
       'regionCode': regionCode,
+      'districtCode': districtCode,
+      'assignedAreas': assignedAreas.map((area) => area.toJson()).toList(),
       'parentSHO': parentSHO,
       'permissions': permissions,
       'staffLimits': staffLimits,
@@ -167,6 +247,40 @@ class RegionalHealthOfficer {
   
   bool get canGenerateReports => permissions['canGenerateRegionalReports'] ?? false;
 
+  // Area assignment related getters
+  bool get hasSpecificAreaAssignment => assignedAreas.isNotEmpty && 
+      assignedAreas.any((area) => area.type == 'area');
+  
+  bool get hasFullDistrictAssignment => assignedAreas.isEmpty || 
+      assignedAreas.any((area) => area.type == 'full-district');
+  
+  String get assignmentTypeText => hasSpecificAreaAssignment ? 'Area-specific' : 'Full District';
+  
+  List<String> get assignedAreaNames => assignedAreas.map((area) => area.displayName).toList();
+  
+  String get assignedAreasText {
+    if (assignedAreas.isEmpty) return 'Full District';
+    if (assignedAreas.length == 1) return assignedAreas.first.displayName;
+    if (assignedAreas.length <= 3) {
+      return assignedAreaNames.join(', ');
+    }
+    return '${assignedAreaNames.take(2).join(', ')} +${assignedAreas.length - 2} more';
+  }
+  
+  int get totalAssignedPopulation => assignedAreas.fold(0, (sum, area) => sum + area.population);
+  
+  double get totalAssignedAreaKm2 => assignedAreas.fold(0.0, (sum, area) => sum + area.areaKm2);
+  
+  String get assignedPopulationText {
+    final pop = totalAssignedPopulation;
+    if (pop >= 1000000) {
+      return '${(pop / 1000000).toStringAsFixed(1)}M people';
+    } else if (pop >= 1000) {
+      return '${(pop / 1000).toStringAsFixed(0)}K people';
+    }
+    return '$pop people';
+  }
+
   // Copy with method for updates
   RegionalHealthOfficer copyWith({
     String? id,
@@ -175,8 +289,11 @@ class RegionalHealthOfficer {
     String? email,
     String? phone,
     String? assignedState,
+    String? assignedDistrict,
     String? assignedRegion,
     String? regionCode,
+    String? districtCode,
+    List<AssignedArea>? assignedAreas,
     String? parentSHO,
     Map<String, dynamic>? permissions,
     Map<String, dynamic>? staffLimits,
@@ -197,8 +314,11 @@ class RegionalHealthOfficer {
       email: email ?? this.email,
       phone: phone ?? this.phone,
       assignedState: assignedState ?? this.assignedState,
+      assignedDistrict: assignedDistrict ?? this.assignedDistrict,
       assignedRegion: assignedRegion ?? this.assignedRegion,
       regionCode: regionCode ?? this.regionCode,
+      districtCode: districtCode ?? this.districtCode,
+      assignedAreas: assignedAreas ?? this.assignedAreas,
       parentSHO: parentSHO ?? this.parentSHO,
       permissions: permissions ?? this.permissions,
       staffLimits: staffLimits ?? this.staffLimits,

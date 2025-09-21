@@ -1,6 +1,169 @@
 const jwt = require('jsonwebtoken');
 const SHO = require('../models/StateHealthOfficer');
+const Patient = require('../models/Patient');
+const RegionalHealthOfficer = require('../models/RegionalHealthOfficer');
 const { validationResult } = require('express-validator');
+
+// Helper function to get migrant statistics for a state
+const getMigrantStatistics = async (state) => {
+  try {
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+
+    // Total migrants in the state (current location)
+    const totalMigrants = await Patient.countDocuments({
+      isMigrant: true,
+      'migrantDetails.currentState': state,
+      isActive: true
+    });
+
+    // Total patients (all) in the state
+    const totalPatients = await Patient.countDocuments({
+      'migrantDetails.currentState': state,
+      isActive: true
+    });
+
+    // Migrants who are from this state (home state = current state)
+    const currentStateMigrants = await Patient.countDocuments({
+      isMigrant: true,
+      homeState: state,
+      'migrantDetails.currentState': state,
+      isActive: true
+    });
+
+    // Inter-state migrants (home state != current state)
+    const interStateMigrants = await Patient.countDocuments({
+      isMigrant: true,
+      'migrantDetails.currentState': state,
+      homeState: { $ne: state },
+      isActive: true
+    });
+
+    // Recent arrivals (last 30 days)
+    const recentArrivals = await Patient.countDocuments({
+      isMigrant: true,
+      'migrantDetails.currentState': state,
+      'migrantDetails.migrationDate': { $gte: thirtyDaysAgo },
+      isActive: true
+    });
+
+    // Top source states (for inter-state migrants)
+    const topSourceStates = await Patient.aggregate([
+      {
+        $match: {
+          isMigrant: true,
+          'migrantDetails.currentState': state,
+          homeState: { $ne: state },
+          isActive: true
+        }
+      },
+      {
+        $group: {
+          _id: '$homeState',
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { count: -1 } },
+      { $limit: 5 },
+      {
+        $project: {
+          state: '$_id',
+          count: 1,
+          _id: 0
+        }
+      }
+    ]);
+
+    // Work sector distribution (if available)
+    const workSectorDistribution = await Patient.aggregate([
+      {
+        $match: {
+          isMigrant: true,
+          'migrantDetails.currentState': state,
+          'migrantDetails.workLocation': { $exists: true, $ne: '' },
+          isActive: true
+        }
+      },
+      {
+        $group: {
+          _id: '$migrantDetails.workLocation',
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { count: -1 } },
+      { $limit: 10 },
+      {
+        $project: {
+          sector: '$_id',
+          count: 1,
+          _id: 0
+        }
+      }
+    ]);
+
+    return {
+      totalMigrants,
+      totalPatients,
+      currentStateMigrants,
+      interStateMigrants,
+      recentArrivals,
+      topSourceStates,
+      workSectorDistribution
+    };
+
+  } catch (error) {
+    console.error('Error getting migrant statistics:', error);
+    return {
+      totalMigrants: 0,
+      totalPatients: 0,
+      currentStateMigrants: 0,
+      interStateMigrants: 0,
+      recentArrivals: 0,
+      topSourceStates: [],
+      workSectorDistribution: []
+    };
+  }
+};
+
+// Helper function to get RHO statistics for a SHO
+const getRHOStatistics = async (shoId) => {
+  try {
+    // Get RHOs managed by this SHO
+    const rhos = await RegionalHealthOfficer.find({ parentSHO: shoId });
+    
+    const totalRHOs = rhos.length;
+    const activeRHOs = rhos.filter(rho => rho.isActive).length;
+    
+    // Calculate total staff from all RHOs
+    const totalStaff = rhos.reduce((sum, rho) => {
+      return sum + (rho.statistics?.totalStaffManaged || 0);
+    }, 0);
+
+    // Get district coverage
+    const districtCoverage = rhos.reduce((districts, rho) => {
+      if (rho.assignedDistrict && !districts.includes(rho.assignedDistrict)) {
+        districts.push(rho.assignedDistrict);
+      }
+      return districts;
+    }, []);
+
+    return {
+      totalRHOs,
+      activeRHOs,
+      totalStaff,
+      districtCoverage: districtCoverage.length
+    };
+
+  } catch (error) {
+    console.error('Error getting RHO statistics:', error);
+    return {
+      totalRHOs: 0,
+      activeRHOs: 0,
+      totalStaff: 0,
+      districtCoverage: 0
+    };
+  }
+};
 
 // Generate JWT token for SHO
 const generateToken = (shoId) => {
@@ -329,21 +492,40 @@ const getDashboardData = async (req, res) => {
       });
     }
 
+    // Get migrant statistics for the SHO's assigned state
+    const migrantStats = await getMigrantStatistics(sho.assignedState);
+    
+    // Get regional health officer statistics
+    const rhoStats = await getRHOStatistics(shoId);
+
     // Get state-specific health statistics
-    // This would typically involve querying patient data, hospital data, etc.
-    // For now, we'll return mock data structure
     const dashboardData = {
       sho: sho.toJSON(),
       stateInfo: {
         name: sho.assignedState,
         totalHospitals: 0, // This would come from actual hospital data
-        totalPatients: 0,  // This would come from actual patient data
-        totalStaff: 0      // This would come from actual staff data
+        totalPatients: migrantStats.totalPatients,
+        totalStaff: rhoStats.totalStaff,
+        totalMigrants: migrantStats.totalMigrants
+      },
+      migrantStatistics: {
+        totalMigrants: migrantStats.totalMigrants,
+        currentStateMigrants: migrantStats.currentStateMigrants,
+        interStateMigrants: migrantStats.interStateMigrants,
+        recentArrivals: migrantStats.recentArrivals,
+        topSourceStates: migrantStats.topSourceStates,
+        workSectorDistribution: migrantStats.workSectorDistribution
+      },
+      regionalStatistics: {
+        totalRHOs: rhoStats.totalRHOs,
+        activeRHOs: rhoStats.activeRHOs,
+        totalStaff: rhoStats.totalStaff,
+        districtCoverage: rhoStats.districtCoverage
       },
       recentActivities: [],
       healthMetrics: {
-        totalRegistrations: 0,
-        activePatients: 0,
+        totalRegistrations: migrantStats.totalPatients,
+        activePatients: migrantStats.totalMigrants,
         healthcareFacilities: 0
       },
       notifications: []
@@ -363,6 +545,132 @@ const getDashboardData = async (req, res) => {
   }
 };
 
+// Get detailed migrant statistics for SHO's state
+const getMigrantData = async (req, res) => {
+  try {
+    const shoId = req.sho.shoId;
+    const sho = await SHO.findById(shoId);
+    
+    if (!sho) {
+      return res.status(404).json({
+        success: false,
+        message: 'SHO not found'
+      });
+    }
+
+    const { page = 1, limit = 20, district, workSector, sourceState } = req.query;
+    const state = sho.assignedState;
+
+    // Build query for migrants in the state
+    let query = {
+      isMigrant: true,
+      'migrantDetails.currentState': state,
+      isActive: true
+    };
+
+    // Add filters
+    if (district) {
+      query['migrantDetails.currentCity'] = district;
+    }
+    if (workSector) {
+      query['migrantDetails.workLocation'] = new RegExp(workSector, 'i');
+    }
+    if (sourceState) {
+      query.homeState = sourceState;
+    }
+
+    // Get paginated migrant data
+    const migrants = await Patient.find(query)
+      .select('uhid fullName phone migrantDetails homeState registrationDate')
+      .sort({ 'migrantDetails.migrationDate': -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
+
+    const totalMigrants = await Patient.countDocuments(query);
+
+    // Get statistics
+    const statistics = await getMigrantStatistics(state);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        migrants,
+        pagination: {
+          current: page,
+          total: Math.ceil(totalMigrants / limit),
+          count: totalMigrants
+        },
+        statistics
+      }
+    });
+
+  } catch (error) {
+    console.error('Get migrant data error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching migrant data'
+    });
+  }
+};
+
+// Get regional staff data for SHO
+const getRegionalStaffData = async (req, res) => {
+  try {
+    const shoId = req.sho.shoId;
+    const sho = await SHO.findById(shoId);
+    
+    if (!sho) {
+      return res.status(404).json({
+        success: false,
+        message: 'SHO not found'
+      });
+    }
+
+    // Get all RHOs under this SHO with their staff statistics
+    const rhos = await RegionalHealthOfficer.find({ parentSHO: shoId })
+      .select('officerId fullName assignedDistrict assignedRegion statistics staffLimits isActive')
+      .sort({ assignedDistrict: 1 });
+
+    // Get detailed statistics
+    const rhoStats = await getRHOStatistics(shoId);
+
+    // Group by district for better organization
+    const districtGroups = rhos.reduce((groups, rho) => {
+      const district = rho.assignedDistrict || 'Unassigned';
+      if (!groups[district]) {
+        groups[district] = [];
+      }
+      groups[district].push({
+        officerId: rho.officerId,
+        fullName: rho.fullName,
+        region: rho.assignedRegion,
+        totalStaff: rho.statistics?.totalStaffManaged || 0,
+        activeStaff: rho.statistics?.activeStaffCount || 0,
+        staffLimit: rho.staffLimits?.maxDirectStaff || 0,
+        isActive: rho.isActive
+      });
+      return groups;
+    }, {});
+
+    res.status(200).json({
+      success: true,
+      data: {
+        summary: rhoStats,
+        districtGroups,
+        totalDistricts: Object.keys(districtGroups).length,
+        state: sho.assignedState
+      }
+    });
+
+  } catch (error) {
+    console.error('Get regional staff data error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching regional staff data'
+    });
+  }
+};
+
 module.exports = {
   login: loginSHO,
   logout: logoutSHO,
@@ -370,5 +678,7 @@ module.exports = {
   updateProfile: updateSHOProfile,
   changePassword,
   verifyToken,
-  getDashboardData
+  getDashboardData,
+  getMigrantData,
+  getRegionalStaffData
 };

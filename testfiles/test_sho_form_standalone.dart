@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class TestSHOFormApp extends StatelessWidget {
+  const TestSHOFormApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -11,6 +13,8 @@ class TestSHOFormApp extends StatelessWidget {
 }
 
 class TestSHOForm extends StatefulWidget {
+  const TestSHOForm({super.key});
+
   @override
   _TestSHOFormState createState() => _TestSHOFormState();
 }

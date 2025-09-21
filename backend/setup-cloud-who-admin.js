@@ -38,7 +38,7 @@ async function setupCloudWhoAdmin() {
       console.log('');
       console.log('🔑 Login credentials:');
       console.log('Admin ID: WHO_ADMIN_001');
-      console.log('Password: WhoAdmi@2024');
+      console.log('Password: WhoAdmin@2024');
       console.log('');
       console.log('🌐 API Endpoint: https://dhrms-sih2025.onrender.com/api/who/login');
       

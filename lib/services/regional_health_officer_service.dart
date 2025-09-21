@@ -4,14 +4,158 @@ import '../models/regional_health_officer.dart';
 import 'api_service.dart';
 
 class RegionalHealthOfficerService {
-  static String get _baseUrl => '${ApiService.baseUrl}/api/regional-health-officers';
+  static String get _baseUrl => '${ApiService.baseUrl}/rho';
+
+  // Get district assignment info with area options
+  static Future<Map<String, dynamic>> getDistrictAssignmentInfo(
+      String authToken, String district) async {
+    try {
+      print('🔍 Fetching assignment info for district: $district');
+      final response = await http.get(
+        Uri.parse('$_baseUrl/districts/$district/assignment-info'),
+        headers: {
+          'Authorization': 'Bearer $authToken',
+        },
+      );
+
+      print('🔍 Assignment info response status: ${response.statusCode}');
+      print('🔍 Assignment info response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        
+        // Backend returns flat structure, not wrapped in 'data' field
+        // The response structure is: { success, district, state, type, requiresAreaSelection, availableAreas, ... }
+        return {
+          'success': true,
+          'data': data,  // Pass the entire response as data
+        };
+      } else {
+        final errorData = json.decode(response.body);
+        return {
+          'success': false,
+          'message': errorData['message'] ?? 'Failed to fetch district assignment info',
+        };
+      }
+    } catch (e) {
+      print('❌ Assignment info error: $e');
+      return {
+        'success': false,
+        'message': 'Network error: ${e.toString()}',
+      };
+    }
+  }
+
+  // Get area coverage details for a specific area
+  static Future<Map<String, dynamic>> getAreaCoverageDetails(
+      String authToken, String district, String areaName) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/districts/$district/areas/$areaName'),
+        headers: {
+          'Authorization': 'Bearer $authToken',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return {
+          'success': true,
+          'data': data,
+        };
+      } else {
+        final errorData = json.decode(response.body);
+        return {
+          'success': false,
+          'message': errorData['message'] ?? 'Failed to fetch area coverage details',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: ${e.toString()}',
+      };
+    }
+  }
+
+  // Get available districts for RHO assignment
+  static Future<Map<String, dynamic>> getAvailableDistricts(String authToken) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/districts'),
+        headers: {
+          'Authorization': 'Bearer $authToken',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        
+        // Check if data field exists
+        if (!data.containsKey('data')) {
+          return {
+            'success': false,
+            'message': 'Invalid districts response format: missing data field',
+          };
+        }
+        
+        return {
+          'success': true,
+          'data': data['data'],
+        };
+      } else {
+        final errorData = json.decode(response.body);
+        return {
+          'success': false,
+          'message': errorData['message'] ?? 'Failed to fetch districts',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: ${e.toString()}',
+      };
+    }
+  }
+
+  // Get mock RHO data for creation
+  static Future<Map<String, dynamic>> getMockRHOData(String authToken) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/mock-data'),
+        headers: {
+          'Authorization': 'Bearer $authToken',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return {
+          'success': true,
+          'data': data['data'],
+        };
+      } else {
+        final errorData = json.decode(response.body);
+        return {
+          'success': false,
+          'message': errorData['message'] ?? 'Failed to fetch mock data',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: ${e.toString()}',
+      };
+    }
+  }
 
   // Create Regional Health Officer
   static Future<Map<String, dynamic>> createRHO(
       String authToken, Map<String, dynamic> rhoData) async {
     try {
       final response = await http.post(
-        Uri.parse('$_baseUrl/create'),
+        Uri.parse('$_baseUrl/create'), // Updated endpoint
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $authToken',
@@ -29,6 +173,40 @@ class RegionalHealthOfficerService {
         return {
           'success': false,
           'message': errorData['message'] ?? 'Failed to create Regional Health Officer',
+          'errors': errorData['errors'] ?? [],
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: ${e.toString()}',
+      };
+    }
+  }
+
+  // Create RHO from mock data
+  static Future<Map<String, dynamic>> createRHOFromMockData(
+      String authToken, int mockRHOIndex) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/create-from-mock'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $authToken',
+        },
+        body: json.encode({'mockRHOIndex': mockRHOIndex}),
+      );
+
+      if (response.statusCode == 201) {
+        return {
+          'success': true,
+          'data': json.decode(response.body),
+        };
+      } else {
+        final errorData = json.decode(response.body);
+        return {
+          'success': false,
+          'message': errorData['message'] ?? 'Failed to create RHO from mock data',
         };
       }
     } catch (e) {
@@ -42,23 +220,42 @@ class RegionalHealthOfficerService {
   // Get all RHOs for a SHO
   static Future<Map<String, dynamic>> getRHOs(String authToken) async {
     try {
+      print('🔍 Fetching RHOs from backend...');
       final response = await http.get(
-        Uri.parse('$_baseUrl/list'),
+        Uri.parse('$_baseUrl/'),
         headers: {
           'Authorization': 'Bearer $authToken',
+          'Content-Type': 'application/json',
         },
       );
 
+      print('🔍 RHO fetch response status: ${response.statusCode}');
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        final List<RegionalHealthOfficer> rhos = (data['data'] as List)
-            .map((rho) => RegionalHealthOfficer.fromJson(rho))
+        print('🔍 Raw response data keys: ${data.keys.toList()}');
+        print('🔍 RHOs count in response: ${data['rhos']?.length ?? 0}');
+        
+        // The backend returns 'rhos' field, not 'data'
+        if (!data.containsKey('rhos') || data['rhos'] == null || data['rhos'] is! List) {
+          return {
+            'success': false,
+            'message': 'Invalid response format: missing or invalid rhos data',
+          };
+        }
+        
+        final List<RegionalHealthOfficer> rhos = (data['rhos'] as List)
+            .map((rho) {
+              print('🔍 Parsing RHO: ${rho['officerId']} - ${rho['fullName']}');
+              return RegionalHealthOfficer.fromJson(rho);
+            })
             .toList();
 
+        print('🔍 Successfully parsed ${rhos.length} RHOs');
         return {
           'success': true,
-          'data': rhos,
+          'data': rhos, // Frontend expects 'data' field
           'statistics': data['statistics'],
+          'pagination': data['pagination'],
         };
       } else {
         final errorData = json.decode(response.body);
@@ -212,257 +409,11 @@ class RegionalHealthOfficerService {
     }
   }
 
-  // Reset RHO password
-  static Future<Map<String, dynamic>> resetRHOPassword(
-      String authToken, String rhoId) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/$rhoId/reset-password'),
-        headers: {
-          'Authorization': 'Bearer $authToken',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return {
-          'success': true,
-          'message': data['message'],
-          'temporaryPassword': data['temporaryPassword'],
-        };
-      } else {
-        final errorData = json.decode(response.body);
-        return {
-          'success': false,
-          'message': errorData['message'] ?? 'Failed to reset password',
-        };
-      }
-    } catch (e) {
-      return {
-        'success': false,
-        'message': 'Network error: ${e.toString()}',
-      };
-    }
-  }
-
   // Get RHO statistics
   static Future<Map<String, dynamic>> getRHOStatistics(String authToken) async {
     try {
       final response = await http.get(
         Uri.parse('$_baseUrl/statistics'),
-        headers: {
-          'Authorization': 'Bearer $authToken',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final statistics = RHOStatistics.fromJson(data['data']);
-
-        return {
-          'success': true,
-          'data': statistics,
-        };
-      } else {
-        final errorData = json.decode(response.body);
-        return {
-          'success': false,
-          'message': errorData['message'] ?? 'Failed to fetch statistics',
-        };
-      }
-    } catch (e) {
-      return {
-        'success': false,
-        'message': 'Network error: ${e.toString()}',
-      };
-    }
-  }
-
-  // Regional Staff Management
-
-  // Create regional staff
-  static Future<Map<String, dynamic>> createRegionalStaff(
-      String authToken, String rhoId, Map<String, dynamic> staffData) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/$rhoId/staff/create'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $authToken',
-        },
-        body: json.encode(staffData),
-      );
-
-      if (response.statusCode == 201) {
-        final data = json.decode(response.body);
-        final staff = RegionalStaff.fromJson(data['data']);
-
-        return {
-          'success': true,
-          'data': staff,
-          'message': 'Regional staff created successfully',
-        };
-      } else {
-        final errorData = json.decode(response.body);
-        return {
-          'success': false,
-          'message': errorData['message'] ?? 'Failed to create regional staff',
-        };
-      }
-    } catch (e) {
-      return {
-        'success': false,
-        'message': 'Network error: ${e.toString()}',
-      };
-    }
-  }
-
-  // Get staff for an RHO
-  static Future<Map<String, dynamic>> getRegionalStaff(
-      String authToken, String rhoId) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$_baseUrl/$rhoId/staff'),
-        headers: {
-          'Authorization': 'Bearer $authToken',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final List<RegionalStaff> staff = (data['data'] as List)
-            .map((staffMember) => RegionalStaff.fromJson(staffMember))
-            .toList();
-
-        return {
-          'success': true,
-          'data': staff,
-          'summary': data['summary'],
-        };
-      } else {
-        final errorData = json.decode(response.body);
-        return {
-          'success': false,
-          'message': errorData['message'] ?? 'Failed to fetch regional staff',
-        };
-      }
-    } catch (e) {
-      return {
-        'success': false,
-        'message': 'Network error: ${e.toString()}',
-      };
-    }
-  }
-
-  // Update regional staff
-  static Future<Map<String, dynamic>> updateRegionalStaff(
-      String authToken, String rhoId, String staffId, Map<String, dynamic> updateData) async {
-    try {
-      final response = await http.put(
-        Uri.parse('$_baseUrl/$rhoId/staff/$staffId'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $authToken',
-        },
-        body: json.encode(updateData),
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final staff = RegionalStaff.fromJson(data['data']);
-
-        return {
-          'success': true,
-          'data': staff,
-          'message': 'Regional staff updated successfully',
-        };
-      } else {
-        final errorData = json.decode(response.body);
-        return {
-          'success': false,
-          'message': errorData['message'] ?? 'Failed to update regional staff',
-        };
-      }
-    } catch (e) {
-      return {
-        'success': false,
-        'message': 'Network error: ${e.toString()}',
-      };
-    }
-  }
-
-  // Delete regional staff
-  static Future<Map<String, dynamic>> deleteRegionalStaff(
-      String authToken, String rhoId, String staffId) async {
-    try {
-      final response = await http.delete(
-        Uri.parse('$_baseUrl/$rhoId/staff/$staffId'),
-        headers: {
-          'Authorization': 'Bearer $authToken',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        return {
-          'success': true,
-          'message': 'Regional staff deleted successfully',
-        };
-      } else {
-        final errorData = json.decode(response.body);
-        return {
-          'success': false,
-          'message': errorData['message'] ?? 'Failed to delete regional staff',
-        };
-      }
-    } catch (e) {
-      return {
-        'success': false,
-        'message': 'Network error: ${e.toString()}',
-      };
-    }
-  }
-
-  // Validate staff limits before creation
-  static Future<Map<String, dynamic>> validateStaffLimits(
-      String authToken, String rhoId, String staffType) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$_baseUrl/$rhoId/staff/validate/$staffType'),
-        headers: {
-          'Authorization': 'Bearer $authToken',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return {
-          'success': true,
-          'canAdd': data['canAdd'],
-          'currentCount': data['currentCount'],
-          'maxLimit': data['maxLimit'],
-          'message': data['message'],
-        };
-      } else {
-        final errorData = json.decode(response.body);
-        return {
-          'success': false,
-          'message': errorData['message'] ?? 'Validation failed',
-        };
-      }
-    } catch (e) {
-      return {
-        'success': false,
-        'message': 'Network error: ${e.toString()}',
-      };
-    }
-  }
-
-  // Get regional data overview (placeholder for future implementation)
-  static Future<Map<String, dynamic>> getRegionalDataOverview(
-      String authToken, String rhoId) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$_baseUrl/$rhoId/data-overview'),
         headers: {
           'Authorization': 'Bearer $authToken',
         },
@@ -478,7 +429,7 @@ class RegionalHealthOfficerService {
         final errorData = json.decode(response.body);
         return {
           'success': false,
-          'message': errorData['message'] ?? 'Failed to fetch regional data',
+          'message': errorData['message'] ?? 'Failed to fetch statistics',
         };
       }
     } catch (e) {

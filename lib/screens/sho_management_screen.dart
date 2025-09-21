@@ -499,7 +499,7 @@ class _ShoManagementScreenState extends State<ShoManagementScreen> {
                   entry.key.replaceAll(RegExp(r'([A-Z])'), ' \$1').trim(),
                   entry.value.toString(),
                 );
-              }).toList(),
+              }),
             ],
           ),
         ),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class DebugSHOForm extends StatefulWidget {
+  const DebugSHOForm({super.key});
+
   @override
   _DebugSHOFormState createState() => _DebugSHOFormState();
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/sho.dart';
 import '../services/sho_service.dart';
 import 'sho_dashboard_screen.dart';
@@ -58,6 +59,9 @@ class _ShoLoginScreenState extends State<ShoLoginScreen> {
           // Store the auth token in the SHO service
           if (result['token'] != null) {
             print('🔍 Storing auth token for future requests');
+            // Store in SharedPreferences for RHO management screen
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setString('auth_token', result['token']);
             // Note: Token is already stored in ShoService.shoLogin method
           }
           

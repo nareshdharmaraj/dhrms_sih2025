@@ -59,4 +59,8 @@ router.put('/change-password', changePasswordValidation, shoAuthController.chang
 // Dashboard routes
 router.get('/dashboard', shoAuthController.getDashboardData);
 
+// Regional data routes
+router.get('/migrants', shoAuthController.getMigrantData);
+router.get('/regional-staff', shoAuthController.getRegionalStaffData);
+
 module.exports = router;

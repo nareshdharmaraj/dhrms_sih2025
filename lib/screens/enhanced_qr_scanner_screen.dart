@@ -193,7 +193,7 @@ class _EnhancedQRScannerScreenState extends State<EnhancedQRScannerScreen> {
                 Text('Processing QR Code...'),
                 SizedBox(height: 8),
                 Text(
-                  'Data: ${data.length > 50 ? data.substring(0, 50) + '...' : data}',
+                  'Data: ${data.length > 50 ? '${data.substring(0, 50)}...' : data}',
                   style: TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ],
@@ -369,7 +369,7 @@ class _EnhancedQRScannerScreenState extends State<EnhancedQRScannerScreen> {
                 ),
 
                 // Upload Option
-                Container(
+                SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: _pickImageFromGallery,
@@ -563,7 +563,7 @@ class _EnhancedQRScannerScreenState extends State<EnhancedQRScannerScreen> {
                     if (scannedData != null) ...[
                       SizedBox(height: 10),
                       Text(
-                        'Data: ${scannedData!.length > 30 ? scannedData!.substring(0, 30) + '...' : scannedData}',
+                        'Data: ${scannedData!.length > 30 ? '${scannedData!.substring(0, 30)}...' : scannedData}',
                         style: TextStyle(color: Colors.white70, fontSize: 14),
                       ),
                     ],

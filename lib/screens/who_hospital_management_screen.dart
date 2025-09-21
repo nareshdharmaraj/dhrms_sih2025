@@ -431,8 +431,8 @@ class _WhoHospitalManagementScreenState extends State<WhoHospitalManagementScree
                     icon: Icon(Icons.more_vert),
                     itemBuilder: (context) => [
                       PopupMenuItem(
-                        child: Text('View Details'),
                         value: 'view',
+                        child: Text('View Details'),
                       ),
                     ],
                     onSelected: (value) {

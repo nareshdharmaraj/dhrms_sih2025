@@ -1,0 +1,708 @@
+[
+  {
+    "state": "Tamil Nadu",
+    "state_code": "TN",
+    "source": "https://www.cra.tn.gov.in/tn_taluks.pdf, https://tnpsc.gov.in/English/districts.html, https://en.wikipedia.org/wiki/List_of_districts_of_Tamil_Nadu",
+    "last_verified": "2025-09-21",
+    "districts": [
+      {
+        "district": "Ariyalur",
+        "subdistricts": [
+          "Ariyalur",
+          "Andimadam",
+          "Sendurai",
+          "Udayarpalayam"
+        ]
+      },
+      {
+        "district": "Chengalpattu",
+        "subdistricts": [
+          "Chengalpattu",
+          "Thirukkalukundram",
+          "Thirupporur",
+          "Cheyyur",
+          "Madhurantakam",
+          "Tambaram",
+          "Pallavaram",
+          "Vandalur"
+        ]
+      },
+      {
+        "district": "Chennai",
+        "subdistricts": [
+          "Ambattur",
+          "Aminjikarai",
+          "Ayanavaram",
+          "Egmore",
+          "Maduravoyal",
+          "Mambalam",
+          "Madhavaram",
+          "Perambur",
+          "Purasawalkam",
+          "Tiruvottiyur",
+          "Tondiarpet",
+          "Alandur",
+          "Guindy",
+          "Mylapore",
+          "Sholinganallur",
+          "Velachery",
+          "Kolathur"
+        ]
+      },
+      {
+        "district": "Coimbatore",
+        "subdistricts": [
+          "Annur",
+          "Coimbatore North",
+          "Coimbatore South",
+          "Madukarai",
+          "Mettupalayam",
+          "Perur",
+          "Pollachi",
+          "Sulur",
+          "Valparai",
+          "Anaimalai",
+          "Kinathukadavu"
+        ]
+      },
+      {
+        "district": "Cuddalore",
+        "subdistricts": [
+          "Bhuvanagiri",
+          "Chidambaram",
+          "Kattumannarkoil",
+          "Kurinjipadi",
+          "Panruti",
+          "Srimushnam",
+          "Thittakudi",
+          "Veppur",
+          "Vriddhachalam",
+          "Cuddalore"
+        ]
+      },
+      {
+        "district": "Dharmapuri",
+        "subdistricts": [
+          "Dharmapuri",
+          "Karimangalam",
+          "Nallampalli",
+          "Palacode",
+          "Pappireddipatti",
+          "Harur",
+          "Pennagaram"
+        ]
+      },
+      {
+        "district": "Dindigul",
+        "subdistricts": [
+          "Athoor",
+          "Dindigul East",
+          "Dindigul West",
+          "Natham",
+          "Nilakottai",
+          "Kodaikanal",
+          "Oddanchatram",
+          "Palani",
+          "Vedasandur"
+        ]
+      },
+      {
+        "district": "Erode",
+        "subdistricts": [
+          "Erode",
+          "Kodumudi",
+          "Modakkurichi",
+          "Perundurai",
+          "Anthiyur",
+          "Bhavani",
+          "Gobichettipalayam",
+          "Nambiyur",
+          "Sathyamangalam",
+          "Thalavadi"
+        ]
+      },
+      {
+        "district": "Kallakurichi",
+        "subdistricts": [
+          "Chinnasalem",
+          "Kallakurichi",
+          "Kalvarayan Hills",
+          "Sankarapuram",
+          "Tirukoilur",
+          "Ulundurpet"
+        ]
+      },
+      {
+        "district": "Kancheepuram",
+        "subdistricts": [
+          "Kancheepuram",
+          "Uthiramerur",
+          "Sriperumbudur",
+          "Walajabad",
+          "Kundrathur"
+        ]
+      },
+      {
+        "district": "Kanyakumari",
+        "subdistricts": [
+          "Agastheeswaram",
+          "Kalkulam",
+          "Killiyoor",
+          "Thovalai",
+          "Thiruvattar",
+          "Vilavancode"
+        ]
+      },
+      {
+        "district": "Karur",
+        "subdistricts": [
+          "Karur",
+          "Aravakurichi",
+          "Kadavur",
+          "Krishnarayapuram",
+          "Kulithalai",
+          "Manmangalam",
+          "Pugalur"
+        ]
+      },
+      {
+        "district": "Krishnagiri",
+        "subdistricts": [
+          "Anchetty",
+          "Denkanikottai",
+          "Hosur",
+          "Shoolagiri",
+          "Bargur",
+          "Krishnagiri",
+          "Pochampalli",
+          "Uthangarai"
+        ]
+      },
+      {
+        "district": "Madurai",
+        "subdistricts": [
+          "Madurai North",
+          "Madurai South",
+          "Madurai East",
+          "Madurai West",
+          "Vadipatti",
+          "Melur",
+          "Peraiyur",
+          "Thirumangalam",
+          "Thiruparankundram",
+          "Usilampatti"
+        ]
+      },
+      {
+        "district": "Mayiladuthurai",
+        "subdistricts": [
+          "Mayiladuthurai",
+          "Sirkazhi",
+          "Tharangambadi",
+          "Kuthalam"
+        ]
+      },
+      {
+        "district": "Nagapattinam",
+        "subdistricts": [
+          "Nagapattinam",
+          "Kilvelur",
+          "Thirukkuvalai",
+          "Vedaranyam"
+        ]
+      },
+      {
+        "district": "Namakkal",
+        "subdistricts": [
+          "Namakkal",
+          "Kumarapalayam",
+          "Mohanur",
+          "Paramathi-Velur",
+          "Rasipuram",
+          "Senthamangalam"
+        ]
+      },
+      {
+        "district": "The Nilgiris",
+        "subdistricts": [
+          "Udagamandalam",
+          "Coonoor",
+          "Gudalur",
+          "Kundah",
+          "Kothagiri",
+          "Pandalur"
+        ]
+      },
+      {
+        "district": "Perambalur",
+        "subdistricts": [
+          "Perambalur",
+          "Alathur",
+          "Kunnam",
+          "Veppanthattai"
+        ]
+      },
+      {
+        "district": "Pudukkottai",
+        "subdistricts": [
+          "Alangudi",
+          "Aranthangi",
+          "Avudaiyarkoil",
+          "Gandarvakottai",
+          "Iluppur",
+          "Karambakudi",
+          "Kulathur",
+          "Manamelkudi",
+          "Ponnamaravathi",
+          "Thirumayam",
+          "Viralimalai"
+        ]
+      },
+      {
+        "district": "Ramanathapuram",
+        "subdistricts": [
+          "Ramanathapuram",
+          "Paramakudi",
+          "Kadaladi",
+          "Kamuthi",
+          "Mudukulathur",
+          "Rameswaram",
+          "Rajasingamangalam",
+          "Tiruvadanai"
+        ]
+      },
+      {
+        "district": "Salem",
+        "subdistricts": [
+          "Salem",
+          "Attur",
+          "Edappadi",
+          "Gangavalli",
+          "Kadaiyampatti",
+          "Mettur",
+          "Omalur",
+          "Pethanayakanpalayam",
+          "Salem South",
+          "Salem West",
+          "Sankari",
+          "Vazhapadi",
+          "Yercaud"
+        ]
+      },
+      {
+        "district": "Sivaganga",
+        "subdistricts": [
+          "Sivaganga",
+          "Devakottai",
+          "Ilaiyangudi",
+          "Kalaiyarkovil",
+          "Karaikudi",
+          "Manamadurai",
+          "Singampunari",
+          "Thirupuvanam"
+        ]
+      },
+      {
+        "district": "Thanjavur",
+        "subdistricts": [
+          "Thanjavur",
+          "Kumbakonam",
+          "Orathanadu",
+          "Papanasam",
+          "Pattukkottai",
+          "Peravurani",
+          "Thiruvaiyaru",
+          "Thiruvidaimarudur",
+          "Boothalur"
+        ]
+      },
+      {
+        "district": "Theni",
+        "subdistricts": [
+          "Theni",
+          "Andipatti",
+          "Bodinayakanur",
+          "Periyakulam",
+          "Uthamapalayam"
+        ]
+      },
+      {
+        "district": "Thiruvallur",
+        "subdistricts": [
+          "Avadi",
+          "Gummidipoondi",
+          "Pallipattu",
+          "Ponneri",
+          "Poonamallee",
+          "R.K. Pet",
+          "Tiruttani",
+          "Uthukottai",
+          "Thiruvallur"
+        ]
+      },
+      {
+        "district": "Tiruvannamalai",
+        "subdistricts": [
+          "Tiruvannamalai",
+          "Arni",
+          "Chengam",
+          "Chetpet",
+          "Cheyyar",
+          "Jamunamarathur",
+          "Kalasapakkam",
+          "Kilpennathur",
+          "Polur",
+          "Thandramet",
+          "Vandavasi",
+          "Vembakkam"
+        ]
+      },
+      {
+        "district": "Tiruvarur",
+        "subdistricts": [
+          "Thiruvarur",
+          "Kodavasal",
+          "Koothanallur",
+          "Mannargudi",
+          "Nannilam",
+          "Needamangalam",
+          "Thiruthuraipoondi",
+          "Valangaiman"
+        ]
+      },
+      {
+        "district": "Thoothukudi",
+        "subdistricts": [
+          "Thoothukudi",
+          "Ottapidaram",
+          "Kovilpatti",
+          "Srivaikundam",
+          "Tiruchendur",
+          "Vilathikulam",
+          "Kayathar",
+          "Eral",
+          "Ettayapuram"
+        ]
+      },
+      {
+        "district": "Tiruchirapalli",
+        "subdistricts": [
+          "Tiruchirappalli East",
+          "Tiruchirappalli West",
+          "Lalgudi",
+          "Manachanallur",
+          "Manapparai",
+          "Marungapuri",
+          "Musiri",
+          "Srirangam",
+          "Thottiam",
+          "Thuraiyur"
+        ]
+      },
+      {
+        "district": "Tiruppur",
+        "subdistricts": [
+          "Tiruppur North",
+          "Tiruppur South",
+          "Avinashi",
+          "Dharapuram",
+          "Kangeyam",
+          "Madathukulam",
+          "Oothukuli",
+          "Palladam"
+        ]
+      },
+      {
+        "district": "Tenkasi",
+        "subdistricts": [
+          "Tenkasi",
+          "Alangulam",
+          "Kadayanallur",
+          "Sankarankovil",
+          "Shenkottai",
+          "Sivagiri",
+          "Thiruvengadam",
+          "Veerakeralampudur"
+        ]
+      },
+      {
+        "district": "Tirupathur",
+        "subdistricts": [
+          "Tirupathur",
+          "Vaniyambadi",
+          "Natrampalli",
+          "Ambur"
+        ]
+      },
+      {
+        "district": "Virudhunagar",
+        "subdistricts": [
+          "Virudhunagar",
+          "Aruppukottai",
+          "Kariapatti",
+          "Rajapalayam",
+          "Sathur",
+          "Sivakasi",
+          "Srivilliputhur",
+          "Tiruchuli",
+          "Vembakottai",
+          "Watrap"
+        ]
+      }
+    ]
+  },
+  {
+    "state": "Kerala",
+    "state_code": "KL",
+    "source": "https://en.wikipedia.org/wiki/List_of_taluks_of_Kerala, https://data.gov.in/catalog/kerala-taluk-wise-villages-list",
+    "last_verified": "2025-09-21",
+    "districts": [
+      {
+        "district": "Thiruvananthapuram",
+        "subdistricts": [
+          "Thiruvananthapuram",
+          "Neyyattinkara",
+          "Kattakkada",
+          "Nedumangad",
+          "Chirayinkeezhu (Attingal)",
+          "Varkala"
+        ]
+      },
+      {
+        "district": "Kollam",
+        "subdistricts": [
+          "Kollam",
+          "Kunnathoor",
+          "Karunagappally",
+          "Kottarakkara",
+          "Punalur",
+          "Pathanapuram"
+        ]
+      },
+      {
+        "district": "Pathanamthitta",
+        "subdistricts": [
+          "Adoor",
+          "Konni",
+          "Kozhencherry",
+          "Ranni",
+          "Mallappally",
+          "Thiruvalla"
+        ]
+      },
+      {
+        "district": "Alappuzha",
+        "subdistricts": [
+          "Ambalappuzha",
+          "Chengannur",
+          "Kuttanad (Mankombu)",
+          "Karthikappally",
+          "Cherthala",
+          "Mavelikkara"
+        ]
+      },
+      {
+        "district": "Kottayam",
+        "subdistricts": [
+          "Changanasserry",
+          "Kottayam",
+          "Vaikom",
+          "Meenachil",
+          "Kanjirappally"
+        ]
+      },
+      {
+        "district": "Idukki",
+        "subdistricts": [
+          "Peermade",
+          "Udumbanchola",
+          "Devikulam",
+          "Thodupuzha",
+          "Idukki"
+        ]
+      },
+      {
+        "district": "Ernakulam",
+        "subdistricts": [
+          "Paravur (North)",
+          "Aluva",
+          "Kochi/Ernakulam",
+          "Muvattupuzha",
+          "Kothamangalam",
+          "Thrikkakara"
+        ]
+      },
+      {
+        "district": "Thrissur",
+        "subdistricts": [
+          "Thrissur",
+          "Chavakkad",
+          "Thalapilly (Kodungallur?)",
+          "Talappilly",
+          "Chalakudy"
+        ]
+      },
+      {
+        "district": "Palakkad",
+        "subdistricts": [
+          "Palakkad",
+          "Ottapalam",
+          "Alathur",
+          "Chittur",
+          "Pattambi",
+          "Mannarkkad"
+        ]
+      },
+      {
+        "district": "Malappuram",
+        "subdistricts": [
+          "Malappuram",
+          "Tirur",
+          "Ponnani",
+          "Perinthalmanna",
+          "Nilambur",
+          "Ernad"
+        ]
+      },
+      {
+        "district": "Kozhikode",
+        "subdistricts": [
+          "Kozhikode",
+          "Vatakara",
+          "Thamarassery",
+          "Koyilandy"
+        ]
+      },
+      {
+        "district": "Wayanad",
+        "subdistricts": [
+          "Mananthavady",
+          "Sulthan Bathery",
+          "Vythiri"
+        ]
+      },
+      {
+        "district": "Kannur",
+        "subdistricts": [
+          "Kannur",
+          "Thalassery",
+          "Taliparamba",
+          "Iritty"
+        ]
+      },
+      {
+        "district": "Kasaragod",
+        "subdistricts": [
+          "Kasaragod",
+          "Hosdurg (Kanhangad)",
+          "Manjeshwaram"
+        ]
+      }
+    ]
+  },
+  {
+    "state": "Andhra Pradesh",
+    "state_code": "AP",
+    "source": "https://en.wikipedia.org/wiki/List_of_mandals_of_Andhra_Pradesh, official district sites (e.g., krishna.ap.gov.in)",
+    "last_verified": "2025-09-21",
+    "note": "Andhra Pradesh has 26 districts and ~679 mandals. Due to size, mandal lists are large; here we include districts and point to the mandals source for full lists.",
+    "districts": [
+      {
+        "district": "Anakapalli",
+        "subdistricts": []
+      },
+      {
+        "district": "Annamayya",
+        "subdistricts": []
+      },
+      {
+        "district": "Anantapur",
+        "subdistricts": []
+      },
+      {
+        "district": "Alluri Sitharama Raju",
+        "subdistricts": []
+      },
+      {
+        "district": "Bapatla",
+        "subdistricts": []
+      },
+      {
+        "district": "Chittoor",
+        "subdistricts": []
+      },
+      {
+        "district": "East Godavari",
+        "subdistricts": []
+      },
+      {
+        "district": "Eluru",
+        "subdistricts": []
+      },
+      {
+        "district": "Guntur",
+        "subdistricts": []
+      },
+      {
+        "district": "Kakinada",
+        "subdistricts": []
+      },
+      {
+        "district": "Krishna",
+        "subdistricts": []
+      },
+      {
+        "district": "Kurnool",
+        "subdistricts": []
+      },
+      {
+        "district": "Nandyal",
+        "subdistricts": []
+      },
+      {
+        "district": "NTR",
+        "subdistricts": []
+      },
+      {
+        "district": "Nellore (Sri Potti Sriramulu Nellore)",
+        "subdistricts": []
+      },
+      {
+        "district": "Palnadu",
+        "subdistricts": []
+      },
+      {
+        "district": "Parvathipuram Manyam",
+        "subdistricts": []
+      },
+      {
+        "district": "Prakasam",
+        "subdistricts": []
+      },
+      {
+        "district": "Srikakulam",
+        "subdistricts": []
+      },
+      {
+        "district": "Tirupati",
+        "subdistricts": []
+      },
+      {
+        "district": "Visakhapatnam",
+        "subdistricts": []
+      },
+      {
+        "district": "Vizianagaram",
+        "subdistricts": []
+      },
+      {
+        "district": "West Godavari",
+        "subdistricts": []
+      },
+      {
+        "district": "Y.S.R. Kadapa (Y.S.R.)",
+        "subdistricts": []
+      }
+    ]
+  }
+]

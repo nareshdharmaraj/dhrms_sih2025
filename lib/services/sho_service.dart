@@ -6,7 +6,7 @@ import 'who_service.dart';
 class SHOService {
   // Use WHO Service's auth token instead of maintaining separate token
   static Future<String> getApiBaseUrl() async {
-    return await EnvironmentConfig.getApiBaseUrl();
+    return EnvironmentConfig.getApiBaseUrl();
   }
 
   static Map<String, String> _getAuthHeaders() {
@@ -421,7 +421,7 @@ class ShoService {
   static String? _authToken;
   
   static Future<String> getApiBaseUrl() async {
-    return await EnvironmentConfig.getApiBaseUrl();
+    return EnvironmentConfig.getApiBaseUrl();
   }
 
   static void setAuthToken(String token) {

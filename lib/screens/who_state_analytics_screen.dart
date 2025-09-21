@@ -406,7 +406,7 @@ class _WhoStateAnalyticsScreenState extends State<WhoStateAnalyticsScreen>
             Expanded(
               child: _buildSummaryCard(
                 'Avg. Age',
-                '${averageAge.toStringAsFixed(1)}',
+                averageAge.toStringAsFixed(1),
                 Icons.cake,
                 Colors.purple,
               ),

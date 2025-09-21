@@ -458,7 +458,7 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen> {
 
   Widget _buildChartsSection() {
     if (stateStats.isEmpty) {
-      return Container(
+      return SizedBox(
         height: 200,
         child: Center(
           child: Text('No statistics available'),

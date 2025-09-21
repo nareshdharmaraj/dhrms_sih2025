@@ -17,6 +17,7 @@ const wearableRoutes = require('./routes/wearableRoutes');
 const whoRoutes = require('./routes/whoRoutes');
 const shoRoutes = require('./routes/shoRoutes');
 const shoAuthRoutes = require('./routes/shoAuthRoutes');
+const rhoRoutes = require('./routes/rhoRoutes');
 
 // Import middleware
 const errorHandler = require('./middleware/error_handler');
@@ -52,6 +53,8 @@ app.use('/api/wearables', wearableRoutes);
 app.use('/api/who', whoRoutes);
 app.use('/api/sho', shoRoutes);
 app.use('/api/sho-auth', shoAuthRoutes);
+app.use('/api/rho', rhoRoutes);
+app.use('/api/rho', rhoRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

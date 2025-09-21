@@ -8,9 +8,9 @@ class ConfigurationSwitcher extends StatefulWidget {
   final Widget child;
   
   const ConfigurationSwitcher({
-    Key? key,
+    super.key,
     required this.child,
-  }) : super(key: key);
+  });
 
   @override
   State<ConfigurationSwitcher> createState() => _ConfigurationSwitcherState();
@@ -237,7 +237,7 @@ class _ConfigurationSwitcherState extends State<ConfigurationSwitcher> {
               ),
             ),
           );
-        }).toList(),
+        }),
       ],
     );
   }

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../services/regional_health_officer_service.dart';
 import '../../utils/colors.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CreateRegionalHealthOfficerScreen extends StatefulWidget {
-  const CreateRegionalHealthOfficerScreen({super.key});
+  final String? preferredState;
+  
+  const CreateRegionalHealthOfficerScreen({super.key, this.preferredState});
 
   @override
   _CreateRegionalHealthOfficerScreenState createState() => _CreateRegionalHealthOfficerScreenState();
@@ -15,123 +18,1039 @@ class _CreateRegionalHealthOfficerScreenState extends State<CreateRegionalHealth
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _regionController = TextEditingController();
+  final _qualificationController = TextEditingController();
+  final _licenseNumberController = TextEditingController();
+  final _experienceController = TextEditingController();
   
-  String _selectedState = 'Andhra Pradesh';
-  int _maxStaffLimit = 50;
+  String? _selectedDistrict;
+  List<Map<String, dynamic>> _availableDistricts = [];
+  List<String> _selectedAreas = [];
+  Map<String, dynamic>? _districtAssignmentInfo;
+  
+  // Zone selection variables
+  String? _selectedZone;
+  List<String> _availableZones = [];
+  List<Map<String, dynamic>> _allAreas = [];
+  List<Map<String, dynamic>> _filteredAreas = [];
+  
   bool _isLoading = false;
+  bool _isLoadingData = true;
+  bool _isLoadingAreas = false;
   
-  final List<String> _indianStates = [
-    'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
-    'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka',
-    'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya',
-    'Mizoram', 'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim',
-    'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand',
-    'West Bengal', 'Delhi', 'Jammu and Kashmir', 'Ladakh'
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadInitialData();
+  }
+
+  Future<void> _loadInitialData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      
+      if (token == null) {
+        setState(() {
+          _isLoadingData = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Authentication token not found'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+        return;
+      }
+      
+      final districtsResult = await RegionalHealthOfficerService.getAvailableDistricts(token);
+      
+      setState(() {
+        if (districtsResult['success']) {
+          final data = districtsResult['data'] as Map<String, dynamic>;
+          List<Map<String, dynamic>> allDistricts = List<Map<String, dynamic>>.from(data['availableDistricts'] ?? []);
+          
+          print('🔍 Loaded ${allDistricts.length} districts from API');
+          print('🔍 First few districts: ${allDistricts.take(3).map((d) => d['name']).toList()}');
+          
+          // Filter districts by preferred state if provided
+          if (widget.preferredState != null && widget.preferredState!.isNotEmpty) {
+            _availableDistricts = allDistricts.where((district) {
+              final districtName = district['name']?.toString() ?? '';
+              final stateName = widget.preferredState!.toLowerCase();
+              // Check if district belongs to the preferred state
+              return districtName.toLowerCase().contains(stateName) ||
+                     district['state']?.toString().toLowerCase() == stateName;
+            }).toList();
+            print('🔍 Filtered to ${_availableDistricts.length} districts for state: ${widget.preferredState}');
+          } else {
+            _availableDistricts = allDistricts;
+          }
+          
+          print('🔍 Final available districts: ${_availableDistricts.map((d) => d['name']).take(5).toList()}');
+        } else {
+          print('❌ Districts API failed: ${districtsResult['message']}');
+        }
+        _isLoadingData = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoadingData = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error loading data: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
+  Future<void> _loadDistrictAreas(String district) async {
+    if (district.isEmpty) return;
+    
+    setState(() {
+      _isLoadingAreas = true;
+      _selectedAreas.clear();
+      _selectedZone = null;
+      _availableZones.clear();
+      _allAreas.clear();
+      _filteredAreas.clear();
+      _districtAssignmentInfo = null;
+    });
+
+    try {
+      print('🔍 Loading areas for district: $district');
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      
+      if (token == null) return;
+
+      final result = await RegionalHealthOfficerService.getDistrictAssignmentInfo(token, district);
+      print('🔍 Assignment info result: $result');
+
+      if (result['success']) {
+        final assignmentData = result['data'] as Map<String, dynamic>;
+        print('🔍 Assignment data structure: ${assignmentData.keys}');
+        
+        // Transform the backend response to match expected structure
+        final transformedData = {
+          'strategy': {
+            'isDense': assignmentData['requiresAreaSelection'] ?? false,
+            'type': assignmentData['type'] ?? 'sparse',
+          },
+          'availableAreas': assignmentData['availableAreas'] ?? [],
+          'subdistricts': assignmentData['subdistricts'] ?? [],
+          'district': assignmentData['district'] ?? district,
+          'state': assignmentData['state'] ?? '',
+        };
+        
+        // Extract zones from available areas
+        final availableAreas = transformedData['availableAreas'] as List<dynamic>;
+        _allAreas = availableAreas.cast<Map<String, dynamic>>();
+        
+        // Extract unique zones from area names
+        Set<String> zonesSet = {};
+        bool hasZoneStructure = false;
+        
+        for (var area in _allAreas) {
+          final areaName = area['name']?.toString() ?? '';
+          // Check if area name contains "Zone" and extract zone number
+          if (areaName.contains('Zone ')) {
+            hasZoneStructure = true;
+            final zoneMatch = RegExp(r'Zone (\d+)').firstMatch(areaName);
+            if (zoneMatch != null) {
+              zonesSet.add('Zone ${zoneMatch.group(1)}');
+            }
+          }
+        }
+        
+        // If no zone structure detected, create geographical groupings for dense districts
+        if (!hasZoneStructure && (transformedData['strategy']['isDense'] ?? false)) {
+          // For districts with specific area names (like Chennai), create regional groupings
+          for (var area in _allAreas) {
+            final areaName = area['name']?.toString() ?? '';
+            if (areaName.toLowerCase().contains('north')) {
+              zonesSet.add('North Region');
+            } else if (areaName.toLowerCase().contains('south')) {
+              zonesSet.add('South Region');
+            } else if (areaName.toLowerCase().contains('central') || areaName.toLowerCase().contains('centre')) {
+              zonesSet.add('Central Region');
+            } else if (areaName.toLowerCase().contains('east')) {
+              zonesSet.add('East Region');
+            } else if (areaName.toLowerCase().contains('west')) {
+              zonesSet.add('West Region');
+            } else {
+              // If area name doesn't match any direction, group by area type
+              zonesSet.add('Other Areas');
+            }
+          }
+        }
+        
+        _availableZones = zonesSet.toList()..sort();
+        
+        // For dense districts, don't show any areas initially - force zone selection
+        if (transformedData['strategy']['isDense'] ?? false) {
+          _filteredAreas = []; // Show no areas until zone is selected
+        } else {
+          _filteredAreas = List.from(_allAreas); // Show all areas for sparse districts
+        }
+        
+        print('🔍 Transformed data: $transformedData');
+        print('🔍 Available areas count: ${_allAreas.length}');
+        print('🔍 Available zones: $_availableZones');
+        
+        setState(() {
+          _districtAssignmentInfo = transformedData;
+          _isLoadingAreas = false;
+        });
+      } else {
+        setState(() {
+          _isLoadingAreas = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? 'Failed to load district areas'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } catch (e) {
+      print('❌ Error loading areas: $e');
+      setState(() {
+        _isLoadingAreas = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error loading areas: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
+  void _filterAreasByZone(String? zone) {
+    setState(() {
+      _selectedZone = zone;
+      _selectedAreas.clear(); // Clear selected areas when zone changes
+      
+      if (zone == null || zone.isEmpty) {
+        // For dense districts, don't show areas when no zone is selected
+        final isDense = _districtAssignmentInfo?['strategy']['isDense'] ?? false;
+        if (isDense) {
+          _filteredAreas = []; // Force zone selection for dense districts
+          print('🔍 Zone filter: No zone selected for dense district → Showing 0 areas');
+        } else {
+          _filteredAreas = List.from(_allAreas);
+          print('🔍 Zone filter: Showing ALL areas for sparse district (${_filteredAreas.length} areas)');
+        }
+      } else {
+        _filteredAreas = _allAreas.where((area) {
+          final areaName = area['name']?.toString() ?? '';
+          
+          // Handle Zone-based filtering (e.g., "Salem Zone 1")
+          if (zone.startsWith('Zone ')) {
+            return areaName.contains(zone);
+          }
+          
+          // Handle Region-based filtering (e.g., "North Region")
+          switch (zone) {
+            case 'North Region':
+              return areaName.toLowerCase().contains('north');
+            case 'South Region':
+              return areaName.toLowerCase().contains('south');
+            case 'Central Region':
+              return areaName.toLowerCase().contains('central') || 
+                     areaName.toLowerCase().contains('centre');
+            case 'East Region':
+              return areaName.toLowerCase().contains('east');
+            case 'West Region':
+              return areaName.toLowerCase().contains('west');
+            case 'Other Areas':
+              return !areaName.toLowerCase().contains('north') &&
+                     !areaName.toLowerCase().contains('south') &&
+                     !areaName.toLowerCase().contains('central') &&
+                     !areaName.toLowerCase().contains('centre') &&
+                     !areaName.toLowerCase().contains('east') &&
+                     !areaName.toLowerCase().contains('west');
+            default:
+              return areaName.contains(zone);
+          }
+        }).toList();
+        
+        print('🔍 Zone filter: Selected "$zone" → Showing ${_filteredAreas.length} areas');
+        print('🔍 Filtered area names: ${_filteredAreas.map((a) => a['name']).toList()}');
+      }
+    });
+    
+    // Additional debug information
+    print('🔍 Total areas available: ${_allAreas.length}');
+    print('🔍 Areas after zone filter: ${_filteredAreas.length}');
+    if (_selectedZone != null) {
+      print('🔍 Selected zone: $_selectedZone');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoadingData) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(widget.preferredState != null 
+            ? 'Create RHO - ${widget.preferredState}' 
+            : 'Create Regional Health Officer'),
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+        ),
+        body: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+    
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Create Regional Health Officer'),
+        title: Text(widget.preferredState != null 
+          ? 'Create RHO - ${widget.preferredState}' 
+          : 'Create Regional Health Officer'),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildSectionTitle('Personal Information'),
-              const SizedBox(height: 16),
-              
-              _buildTextField(
-                controller: _fullNameController,
-                label: 'Full Name',
-                icon: Icons.person,
-                validator: (value) => value?.isEmpty == true ? 'Full name is required' : null,
-              ),
-              
-              const SizedBox(height: 16),
-              _buildTextField(
-                controller: _emailController,
-                label: 'Email',
-                icon: Icons.email,
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value?.isEmpty == true) return 'Email is required';
-                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value!)) {
-                    return 'Please enter a valid email';
-                  }
-                  return null;
-                },
-              ),
-              
-              const SizedBox(height: 16),
-              _buildTextField(
-                controller: _phoneController,
-                label: 'Phone Number',
-                icon: Icons.phone,
-                keyboardType: TextInputType.phone,
-                validator: (value) => value?.isEmpty == true ? 'Phone number is required' : null,
-              ),
-              
-              const SizedBox(height: 16),
-              _buildTextField(
-                controller: _passwordController,
-                label: 'Password',
-                icon: Icons.lock,
-                obscureText: true,
-                validator: (value) {
-                  if (value?.isEmpty == true) return 'Password is required';
-                  if (value!.length < 8) return 'Password must be at least 8 characters';
-                  return null;
-                },
-              ),
-              
-              const SizedBox(height: 24),
-              _buildSectionTitle('Assignment Details'),
-              const SizedBox(height: 16),
-              
-              _buildDropdown(),
-              
-              const SizedBox(height: 16),
-              _buildTextField(
-                controller: _regionController,
-                label: 'Assigned Region',
-                icon: Icons.location_on,
-                validator: (value) => value?.isEmpty == true ? 'Assigned region is required' : null,
-              ),
-              
-              const SizedBox(height: 16),
-              _buildStaffLimitSlider(),
-              
-              const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _createRHO,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Regional Health Officer Form
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Regional Health Officer Details',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
-                  ),
-                  child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text('Create Regional Health Officer', style: TextStyle(fontSize: 16)),
+                    const SizedBox(height: 16),
+                    _buildCustomDataForm(),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+            
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _createCustomRHO,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : Text(
+                        'Create RHO',
+                        style: const TextStyle(fontSize: 16),
+                      ),
+              ),
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  Widget _buildCustomDataForm() {
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionTitle('Personal Information'),
+          const SizedBox(height: 16),
+          
+          _buildTextField(
+            controller: _fullNameController,
+            label: 'Full Name',
+            icon: Icons.person,
+            helperText: 'Enter a proper name (e.g., Dr. John Smith). Only letters, spaces, and dots allowed.',
+            validator: (value) {
+              if (value?.isEmpty == true) return 'Full name is required';
+              if (!RegExp(r'^[a-zA-Z\s.]+$').hasMatch(value!)) {
+                return 'Full name can only contain letters, spaces, and dots';
+              }
+              return null;
+            },
+          ),
+          
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _emailController,
+            label: 'Email',
+            icon: Icons.email,
+            keyboardType: TextInputType.emailAddress,
+            validator: (value) {
+              if (value?.isEmpty == true) return 'Email is required';
+              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value!)) {
+                return 'Please enter a valid email';
+              }
+              return null;
+            },
+          ),
+          
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _phoneController,
+            label: 'Phone Number',
+            icon: Icons.phone,
+            keyboardType: TextInputType.phone,
+            validator: (value) => value?.isEmpty == true ? 'Phone number is required' : null,
+          ),
+          
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _passwordController,
+            label: 'Password',
+            icon: Icons.lock,
+            obscureText: true,
+            helperText: 'Must contain: uppercase, lowercase, number, and special character (@\$!%*?&)',
+            validator: (value) {
+              if (value?.isEmpty == true) return 'Password is required';
+              if (value!.length < 8) return 'Password must be at least 8 characters';
+              if (!RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$').hasMatch(value)) {
+                return 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@\$!%*?&)';
+              }
+              return null;
+            },
+          ),
+          
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _qualificationController,
+            label: 'Qualification',
+            icon: Icons.school,
+            validator: (value) => value?.isEmpty == true ? 'Qualification is required' : null,
+          ),
+          
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _experienceController,
+            label: 'Experience (years)',
+            icon: Icons.work,
+            keyboardType: TextInputType.number,
+            validator: (value) {
+              if (value?.isEmpty == true) return 'Experience is required';
+              final exp = int.tryParse(value!);
+              if (exp == null || exp < 0) return 'Please enter a valid number';
+              return null;
+            },
+          ),
+          
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _licenseNumberController,
+            label: 'License Number',
+            icon: Icons.badge,
+            validator: (value) => value?.isEmpty == true ? 'License number is required' : null,
+          ),
+          
+          const SizedBox(height: 24),
+          _buildSectionTitle('District & Area Assignment'),
+          const SizedBox(height: 16),
+          
+          _buildDistrictDropdown(),
+          
+          if (_selectedDistrict != null) ...[
+            const SizedBox(height: 16),
+            _buildZoneSelection(),
+            const SizedBox(height: 16),
+            _buildAreaSelection(),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDistrictDropdown() {
+    // Ensure we have valid districts and no duplicates
+    final validDistricts = _availableDistricts
+        .where((district) => district['name'] != null && district['name'].toString().isNotEmpty)
+        .toList();
+    
+    // Ensure selected district is valid
+    if (_selectedDistrict != null && 
+        !validDistricts.any((d) => d['name'].toString() == _selectedDistrict)) {
+      _selectedDistrict = null;
+    }
+    
+    return DropdownButtonFormField<String>(
+      value: _selectedDistrict,
+      decoration: InputDecoration(
+        labelText: 'Assigned District',
+        prefixIcon: const Icon(Icons.location_city, color: AppColors.primary),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+        ),
+        helperText: validDistricts.isEmpty ? 'No districts available' : '${validDistricts.length} districts available',
+      ),
+      validator: (value) => value == null ? 'Please select a district' : null,
+      items: validDistricts.isEmpty ? [] : validDistricts.map<DropdownMenuItem<String>>((district) {
+        final districtName = district['name'].toString();
+        final isDense = district['isDense'] ?? false;
+        
+        return DropdownMenuItem<String>(
+          value: districtName,
+          child: Text(
+            '$districtName${isDense ? ' (Dense)' : ''}',
+            style: TextStyle(
+              fontSize: 14,
+              color: isDense ? Colors.orange[700] : null,
+            ),
+          ),
+        );
+      }).toList(),
+      onChanged: validDistricts.isEmpty ? null : (value) {
+        setState(() {
+          _selectedDistrict = value;
+          _selectedAreas.clear();
+        });
+        if (value != null) {
+          _loadDistrictAreas(value);
+        }
+      },
+    );
+  }
+
+  Widget _buildZoneSelection() {
+    if (_districtAssignmentInfo == null || _availableZones.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final strategy = _districtAssignmentInfo!['strategy'] as Map<String, dynamic>;
+    final isDense = strategy['isDense'] as bool? ?? false;
+
+    // Only show zone selection for dense districts with multiple zones
+    if (!isDense || _availableZones.length <= 1) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.scatter_plot, color: Colors.blue[600]),
+            const SizedBox(width: 8),
+            Text(
+              'Zone Selection',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.blue[800],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        
+        // Warning about exclusive zone selection
+        Card(
+          color: Colors.orange[50],
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Icon(Icons.warning_amber, color: Colors.orange[700], size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Important: Each RHO can only manage ONE zone. Once assigned, they cannot manage areas from other zones.',
+                    style: TextStyle(
+                      color: Colors.orange[800],
+                      fontWeight: FontWeight.w500,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        
+        const SizedBox(height: 8),
+        Text(
+          'Select exactly ONE zone for this RHO. Dense districts require zone-specific assignments for better management.',
+          style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.w500),
+        ),
+        const SizedBox(height: 12),
+        
+        // Radio button selection for exclusive zone selection
+        Card(
+          elevation: 2,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Available Zones:',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[800],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                
+                // Individual zone radio buttons (no "All Zones" option for dense districts)
+                ..._availableZones.map((zone) {
+                  final areasInZone = _allAreas.where((area) {
+                    final areaName = area['name']?.toString() ?? '';
+                    
+                    // Handle Zone-based filtering (e.g., "Salem Zone 1")
+                    if (zone.startsWith('Zone ')) {
+                      return areaName.contains(zone);
+                    }
+                    
+                    // Handle Region-based filtering
+                    switch (zone) {
+                      case 'North Region':
+                        return areaName.toLowerCase().contains('north');
+                      case 'South Region':
+                        return areaName.toLowerCase().contains('south');
+                      case 'Central Region':
+                        return areaName.toLowerCase().contains('central') || 
+                               areaName.toLowerCase().contains('centre');
+                      case 'East Region':
+                        return areaName.toLowerCase().contains('east');
+                      case 'West Region':
+                        return areaName.toLowerCase().contains('west');
+                      case 'Other Areas':
+                        return !areaName.toLowerCase().contains('north') &&
+                               !areaName.toLowerCase().contains('south') &&
+                               !areaName.toLowerCase().contains('central') &&
+                               !areaName.toLowerCase().contains('centre') &&
+                               !areaName.toLowerCase().contains('east') &&
+                               !areaName.toLowerCase().contains('west');
+                      default:
+                        return areaName.contains(zone);
+                    }
+                  }).length;
+                  
+                  return RadioListTile<String>(
+                    title: Text(
+                      zone,
+                      style: TextStyle(
+                        fontWeight: _selectedZone == zone ? FontWeight.bold : FontWeight.normal,
+                        color: _selectedZone == zone ? AppColors.primary : Colors.black87,
+                      ),
+                    ),
+                    subtitle: Text('$areasInZone areas available'),
+                    value: zone,
+                    groupValue: _selectedZone,
+                    onChanged: (value) {
+                      _filterAreasByZone(value);
+                    },
+                    dense: true,
+                    activeColor: AppColors.primary,
+                  );
+                }).toList(),
+              ],
+            ),
+          ),
+        ),
+        if (_selectedZone != null) ...[
+          const SizedBox(height: 8),
+          Card(
+            color: Colors.green[50],
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  Icon(Icons.check_circle_outline, color: Colors.green[600], size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Zone Selected: $_selectedZone',
+                          style: TextStyle(
+                            color: Colors.green[800],
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          'Showing ${_filteredAreas.length} areas exclusively from this zone',
+                          style: TextStyle(
+                            color: Colors.green[700],
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildAreaSelection() {
+    if (_isLoadingAreas) {
+      return const Card(
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 16),
+              Text('Loading area options...'),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_districtAssignmentInfo == null) {
+      return const SizedBox.shrink();
+    }
+
+    final strategy = _districtAssignmentInfo!['strategy'] as Map<String, dynamic>;
+    final availableAreas = _districtAssignmentInfo!['availableAreas'] as List<dynamic>;
+    final subdistricts = _districtAssignmentInfo!['subdistricts'] as List<dynamic>? ?? [];
+    final isDense = strategy['isDense'] as bool? ?? false;
+
+    print('🔍 Building area selection - isDense: $isDense, areas: ${availableAreas.length}, subdistricts: ${subdistricts.length}');
+
+    if (!isDense) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.info, color: Colors.blue[600]),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Full District Assignment',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue[800],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'This district is classified as sparse. The RHO will manage the entire district.',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+              if (subdistricts.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Text(
+                  'Subdistricts in this district (${subdistricts.length}):',
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: subdistricts.map((subdistrict) {
+                    final subdistrictName = subdistrict is String 
+                        ? subdistrict 
+                        : subdistrict is Map<String, dynamic> 
+                            ? (subdistrict['name'] ?? subdistrict.toString())
+                            : subdistrict.toString();
+                    return Chip(
+                      label: Text(
+                        subdistrictName,
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      backgroundColor: Colors.blue[50],
+                    );
+                  }).toList(),
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.warning, color: Colors.orange[600]),
+            const SizedBox(width: 8),
+            Text(
+              'Area-Specific Assignment Required',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.orange[800],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'This district is densely populated. Please select specific areas for this RHO to manage.',
+          style: TextStyle(color: Colors.grey[600]),
+        ),
+        const SizedBox(height: 16),
+        
+        // Show zone selection requirement for dense districts
+        if (_availableZones.length > 1 && _selectedZone == null) ...[
+          Card(
+            color: Colors.amber[50],
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.amber[700]),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Zone Selection Required',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.amber[800],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Please select a specific zone above to view the areas available in that zone. Each RHO must be assigned to exactly one zone.',
+                    style: TextStyle(color: Colors.amber[800]),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+        
+        if (_filteredAreas.isNotEmpty) ...[
+          Text(
+            'Available Areas${_selectedZone != null ? ' in $_selectedZone' : ''}:',
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${_filteredAreas.length} area${_filteredAreas.length == 1 ? '' : 's'} available${_selectedZone != null ? ' in $_selectedZone' : ''}',
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 12,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+          const SizedBox(height: 12),
+          
+          ..._filteredAreas.map((area) {
+            final areaData = area;
+            final isAssigned = areaData['isAssigned'] as bool? ?? false;
+            final areaName = (areaData['name'] ?? areaData['areaName'] ?? 'Unknown Area').toString();
+            final isSelected = _selectedAreas.contains(areaName);
+            
+            // Handle population data safely
+            final population = areaData['population'] is int 
+                ? areaData['population'] as int
+                : int.tryParse(areaData['population']?.toString() ?? '0') ?? 0;
+            
+            // Handle area data safely
+            final areaKm2 = areaData['areaKm2'] is double
+                ? areaData['areaKm2'] as double
+                : double.tryParse(areaData['areaKm2']?.toString() ?? '0') ?? 0.0;
+            
+            // Determine which zone this area belongs to
+            String areaZone = 'Unknown Zone';
+            if (areaName.contains('Zone ')) {
+              final zoneMatch = RegExp(r'Zone (\d+)').firstMatch(areaName);
+              if (zoneMatch != null) {
+                areaZone = 'Zone ${zoneMatch.group(1)}';
+              }
+            } else {
+              // For region-based areas
+              if (areaName.toLowerCase().contains('north')) {
+                areaZone = 'North Region';
+              } else if (areaName.toLowerCase().contains('south')) {
+                areaZone = 'South Region';
+              } else if (areaName.toLowerCase().contains('central') || areaName.toLowerCase().contains('centre')) {
+                areaZone = 'Central Region';
+              } else if (areaName.toLowerCase().contains('east')) {
+                areaZone = 'East Region';
+              } else if (areaName.toLowerCase().contains('west')) {
+                areaZone = 'West Region';
+              } else {
+                areaZone = 'Other Areas';
+              }
+            }
+            
+            return Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              elevation: isSelected ? 3 : 1,
+              color: isAssigned 
+                  ? Colors.red[50] 
+                  : isSelected 
+                      ? Colors.green[50] 
+                      : Colors.white,
+              child: CheckboxListTile(
+                title: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      areaName,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        color: isAssigned ? Colors.red[600] : null,
+                      ),
+                    ),
+                    if (_selectedZone == null || _availableZones.length > 1) ...[
+                      const SizedBox(height: 2),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: _selectedZone == areaZone 
+                              ? Colors.blue[100] 
+                              : Colors.grey[100],
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          areaZone,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: _selectedZone == areaZone 
+                                ? Colors.blue[800] 
+                                : Colors.grey[600],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Population: ${_formatPopulation(population)}'),
+                    Text('Area: ${areaKm2.toStringAsFixed(1)} km²'),
+                    if (isAssigned && areaData['assignedTo'] != null) ...[
+                      Text(
+                        'Assigned to: ${areaData['assignedTo']['fullName'] ?? 'Unknown RHO'}',
+                        style: TextStyle(color: Colors.red[600], fontSize: 12),
+                      ),
+                    ],
+                  ],
+                ),
+                value: isSelected,
+                onChanged: isAssigned ? null : (bool? value) {
+                  setState(() {
+                    if (value == true) {
+                      _selectedAreas.add(areaName);
+                    } else {
+                      _selectedAreas.remove(areaName);
+                    }
+                  });
+                },
+                controlAffinity: ListTileControlAffinity.trailing,
+              ),
+            );
+          }).toList(),
+          
+          if (_selectedAreas.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Card(
+              color: Colors.blue[50],
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Selected Areas (${_selectedAreas.length}):',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      children: _selectedAreas.map((area) => Chip(
+                        label: Text(area),
+                        onDeleted: () {
+                          setState(() {
+                            _selectedAreas.remove(area);
+                          });
+                        },
+                      )).toList(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ] else ...[
+          Card(
+            color: Colors.orange[50],
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.warning_amber, color: Colors.orange[700]),
+                      const SizedBox(width: 8),
+                      Text(
+                        'No Areas Available',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.orange[800],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _selectedZone != null 
+                        ? 'No areas are available for assignment in $_selectedZone. This could mean:\n• All areas in this zone are already assigned to other RHOs\n• The zone has no defined areas\n\nTry selecting a different zone above.'
+                        : 'No areas are available for assignment in this district.',
+                    style: TextStyle(color: Colors.orange[800]),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  String _formatPopulation(int population) {
+    if (population >= 1000000) {
+      return '${(population / 1000000).toStringAsFixed(1)}M';
+    } else if (population >= 1000) {
+      return '${(population / 1000).toStringAsFixed(0)}K';
+    }
+    return population.toString();
   }
 
   Widget _buildSectionTitle(String title) {
@@ -152,6 +1071,7 @@ class _CreateRegionalHealthOfficerScreenState extends State<CreateRegionalHealth
     TextInputType? keyboardType,
     bool obscureText = false,
     String? Function(String?)? validator,
+    String? helperText,
   }) {
     return TextFormField(
       controller: controller,
@@ -160,6 +1080,8 @@ class _CreateRegionalHealthOfficerScreenState extends State<CreateRegionalHealth
       validator: validator,
       decoration: InputDecoration(
         labelText: label,
+        helperText: helperText,
+        helperMaxLines: 3,
         prefixIcon: Icon(icon, color: AppColors.primary),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
@@ -172,106 +1094,74 @@ class _CreateRegionalHealthOfficerScreenState extends State<CreateRegionalHealth
     );
   }
 
-  Widget _buildDropdown() {
-    return DropdownButtonFormField<String>(
-      value: _selectedState,
-      decoration: InputDecoration(
-        labelText: 'Assigned State',
-        prefixIcon: const Icon(Icons.location_city, color: AppColors.primary),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppColors.primary, width: 2),
-        ),
-      ),
-      items: _indianStates.map((state) => DropdownMenuItem(
-        value: state,
-        child: Text(state),
-      )).toList(),
-      onChanged: (value) {
-        setState(() {
-          _selectedState = value!;
-        });
-      },
-    );
-  }
-
-  Widget _buildStaffLimitSlider() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'Maximum Staff Limit',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                '$_maxStaffLimit',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Slider(
-          value: _maxStaffLimit.toDouble(),
-          min: 10,
-          max: 200,
-          divisions: 19,
-          activeColor: AppColors.primary,
-          onChanged: (value) {
-            setState(() {
-              _maxStaffLimit = value.round();
-            });
-          },
-        ),
-        const Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('10', style: TextStyle(color: AppColors.textSecondary)),
-            Text('200', style: TextStyle(color: AppColors.textSecondary)),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Future<void> _createRHO() async {
+  Future<void> _createCustomRHO() async {
     if (!_formKey.currentState!.validate()) return;
+
+    // Validate area assignment for dense districts
+    if (_districtAssignmentInfo != null) {
+      final strategy = _districtAssignmentInfo!['strategy'] as Map<String, dynamic>;
+      final isDense = strategy['isDense'] as bool? ?? false;
+      
+      if (isDense) {
+        // Validate zone selection for dense districts
+        if (_availableZones.length > 1 && _selectedZone == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please select a specific zone for this dense district. Each RHO must be assigned to only one zone.'),
+              backgroundColor: AppColors.error,
+              duration: Duration(seconds: 4),
+            ),
+          );
+          return;
+        }
+        
+        // Validate area selection within the zone
+        if (_selectedAreas.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(_selectedZone != null 
+                ? 'Please select at least one area within $_selectedZone'
+                : 'Please select at least one area for this dense district'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+          return;
+        }
+      }
+    }
 
     setState(() {
       _isLoading = true;
     });
 
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      
+      if (token == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Authentication token not found'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+        return;
+      }
+      
       final rhoData = {
         'fullName': _fullNameController.text.trim(),
         'email': _emailController.text.trim(),
         'phone': _phoneController.text.trim(),
         'password': _passwordController.text,
-        'assignedRegion': _regionController.text.trim(),
-        'assignedState': _selectedState,
-        'parentSHO': 'current_sho_id', // This should come from the current SHO context
-        'maxStaffLimit': _maxStaffLimit,
+        'assignedDistrict': _selectedDistrict,
+        'qualification': _qualificationController.text.trim(),
+        'experience': int.tryParse(_experienceController.text.trim()) ?? 0,
+        'licenseNumber': _licenseNumberController.text.trim(),
+        if (_selectedAreas.isNotEmpty) 'assignedAreas': _selectedAreas,
+        if (_selectedZone != null) 'assignedZone': _selectedZone,
       };
 
-      final result = await RegionalHealthOfficerService.createRHO(
-        'auth_token', // This should come from auth service
-        rhoData,
-      );
+      final result = await RegionalHealthOfficerService.createRHO(token, rhoData);
 
       if (result['success']) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -282,10 +1172,17 @@ class _CreateRegionalHealthOfficerScreenState extends State<CreateRegionalHealth
         );
         Navigator.pop(context, true);
       } else {
+        String errorMessage = result['message'] ?? 'Failed to create RHO';
+        if (result['errors'] != null && result['errors'].isNotEmpty) {
+          errorMessage += '\n\nDetails:\n';
+          errorMessage += (result['errors'] as List).join('\n');
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(result['message'] ?? 'Failed to create RHO'),
+            content: Text(errorMessage),
             backgroundColor: AppColors.error,
+            duration: const Duration(seconds: 5),
           ),
         );
       }
@@ -309,7 +1206,8 @@ class _CreateRegionalHealthOfficerScreenState extends State<CreateRegionalHealth
     _emailController.dispose();
     _phoneController.dispose();
     _passwordController.dispose();
-    _regionController.dispose();
+    _qualificationController.dispose();
+    _licenseNumberController.dispose();
     super.dispose();
   }
 }

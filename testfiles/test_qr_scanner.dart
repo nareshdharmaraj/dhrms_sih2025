@@ -6,6 +6,8 @@ void main() {
 }
 
 class TestQRScannerApp extends StatelessWidget {
+  const TestQRScannerApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -16,6 +18,8 @@ class TestQRScannerApp extends StatelessWidget {
 }
 
 class TestQRScannerScreen extends StatelessWidget {
+  const TestQRScannerScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
