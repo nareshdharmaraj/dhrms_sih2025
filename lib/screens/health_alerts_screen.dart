@@ -197,7 +197,7 @@ class _HealthAlertsScreenState extends State<HealthAlertsScreen> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                initialValue: selectedType,
+                value: selectedType,
                 decoration: const InputDecoration(
                   labelText: 'Alert Type',
                   border: OutlineInputBorder(),

@@ -1471,7 +1471,7 @@ class _AddAssistantDialogState extends State<AddAssistantDialog> {
               ),
               SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                initialValue: _selectedDoctorId,
+                value: _selectedDoctorId,
                 decoration: InputDecoration(
                   labelText: 'Assign to Doctor (Optional)',
                   border: OutlineInputBorder(),

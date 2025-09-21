@@ -175,7 +175,7 @@ class _WhoHospitalManagementScreenState extends State<WhoHospitalManagementScree
             children: [
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  initialValue: selectedState,
+                  value: selectedState,
                   decoration: InputDecoration(
                     labelText: 'State',
                     border: OutlineInputBorder(
@@ -202,7 +202,7 @@ class _WhoHospitalManagementScreenState extends State<WhoHospitalManagementScree
               SizedBox(width: 12),
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  initialValue: selectedStatus,
+                  value: selectedStatus,
                   decoration: InputDecoration(
                     labelText: 'Status',
                     border: OutlineInputBorder(

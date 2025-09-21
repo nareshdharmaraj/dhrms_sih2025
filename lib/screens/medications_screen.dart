@@ -273,7 +273,7 @@ class _MedicationsScreenState extends State<MedicationsScreen> {
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
-                  initialValue: selectedFrequency,
+                  value: selectedFrequency,
                   decoration: const InputDecoration(
                     labelText: 'Frequency',
                     border: OutlineInputBorder(),
@@ -309,7 +309,7 @@ class _MedicationsScreenState extends State<MedicationsScreen> {
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
-                  initialValue: selectedType,
+                  value: selectedType,
                   decoration: const InputDecoration(
                     labelText: 'Type',
                     border: OutlineInputBorder(),

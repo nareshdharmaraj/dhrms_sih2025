@@ -771,7 +771,7 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen>
 
   Widget _buildChartsSection() {
     if (stateStats.isEmpty) {
-      return SizedBox(
+      return Container(
         height: 200,
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(

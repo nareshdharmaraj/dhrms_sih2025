@@ -188,7 +188,7 @@ class _HospitalDoctorLoginScreenState extends State<HospitalDoctorLoginScreen> {
                               child: Center(child: CircularProgressIndicator()),
                             )
                           : DropdownButtonFormField<Map<String, dynamic>>(
-                              initialValue: _selectedHospital,
+                              value: _selectedHospital,
                               decoration: const InputDecoration(
                                 labelText: 'Select Hospital',
                                 border: InputBorder.none,
