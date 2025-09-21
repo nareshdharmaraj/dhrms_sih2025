@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import '../services/api_service.dart';
-import '../utils/constants.dart';
+import '../services/hospital_api_service.dart';
+import '../services/api_client.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
 
 class HospitalDoctorLoginScreen extends StatefulWidget {
+  const HospitalDoctorLoginScreen({super.key});
+
   @override
-  _HospitalDoctorLoginScreenState createState() => _HospitalDoctorLoginScreenState();
+  _HospitalDoctorLoginScreenState createState() =>
+      _HospitalDoctorLoginScreenState();
 }
 
 class _HospitalDoctorLoginScreenState extends State<HospitalDoctorLoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  
+
   List<Map<String, dynamic>> _hospitals = [];
   Map<String, dynamic>? _selectedHospital;
   bool _isLoading = false;
@@ -40,19 +41,10 @@ class _HospitalDoctorLoginScreenState extends State<HospitalDoctorLoginScreen> {
     });
 
     try {
-      final response = await http.get(
-        Uri.parse('${ApiConstants.baseUrl}/hospital/list'),
-        headers: {'Content-Type': 'application/json'},
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        if (data['success']) {
-          setState(() {
-            _hospitals = List<Map<String, dynamic>>.from(data['data']);
-          });
-        }
-      }
+      final hospitals = await HospitalApiService.getHospitalList();
+      setState(() {
+        _hospitals = hospitals;
+      });
     } catch (e) {
       _showErrorDialog('Failed to load hospitals: $e');
     } finally {
@@ -73,31 +65,21 @@ class _HospitalDoctorLoginScreenState extends State<HospitalDoctorLoginScreen> {
     });
 
     try {
-      final response = await http.post(
-        Uri.parse('${ApiConstants.baseUrl}/hospital-doctor/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'hospitalId': _selectedHospital!['hospitalId'],
-          'username': _usernameController.text.trim(),
-          'password': _passwordController.text,
-        }),
+      final data = await HospitalApiService.doctorLogin(
+        _selectedHospital!['hospitalId'],
+        _usernameController.text.trim(),
+        _passwordController.text,
       );
 
-      final data = json.decode(response.body);
+      // Store token and doctor data
+      await ApiClient.setAuthToken(data['data']['token']);
 
-      if (response.statusCode == 200 && data['success']) {
-        // Store token and doctor data
-        await ApiService.setAuthToken(data['data']['token']);
-        
-        // Navigate to doctor dashboard
-        Navigator.pushReplacementNamed(
-          context,
-          '/hospital-staff-dashboard',
-          arguments: data['data']['doctor'],
-        );
-      } else {
-        _showErrorDialog(data['message'] ?? 'Login failed');
-      }
+      // Navigate to doctor dashboard
+      Navigator.pushReplacementNamed(
+        context,
+        '/hospital-staff-dashboard',
+        arguments: data['data']['doctor'],
+      );
     } catch (e) {
       _showErrorDialog('Login failed: $e');
     } finally {
@@ -136,10 +118,7 @@ class _HospitalDoctorLoginScreenState extends State<HospitalDoctorLoginScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF64B5F6),
-              Color(0xFF2196F3),
-            ],
+            colors: [Color(0xFF64B5F6), Color(0xFF2196F3)],
           ),
         ),
         child: SafeArea(
@@ -151,7 +130,7 @@ class _HospitalDoctorLoginScreenState extends State<HospitalDoctorLoginScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 40),
-                  
+
                   // Header
                   Container(
                     padding: const EdgeInsets.all(20),
@@ -177,17 +156,14 @@ class _HospitalDoctorLoginScreenState extends State<HospitalDoctorLoginScreen> {
                         ),
                         const Text(
                           'Login to access patient records',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.white70,
-                          ),
+                          style: TextStyle(fontSize: 14, color: Colors.white70),
                         ),
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(height: 40),
-                  
+
                   // Hospital Selection
                   Container(
                     decoration: BoxDecoration(
@@ -202,14 +178,17 @@ class _HospitalDoctorLoginScreenState extends State<HospitalDoctorLoginScreen> {
                       ],
                     ),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 4,
+                      ),
                       child: _isLoadingHospitals
                           ? const Padding(
                               padding: EdgeInsets.all(16.0),
                               child: Center(child: CircularProgressIndicator()),
                             )
                           : DropdownButtonFormField<Map<String, dynamic>>(
-                              value: _selectedHospital,
+                              initialValue: _selectedHospital,
                               decoration: const InputDecoration(
                                 labelText: 'Select Hospital',
                                 border: InputBorder.none,
@@ -218,7 +197,9 @@ class _HospitalDoctorLoginScreenState extends State<HospitalDoctorLoginScreen> {
                               items: _hospitals.map((hospital) {
                                 return DropdownMenuItem<Map<String, dynamic>>(
                                   value: hospital,
-                                  child: Text(hospital['name'] ?? 'Unknown Hospital'),
+                                  child: Text(
+                                    hospital['name'] ?? 'Unknown Hospital',
+                                  ),
                                 );
                               }).toList(),
                               onChanged: (value) {
@@ -235,9 +216,9 @@ class _HospitalDoctorLoginScreenState extends State<HospitalDoctorLoginScreen> {
                             ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 20),
-                  
+
                   // Username Field
                   CustomTextField(
                     controller: _usernameController,
@@ -250,9 +231,9 @@ class _HospitalDoctorLoginScreenState extends State<HospitalDoctorLoginScreen> {
                       return null;
                     },
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // Password Field
                   CustomTextField(
                     controller: _passwordController,
@@ -266,18 +247,18 @@ class _HospitalDoctorLoginScreenState extends State<HospitalDoctorLoginScreen> {
                       return null;
                     },
                   ),
-                  
+
                   const SizedBox(height: 30),
-                  
+
                   // Login Button
                   CustomButton(
                     text: 'Login as Doctor',
                     onPressed: _isLoading ? null : _login,
                     isLoading: _isLoading,
                   ),
-                  
+
                   const SizedBox(height: 20),
-                  
+
                   // Help Text
                   Center(
                     child: Text(

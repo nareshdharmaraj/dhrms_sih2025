@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import '../services/api_service.dart';
-import '../utils/constants.dart';
+import '../services/hospital_api_service.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/app_branding.dart';
 
 class HospitalAdminDashboardScreen extends StatefulWidget {
+  const HospitalAdminDashboardScreen({super.key});
+
   @override
-  _HospitalAdminDashboardScreenState createState() => _HospitalAdminDashboardScreenState();
+  _HospitalAdminDashboardScreenState createState() =>
+      _HospitalAdminDashboardScreenState();
 }
 
-class _HospitalAdminDashboardScreenState extends State<HospitalAdminDashboardScreen>
+class _HospitalAdminDashboardScreenState
+    extends State<HospitalAdminDashboardScreen>
     with SingleTickerProviderStateMixin {
   TabController? _tabController;
   bool _isLoading = false;
@@ -38,25 +39,12 @@ class _HospitalAdminDashboardScreenState extends State<HospitalAdminDashboardScr
     });
 
     try {
-      final token = await ApiService.getAuthToken();
-      final response = await http.get(
-        Uri.parse('${ApiConstants.baseUrl}/hospital/admin/dashboard'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        setState(() {
-          _dashboardData = data['data'];
-          _doctors = data['data']['doctors'] ?? [];
-          _assistants = data['data']['assistants'] ?? [];
-        });
-      } else {
-        _showError('Failed to load dashboard data');
-      }
+      final data = await HospitalApiService.getAdminDashboard();
+      setState(() {
+        _dashboardData = data['data'];
+        _doctors = data['data']['doctors'] ?? [];
+        _assistants = data['data']['assistants'] ?? [];
+      });
     } catch (e) {
       _showError('Error loading dashboard: $e');
     } finally {
@@ -68,10 +56,7 @@ class _HospitalAdminDashboardScreenState extends State<HospitalAdminDashboardScr
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
   }
 
@@ -82,11 +67,8 @@ class _HospitalAdminDashboardScreenState extends State<HospitalAdminDashboardScr
       body: Column(
         children: [
           // App Branding Header
-          AppBranding(
-            backgroundColor: Colors.blue[700],
-            height: 100,
-          ),
-          
+          AppBranding(backgroundColor: Colors.blue[700], height: 100),
+
           // Content Area
           Expanded(
             child: _isLoading
@@ -95,7 +77,9 @@ class _HospitalAdminDashboardScreenState extends State<HospitalAdminDashboardScr
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.blue[700]!),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.blue[700]!,
+                          ),
                         ),
                         SizedBox(height: 16),
                         Text(
@@ -119,7 +103,7 @@ class _HospitalAdminDashboardScreenState extends State<HospitalAdminDashboardScr
           ),
         ],
       ),
-      
+
       // Bottom Navigation
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
@@ -138,25 +122,16 @@ class _HospitalAdminDashboardScreenState extends State<HospitalAdminDashboardScr
           unselectedLabelColor: Colors.grey[500],
           indicatorWeight: 3,
           tabs: [
-            Tab(
-              icon: Icon(Icons.dashboard),
-              text: 'Dashboard',
-            ),
-            Tab(
-              icon: Icon(Icons.local_hospital),
-              text: 'Doctors',
-            ),
-            Tab(
-              icon: Icon(Icons.people),
-              text: 'Assistants',
-            ),
+            Tab(icon: Icon(Icons.dashboard), text: 'Dashboard'),
+            Tab(icon: Icon(Icons.local_hospital), text: 'Doctors'),
+            Tab(icon: Icon(Icons.people), text: 'Assistants'),
           ],
         ),
       ),
-      
+
       // Floating Action Button for Quick Actions
-      floatingActionButton: (_tabController?.index ?? 0) == 0 
-          ? null 
+      floatingActionButton: (_tabController?.index ?? 0) == 0
+          ? null
           : FloatingActionButton(
               onPressed: () {
                 if ((_tabController?.index ?? 0) == 1) {
@@ -177,11 +152,7 @@ class _HospitalAdminDashboardScreenState extends State<HospitalAdminDashboardScr
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
             SizedBox(height: 16),
             Text(
               'No data available',
@@ -194,10 +165,7 @@ class _HospitalAdminDashboardScreenState extends State<HospitalAdminDashboardScr
             SizedBox(height: 8),
             Text(
               'Please refresh to load dashboard data',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[500],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
             ),
             SizedBox(height: 24),
             ElevatedButton.icon(
@@ -278,9 +246,9 @@ class _HospitalAdminDashboardScreenState extends State<HospitalAdminDashboardScr
                   ),
                 ),
               ),
-              
+
               SizedBox(width: 16),
-              
+
               // Quick Actions
               Expanded(
                 flex: 1,
@@ -298,7 +266,7 @@ class _HospitalAdminDashboardScreenState extends State<HospitalAdminDashboardScr
                       Icons.logout,
                       Colors.red,
                       () async {
-                        await ApiService.clearAuthToken();
+                        await HospitalApiService.logout();
                         Navigator.of(context).pushReplacementNamed('/login');
                       },
                     ),
@@ -320,7 +288,7 @@ class _HospitalAdminDashboardScreenState extends State<HospitalAdminDashboardScr
             ),
           ),
           SizedBox(height: 12),
-          
+
           Row(
             children: [
               Expanded(
@@ -393,11 +361,7 @@ class _HospitalAdminDashboardScreenState extends State<HospitalAdminDashboardScr
               children: [
                 Row(
                   children: [
-                    Icon(
-                      Icons.business,
-                      color: Colors.blue[700],
-                      size: 24,
-                    ),
+                    Icon(Icons.business, color: Colors.blue[700], size: 24),
                     SizedBox(width: 8),
                     Text(
                       'Hospital Information',
@@ -414,11 +378,22 @@ class _HospitalAdminDashboardScreenState extends State<HospitalAdminDashboardScr
                 _buildInfoRow('Type', hospital['hospitalType'] ?? 'N/A'),
                 _buildInfoRow('Contact', hospital['contactNumber'] ?? 'N/A'),
                 _buildInfoRow('Email', hospital['email'] ?? 'N/A'),
-                _buildInfoRow('Total Beds', '${hospital['totalBeds'] ?? 'N/A'}'),
+                _buildInfoRow(
+                  'Total Beds',
+                  '${hospital['totalBeds'] ?? 'N/A'}',
+                ),
                 if (hospital['emergencyServices'] == true)
-                  _buildInfoRow('Emergency Services', 'Available', Colors.green),
+                  _buildInfoRow(
+                    'Emergency Services',
+                    'Available',
+                    Colors.green,
+                  ),
                 if (hospital['ambulanceServices'] == true)
-                  _buildInfoRow('Ambulance Services', 'Available', Colors.green),
+                  _buildInfoRow(
+                    'Ambulance Services',
+                    'Available',
+                    Colors.green,
+                  ),
               ],
             ),
           ),
@@ -427,7 +402,12 @@ class _HospitalAdminDashboardScreenState extends State<HospitalAdminDashboardScr
     );
   }
 
-  Widget _buildQuickActionCard(String title, IconData icon, Color color, VoidCallback onTap) {
+  Widget _buildQuickActionCard(
+    String title,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -456,7 +436,13 @@ class _HospitalAdminDashboardScreenState extends State<HospitalAdminDashboardScr
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color, Color backgroundColor) {
+  Widget _buildStatCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+    Color backgroundColor,
+  ) {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -500,7 +486,7 @@ class _HospitalAdminDashboardScreenState extends State<HospitalAdminDashboardScr
           SizedBox(
             width: 120,
             child: Text(
-              label + ':',
+              '$label:',
               style: TextStyle(
                 fontWeight: FontWeight.w500,
                 color: Colors.grey[700],
@@ -512,7 +498,9 @@ class _HospitalAdminDashboardScreenState extends State<HospitalAdminDashboardScr
               value,
               style: TextStyle(
                 color: valueColor ?? Colors.grey[800],
-                fontWeight: valueColor != null ? FontWeight.w600 : FontWeight.normal,
+                fontWeight: valueColor != null
+                    ? FontWeight.w600
+                    : FontWeight.normal,
               ),
             ),
           ),
@@ -590,10 +578,7 @@ class _HospitalAdminDashboardScreenState extends State<HospitalAdminDashboardScr
                       SizedBox(height: 8),
                       Text(
                         'Add your first doctor to get started',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[500],
-                        ),
+                        style: TextStyle(fontSize: 14, color: Colors.grey[500]),
                       ),
                     ],
                   ),
@@ -619,8 +604,13 @@ class _HospitalAdminDashboardScreenState extends State<HospitalAdminDashboardScr
                       child: ListTile(
                         contentPadding: EdgeInsets.all(16),
                         leading: CircleAvatar(
-                          backgroundColor: doctor['isActive'] ? Colors.green : Colors.grey,
-                          child: Icon(Icons.local_hospital, color: Colors.white),
+                          backgroundColor: doctor['isActive']
+                              ? Colors.green
+                              : Colors.grey,
+                          child: Icon(
+                            Icons.local_hospital,
+                            color: Colors.white,
+                          ),
                         ),
                         title: Text(
                           doctor['doctorName'] ?? 'Unknown',
@@ -634,13 +624,22 @@ class _HospitalAdminDashboardScreenState extends State<HospitalAdminDashboardScr
                           children: [
                             SizedBox(height: 4),
                             Text('ID: ${doctor['doctorId'] ?? 'N/A'}'),
-                            Text('Specialization: ${doctor['specialization'] ?? 'N/A'}'),
-                            Text('Contact: ${doctor['contactNumber'] ?? 'N/A'}'),
+                            Text(
+                              'Specialization: ${doctor['specialization'] ?? 'N/A'}',
+                            ),
+                            Text(
+                              'Contact: ${doctor['contactNumber'] ?? 'N/A'}',
+                            ),
                             SizedBox(height: 4),
                             Container(
-                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
-                                color: doctor['isActive'] ? Colors.green[100] : Colors.grey[200],
+                                color: doctor['isActive']
+                                    ? Colors.green[100]
+                                    : Colors.grey[200],
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
@@ -648,7 +647,9 @@ class _HospitalAdminDashboardScreenState extends State<HospitalAdminDashboardScr
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
-                                  color: doctor['isActive'] ? Colors.green[700] : Colors.grey[600],
+                                  color: doctor['isActive']
+                                      ? Colors.green[700]
+                                      : Colors.grey[600],
                                 ),
                               ),
                             ),
@@ -661,11 +662,17 @@ class _HospitalAdminDashboardScreenState extends State<HospitalAdminDashboardScr
                               child: Row(
                                 children: [
                                   Icon(
-                                    doctor['isActive'] ? Icons.block : Icons.check_circle,
+                                    doctor['isActive']
+                                        ? Icons.block
+                                        : Icons.check_circle,
                                     size: 18,
                                   ),
                                   SizedBox(width: 8),
-                                  Text(doctor['isActive'] ? 'Deactivate' : 'Activate'),
+                                  Text(
+                                    doctor['isActive']
+                                        ? 'Deactivate'
+                                        : 'Activate',
+                                  ),
                                 ],
                               ),
                             ),
@@ -682,7 +689,10 @@ class _HospitalAdminDashboardScreenState extends State<HospitalAdminDashboardScr
                           ],
                           onSelected: (value) {
                             if (value == 'toggle_status') {
-                              _toggleDoctorStatus(doctor['_id'], !doctor['isActive']);
+                              _toggleDoctorStatus(
+                                doctor['_id'],
+                                !doctor['isActive'],
+                              );
                             } else if (value == 'view_details') {
                               _showDoctorDetails(doctor);
                             }
@@ -767,10 +777,7 @@ class _HospitalAdminDashboardScreenState extends State<HospitalAdminDashboardScr
                       SizedBox(height: 8),
                       Text(
                         'Add your first assistant to get started',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[500],
-                        ),
+                        style: TextStyle(fontSize: 14, color: Colors.grey[500]),
                       ),
                     ],
                   ),
@@ -796,7 +803,9 @@ class _HospitalAdminDashboardScreenState extends State<HospitalAdminDashboardScr
                       child: ListTile(
                         contentPadding: EdgeInsets.all(16),
                         leading: CircleAvatar(
-                          backgroundColor: assistant['isActive'] ? Colors.green : Colors.grey,
+                          backgroundColor: assistant['isActive']
+                              ? Colors.green
+                              : Colors.grey,
                           child: Icon(Icons.people, color: Colors.white),
                         ),
                         title: Text(
@@ -811,15 +820,26 @@ class _HospitalAdminDashboardScreenState extends State<HospitalAdminDashboardScr
                           children: [
                             SizedBox(height: 4),
                             Text('ID: ${assistant['assistantId'] ?? 'N/A'}'),
-                            Text('Department: ${assistant['department'] ?? 'N/A'}'),
-                            Text('Contact: ${assistant['contactNumber'] ?? 'N/A'}'),
+                            Text(
+                              'Department: ${assistant['department'] ?? 'N/A'}',
+                            ),
+                            Text(
+                              'Contact: ${assistant['contactNumber'] ?? 'N/A'}',
+                            ),
                             if (assistant['assignedDoctor'] != null)
-                              Text('Assigned to: ${assistant['assignedDoctor']['doctorName'] ?? 'N/A'}'),
+                              Text(
+                                'Assigned to: ${assistant['assignedDoctor']['doctorName'] ?? 'N/A'}',
+                              ),
                             SizedBox(height: 4),
                             Container(
-                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
-                                color: assistant['isActive'] ? Colors.green[100] : Colors.grey[200],
+                                color: assistant['isActive']
+                                    ? Colors.green[100]
+                                    : Colors.grey[200],
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
@@ -827,7 +847,9 @@ class _HospitalAdminDashboardScreenState extends State<HospitalAdminDashboardScr
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
-                                  color: assistant['isActive'] ? Colors.green[700] : Colors.grey[600],
+                                  color: assistant['isActive']
+                                      ? Colors.green[700]
+                                      : Colors.grey[600],
                                 ),
                               ),
                             ),
@@ -840,11 +862,17 @@ class _HospitalAdminDashboardScreenState extends State<HospitalAdminDashboardScr
                               child: Row(
                                 children: [
                                   Icon(
-                                    assistant['isActive'] ? Icons.block : Icons.check_circle,
+                                    assistant['isActive']
+                                        ? Icons.block
+                                        : Icons.check_circle,
                                     size: 18,
                                   ),
                                   SizedBox(width: 8),
-                                  Text(assistant['isActive'] ? 'Deactivate' : 'Activate'),
+                                  Text(
+                                    assistant['isActive']
+                                        ? 'Deactivate'
+                                        : 'Activate',
+                                  ),
                                 ],
                               ),
                             ),
@@ -861,7 +889,10 @@ class _HospitalAdminDashboardScreenState extends State<HospitalAdminDashboardScr
                           ],
                           onSelected: (value) {
                             if (value == 'toggle_status') {
-                              _toggleAssistantStatus(assistant['_id'], !assistant['isActive']);
+                              _toggleAssistantStatus(
+                                assistant['_id'],
+                                !assistant['isActive'],
+                              );
                             } else if (value == 'view_details') {
                               _showAssistantDetails(assistant);
                             }
@@ -918,8 +949,14 @@ class _HospitalAdminDashboardScreenState extends State<HospitalAdminDashboardScr
               _buildDetailRow('Specialization', doctor['specialization']),
               _buildDetailRow('License Number', doctor['licenseNumber']),
               _buildDetailRow('Qualification', doctor['qualification']),
-              _buildDetailRow('Experience', '${doctor['experienceYears'] ?? 0} years'),
-              _buildDetailRow('Status', doctor['isActive'] ? 'Active' : 'Inactive'),
+              _buildDetailRow(
+                'Experience',
+                '${doctor['experienceYears'] ?? 0} years',
+              ),
+              _buildDetailRow(
+                'Status',
+                doctor['isActive'] ? 'Active' : 'Inactive',
+              ),
               _buildDetailRow('Created', doctor['createdAt'] ?? 'N/A'),
             ],
           ),
@@ -951,10 +988,19 @@ class _HospitalAdminDashboardScreenState extends State<HospitalAdminDashboardScr
               _buildDetailRow('Contact', assistant['contactNumber']),
               _buildDetailRow('Department', assistant['department']),
               _buildDetailRow('Qualification', assistant['qualification']),
-              _buildDetailRow('Experience', '${assistant['experienceYears'] ?? 0} years'),
+              _buildDetailRow(
+                'Experience',
+                '${assistant['experienceYears'] ?? 0} years',
+              ),
               if (assistant['assignedDoctor'] != null)
-                _buildDetailRow('Assigned Doctor', assistant['assignedDoctor']['doctorName']),
-              _buildDetailRow('Status', assistant['isActive'] ? 'Active' : 'Inactive'),
+                _buildDetailRow(
+                  'Assigned Doctor',
+                  assistant['assignedDoctor']['doctorName'],
+                ),
+              _buildDetailRow(
+                'Status',
+                assistant['isActive'] ? 'Active' : 'Inactive',
+              ),
               _buildDetailRow('Created', assistant['createdAt'] ?? 'N/A'),
             ],
           ),
@@ -978,7 +1024,7 @@ class _HospitalAdminDashboardScreenState extends State<HospitalAdminDashboardScr
           SizedBox(
             width: 100,
             child: Text(
-              label + ':',
+              '$label:',
               style: TextStyle(fontWeight: FontWeight.w500),
             ),
           ),
@@ -990,49 +1036,26 @@ class _HospitalAdminDashboardScreenState extends State<HospitalAdminDashboardScr
 
   Future<void> _toggleDoctorStatus(String doctorId, bool newStatus) async {
     try {
-      final token = await ApiService.getAuthToken();
-      final response = await http.patch(
-        Uri.parse('${ApiConstants.baseUrl}/hospital/admin/doctor/$doctorId/status'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: json.encode({'isActive': newStatus}),
+      await HospitalApiService.toggleDoctorStatus(doctorId, newStatus);
+      _loadDashboardData(); // Refresh data
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Doctor status updated successfully')),
       );
-
-      if (response.statusCode == 200) {
-        _loadDashboardData(); // Refresh data
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Doctor status updated successfully')),
-        );
-      } else {
-        _showError('Failed to update doctor status');
-      }
     } catch (e) {
       _showError('Error updating doctor status: $e');
     }
   }
 
-  Future<void> _toggleAssistantStatus(String assistantId, bool newStatus) async {
+  Future<void> _toggleAssistantStatus(
+    String assistantId,
+    bool newStatus,
+  ) async {
     try {
-      final token = await ApiService.getAuthToken();
-      final response = await http.patch(
-        Uri.parse('${ApiConstants.baseUrl}/hospital/admin/assistant/$assistantId/status'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: json.encode({'isActive': newStatus}),
+      await HospitalApiService.toggleAssistantStatus(assistantId, newStatus);
+      _loadDashboardData(); // Refresh data
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Assistant status updated successfully')),
       );
-
-      if (response.statusCode == 200) {
-        _loadDashboardData(); // Refresh data
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Assistant status updated successfully')),
-        );
-      } else {
-        _showError('Failed to update assistant status');
-      }
     } catch (e) {
       _showError('Error updating assistant status: $e');
     }
@@ -1042,7 +1065,7 @@ class _HospitalAdminDashboardScreenState extends State<HospitalAdminDashboardScr
 class AddDoctorDialog extends StatefulWidget {
   final VoidCallback onDoctorAdded;
 
-  AddDoctorDialog({required this.onDoctorAdded});
+  const AddDoctorDialog({super.key, required this.onDoctorAdded});
 
   @override
   _AddDoctorDialogState createState() => _AddDoctorDialogState();
@@ -1083,41 +1106,24 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
     });
 
     try {
-      final token = await ApiService.getAuthToken();
-      final response = await http.post(
-        Uri.parse('${ApiConstants.baseUrl}/hospital/admin/doctor'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: json.encode({
-          'username': _usernameController.text.trim(),
-          'password': _passwordController.text,
-          'doctorName': _doctorNameController.text.trim(),
-          'email': _emailController.text.trim(),
-          'contactNumber': _contactNumberController.text.trim(),
-          'specialization': _specializationController.text.trim(),
-          'licenseNumber': _licenseNumberController.text.trim(),
-          'qualification': _qualificationController.text.trim(),
-          'experienceYears': int.tryParse(_experienceYearsController.text) ?? 0,
-        }),
-      );
+      final doctorData = {
+        'username': _usernameController.text.trim(),
+        'password': _passwordController.text,
+        'doctorName': _doctorNameController.text.trim(),
+        'email': _emailController.text.trim(),
+        'contactNumber': _contactNumberController.text.trim(),
+        'specialization': _specializationController.text.trim(),
+        'licenseNumber': _licenseNumberController.text.trim(),
+        'qualification': _qualificationController.text.trim(),
+        'experienceYears': int.tryParse(_experienceYearsController.text) ?? 0,
+      };
 
-      if (response.statusCode == 201) {
-        Navigator.pop(context);
-        widget.onDoctorAdded();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Doctor added successfully')),
-        );
-      } else {
-        final data = json.decode(response.body);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(data['message'] ?? 'Failed to add doctor'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      await HospitalApiService.createDoctor(doctorData);
+      Navigator.pop(context);
+      widget.onDoctorAdded();
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Doctor added successfully')));
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1264,7 +1270,9 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
         ),
         ElevatedButton(
           onPressed: _isLoading ? null : _addDoctor,
-          child: _isLoading ? CircularProgressIndicator(strokeWidth: 2) : Text('Add Doctor'),
+          child: _isLoading
+              ? CircularProgressIndicator(strokeWidth: 2)
+              : Text('Add Doctor'),
         ),
       ],
     );
@@ -1275,7 +1283,11 @@ class AddAssistantDialog extends StatefulWidget {
   final List<dynamic> doctors;
   final VoidCallback onAssistantAdded;
 
-  AddAssistantDialog({required this.doctors, required this.onAssistantAdded});
+  const AddAssistantDialog({
+    super.key,
+    required this.doctors,
+    required this.onAssistantAdded,
+  });
 
   @override
   _AddAssistantDialogState createState() => _AddAssistantDialogState();
@@ -1315,41 +1327,24 @@ class _AddAssistantDialogState extends State<AddAssistantDialog> {
     });
 
     try {
-      final token = await ApiService.getAuthToken();
-      final response = await http.post(
-        Uri.parse('${ApiConstants.baseUrl}/hospital/admin/assistant'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: json.encode({
-          'username': _usernameController.text.trim(),
-          'password': _passwordController.text,
-          'assistantName': _assistantNameController.text.trim(),
-          'email': _emailController.text.trim(),
-          'contactNumber': _contactNumberController.text.trim(),
-          'department': _departmentController.text.trim(),
-          'qualification': _qualificationController.text.trim(),
-          'experienceYears': int.tryParse(_experienceYearsController.text) ?? 0,
-          if (_selectedDoctorId != null) 'assignedDoctor': _selectedDoctorId,
-        }),
-      );
+      final assistantData = {
+        'username': _usernameController.text.trim(),
+        'password': _passwordController.text,
+        'assistantName': _assistantNameController.text.trim(),
+        'email': _emailController.text.trim(),
+        'contactNumber': _contactNumberController.text.trim(),
+        'department': _departmentController.text.trim(),
+        'qualification': _qualificationController.text.trim(),
+        'experienceYears': int.tryParse(_experienceYearsController.text) ?? 0,
+        if (_selectedDoctorId != null) 'assignedDoctor': _selectedDoctorId,
+      };
 
-      if (response.statusCode == 201) {
-        Navigator.pop(context);
-        widget.onAssistantAdded();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Assistant added successfully')),
-        );
-      } else {
-        final data = json.decode(response.body);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(data['message'] ?? 'Failed to add assistant'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      await HospitalApiService.createAssistant(assistantData);
+      Navigator.pop(context);
+      widget.onAssistantAdded();
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Assistant added successfully')));
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1476,7 +1471,7 @@ class _AddAssistantDialogState extends State<AddAssistantDialog> {
               ),
               SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: _selectedDoctorId,
+                initialValue: _selectedDoctorId,
                 decoration: InputDecoration(
                   labelText: 'Assign to Doctor (Optional)',
                   border: OutlineInputBorder(),
@@ -1489,9 +1484,11 @@ class _AddAssistantDialogState extends State<AddAssistantDialog> {
                   ...widget.doctors.map((doctor) {
                     return DropdownMenuItem<String>(
                       value: doctor['_id'],
-                      child: Text('${doctor['doctorName']} - ${doctor['specialization']}'),
+                      child: Text(
+                        '${doctor['doctorName']} - ${doctor['specialization']}',
+                      ),
                     );
-                  }).toList(),
+                  }),
                 ],
                 onChanged: (value) {
                   setState(() {
@@ -1510,7 +1507,9 @@ class _AddAssistantDialogState extends State<AddAssistantDialog> {
         ),
         ElevatedButton(
           onPressed: _isLoading ? null : _addAssistant,
-          child: _isLoading ? CircularProgressIndicator(strokeWidth: 2) : Text('Add Assistant'),
+          child: _isLoading
+              ? CircularProgressIndicator(strokeWidth: 2)
+              : Text('Add Assistant'),
         ),
       ],
     );

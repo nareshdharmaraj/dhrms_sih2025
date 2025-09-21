@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
 import '../utils/card_download_service.dart';
 import '../utils/environment_config.dart';
 

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../widgets/role_card_widget.dart';
 import '../models/user_role_model.dart';
 import 'login_screen.dart';
-import 'debug_connection_screen.dart';
 
 class RoleSelectionScreen extends StatelessWidget {
   const RoleSelectionScreen({super.key});
@@ -13,24 +12,7 @@ class RoleSelectionScreen extends StatelessWidget {
     final isTablet = screenSize.width > 600;
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.bug_report, color: Colors.white),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => DebugConnectionScreen(),
-                ),
-              );
-            },
-            tooltip: 'Debug Connection',
-          ),
-        ],
-      ),
+      appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
       extendBodyBehindAppBar: true,
       body: Container(
         decoration: const BoxDecoration(
@@ -265,16 +247,15 @@ class RoleSelectionScreen extends StatelessWidget {
     // Navigate to WHO login for WHO admin role
     if (role.route == '/who') {
       Navigator.pushNamed(context, '/who-login');
-    } 
+    }
     // Navigate to SHO login for SHO role
     else if (role.route == '/sho') {
       Navigator.pushNamed(context, '/sho-login');
-    } 
+    }
     // Navigate to hospital role selection for hospital staff
     else if (role.route == '/hospital') {
       Navigator.pushNamed(context, '/hospital-role-selection');
-    }
-    else {
+    } else {
       // Navigate directly to login screen for all other roles
       Navigator.push(
         context,

@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import '../services/api_service.dart';
-import '../utils/constants.dart';
+import '../services/hospital_api_service.dart';
 import '../widgets/app_branding.dart';
 
 class HospitalAssistantDashboardScreen extends StatefulWidget {
+  const HospitalAssistantDashboardScreen({super.key});
+
   @override
-  _HospitalAssistantDashboardScreenState createState() => _HospitalAssistantDashboardScreenState();
+  _HospitalAssistantDashboardScreenState createState() =>
+      _HospitalAssistantDashboardScreenState();
 }
 
-class _HospitalAssistantDashboardScreenState extends State<HospitalAssistantDashboardScreen>
+class _HospitalAssistantDashboardScreenState
+    extends State<HospitalAssistantDashboardScreen>
     with SingleTickerProviderStateMixin {
   TabController? _tabController;
   bool _isLoading = false;
@@ -38,28 +39,13 @@ class _HospitalAssistantDashboardScreenState extends State<HospitalAssistantDash
     });
 
     try {
-      final token = await ApiService.getAuthToken();
-      
-      // Load assistant dashboard data
-      final response = await http.get(
-        Uri.parse('${ApiConstants.baseUrl}/hospital/assistant/dashboard'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        setState(() {
-          _assistantData = data['data'];
-          _assignedTasks = data['data']['assignedTasks'] ?? [];
-          _patientRecords = data['data']['patientRecords'] ?? [];
-          _todayTasks = data['data']['todayTasks'] ?? [];
-        });
-      } else {
-        _showError('Failed to load assistant data');
-      }
+      final data = await HospitalApiService.getAssistantDashboard();
+      setState(() {
+        _assistantData = data['data'];
+        _assignedTasks = data['data']['assignedTasks'] ?? [];
+        _patientRecords = data['data']['patientRecords'] ?? [];
+        _todayTasks = data['data']['todayTasks'] ?? [];
+      });
     } catch (e) {
       _showError('Error loading assistant dashboard: $e');
     } finally {
@@ -71,10 +57,7 @@ class _HospitalAssistantDashboardScreenState extends State<HospitalAssistantDash
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
   }
 
@@ -85,11 +68,8 @@ class _HospitalAssistantDashboardScreenState extends State<HospitalAssistantDash
       body: Column(
         children: [
           // App Branding Header
-          AppBranding(
-            backgroundColor: Colors.purple[700],
-            height: 100,
-          ),
-          
+          AppBranding(backgroundColor: Colors.purple[700], height: 100),
+
           // Content Area
           Expanded(
             child: _isLoading
@@ -98,7 +78,9 @@ class _HospitalAssistantDashboardScreenState extends State<HospitalAssistantDash
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.purple[700]!),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.purple[700]!,
+                          ),
                         ),
                         SizedBox(height: 16),
                         Text(
@@ -123,7 +105,7 @@ class _HospitalAssistantDashboardScreenState extends State<HospitalAssistantDash
           ),
         ],
       ),
-      
+
       // Bottom Navigation
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
@@ -142,22 +124,10 @@ class _HospitalAssistantDashboardScreenState extends State<HospitalAssistantDash
           unselectedLabelColor: Colors.grey[500],
           indicatorWeight: 3,
           tabs: [
-            Tab(
-              icon: Icon(Icons.dashboard),
-              text: 'Dashboard',
-            ),
-            Tab(
-              icon: Icon(Icons.assignment),
-              text: 'Tasks',
-            ),
-            Tab(
-              icon: Icon(Icons.folder_shared),
-              text: 'Records',
-            ),
-            Tab(
-              icon: Icon(Icons.person),
-              text: 'Profile',
-            ),
+            Tab(icon: Icon(Icons.dashboard), text: 'Dashboard'),
+            Tab(icon: Icon(Icons.assignment), text: 'Tasks'),
+            Tab(icon: Icon(Icons.folder_shared), text: 'Records'),
+            Tab(icon: Icon(Icons.person), text: 'Profile'),
           ],
         ),
       ),
@@ -170,11 +140,7 @@ class _HospitalAssistantDashboardScreenState extends State<HospitalAssistantDash
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
             SizedBox(height: 16),
             Text(
               'No data available',
@@ -187,10 +153,7 @@ class _HospitalAssistantDashboardScreenState extends State<HospitalAssistantDash
             SizedBox(height: 8),
             Text(
               'Please refresh to load dashboard data',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[500],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
             ),
             SizedBox(height: 24),
             ElevatedButton.icon(
@@ -280,9 +243,9 @@ class _HospitalAssistantDashboardScreenState extends State<HospitalAssistantDash
                   ),
                 ),
               ),
-              
+
               SizedBox(width: 16),
-              
+
               // Quick Actions
               Expanded(
                 flex: 1,
@@ -300,7 +263,7 @@ class _HospitalAssistantDashboardScreenState extends State<HospitalAssistantDash
                       Icons.logout,
                       Colors.red,
                       () async {
-                        await ApiService.clearAuthToken();
+                        await HospitalApiService.logout();
                         Navigator.of(context).pushReplacementNamed('/login');
                       },
                     ),
@@ -367,7 +330,7 @@ class _HospitalAssistantDashboardScreenState extends State<HospitalAssistantDash
             ),
           ),
           SizedBox(height: 12),
-          
+
           Row(
             children: [
               Expanded(
@@ -440,11 +403,7 @@ class _HospitalAssistantDashboardScreenState extends State<HospitalAssistantDash
               children: [
                 Row(
                   children: [
-                    Icon(
-                      Icons.today,
-                      color: Colors.purple[700],
-                      size: 24,
-                    ),
+                    Icon(Icons.today, color: Colors.purple[700], size: 24),
                     SizedBox(width: 8),
                     Text(
                       'Today\'s Tasks',
@@ -463,17 +422,15 @@ class _HospitalAssistantDashboardScreenState extends State<HospitalAssistantDash
                       padding: EdgeInsets.all(20),
                       child: Text(
                         'No tasks for today',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 16,
-                        ),
+                        style: TextStyle(color: Colors.grey[600], fontSize: 16),
                       ),
                     ),
                   )
                 else
-                  ...(_todayTasks.take(3).map((task) => 
-                    _buildTaskCard(task)
-                  ).toList()),
+                  ...(_todayTasks
+                      .take(3)
+                      .map((task) => _buildTaskCard(task))
+                      .toList()),
                 if (_todayTasks.length > 3)
                   TextButton(
                     onPressed: () {
@@ -489,7 +446,12 @@ class _HospitalAssistantDashboardScreenState extends State<HospitalAssistantDash
     );
   }
 
-  Widget _buildQuickActionCard(String title, IconData icon, Color color, VoidCallback onTap) {
+  Widget _buildQuickActionCard(
+    String title,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -518,7 +480,13 @@ class _HospitalAssistantDashboardScreenState extends State<HospitalAssistantDash
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color, Color backgroundColor) {
+  Widget _buildStatCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+    Color backgroundColor,
+  ) {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -565,9 +533,11 @@ class _HospitalAssistantDashboardScreenState extends State<HospitalAssistantDash
       child: Row(
         children: [
           CircleAvatar(
-            backgroundColor: _getTaskPriorityColor(task['priority']).withOpacity(0.2),
+            backgroundColor: _getTaskPriorityColor(
+              task['priority'],
+            ).withOpacity(0.2),
             child: Icon(
-              Icons.assignment, 
+              Icons.assignment,
               color: _getTaskPriorityColor(task['priority']),
               size: 20,
             ),
@@ -579,27 +549,18 @@ class _HospitalAssistantDashboardScreenState extends State<HospitalAssistantDash
               children: [
                 Text(
                   task['title'] ?? 'Unknown Task',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                 ),
                 if (task['description'] != null)
                   Text(
                     task['description'],
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                 Text(
                   'Due: ${task['dueTime'] ?? 'Not specified'}',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
                 ),
               ],
             ),
@@ -625,7 +586,9 @@ class _HospitalAssistantDashboardScreenState extends State<HospitalAssistantDash
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: _getTaskPriorityColor(task['priority']).withOpacity(0.2),
+                  color: _getTaskPriorityColor(
+                    task['priority'],
+                  ).withOpacity(0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -731,10 +694,7 @@ class _HospitalAssistantDashboardScreenState extends State<HospitalAssistantDash
                       SizedBox(height: 8),
                       Text(
                         'Tasks will appear here when assigned',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[500],
-                        ),
+                        style: TextStyle(fontSize: 14, color: Colors.grey[500]),
                       ),
                     ],
                   ),
@@ -760,9 +720,11 @@ class _HospitalAssistantDashboardScreenState extends State<HospitalAssistantDash
                       child: ListTile(
                         contentPadding: EdgeInsets.all(16),
                         leading: CircleAvatar(
-                          backgroundColor: _getTaskPriorityColor(task['priority']).withOpacity(0.2),
+                          backgroundColor: _getTaskPriorityColor(
+                            task['priority'],
+                          ).withOpacity(0.2),
                           child: Icon(
-                            Icons.assignment, 
+                            Icons.assignment,
                             color: _getTaskPriorityColor(task['priority']),
                           ),
                         ),
@@ -791,9 +753,14 @@ class _HospitalAssistantDashboardScreenState extends State<HospitalAssistantDash
                             Row(
                               children: [
                                 Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: _getTaskStatusColor(task['status']).withOpacity(0.2),
+                                    color: _getTaskStatusColor(
+                                      task['status'],
+                                    ).withOpacity(0.2),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
@@ -801,15 +768,22 @@ class _HospitalAssistantDashboardScreenState extends State<HospitalAssistantDash
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
-                                      color: _getTaskStatusColor(task['status']),
+                                      color: _getTaskStatusColor(
+                                        task['status'],
+                                      ),
                                     ),
                                   ),
                                 ),
                                 SizedBox(width: 8),
                                 Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: _getTaskPriorityColor(task['priority']).withOpacity(0.2),
+                                    color: _getTaskPriorityColor(
+                                      task['priority'],
+                                    ).withOpacity(0.2),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
@@ -817,7 +791,9 @@ class _HospitalAssistantDashboardScreenState extends State<HospitalAssistantDash
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
-                                      color: _getTaskPriorityColor(task['priority']),
+                                      color: _getTaskPriorityColor(
+                                        task['priority'],
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -941,10 +917,7 @@ class _HospitalAssistantDashboardScreenState extends State<HospitalAssistantDash
                       SizedBox(height: 8),
                       Text(
                         'Records will appear here when assigned',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[500],
-                        ),
+                        style: TextStyle(fontSize: 14, color: Colors.grey[500]),
                       ),
                     ],
                   ),
@@ -985,7 +958,9 @@ class _HospitalAssistantDashboardScreenState extends State<HospitalAssistantDash
                           children: [
                             SizedBox(height: 4),
                             Text('UHID: ${record['uhid'] ?? 'N/A'}'),
-                            Text('Record Type: ${record['recordType'] ?? 'General'}'),
+                            Text(
+                              'Record Type: ${record['recordType'] ?? 'General'}',
+                            ),
                             Text('Date: ${record['recordDate'] ?? 'N/A'}'),
                             if (record['notes'] != null)
                               Text(
@@ -996,7 +971,10 @@ class _HospitalAssistantDashboardScreenState extends State<HospitalAssistantDash
                           ],
                         ),
                         trailing: IconButton(
-                          icon: Icon(Icons.visibility, color: Colors.purple[700]),
+                          icon: Icon(
+                            Icons.visibility,
+                            color: Colors.purple[700],
+                          ),
                           onPressed: () => _showRecordDetails(record),
                         ),
                         isThreeLine: true,
@@ -1112,9 +1090,15 @@ class _HospitalAssistantDashboardScreenState extends State<HospitalAssistantDash
                 _buildProfileRow('Assistant ID', assistant['assistantId']),
                 _buildProfileRow('Department', assistant['department']),
                 _buildProfileRow('Qualification', assistant['qualification']),
-                _buildProfileRow('Experience', '${assistant['experienceYears'] ?? 0} years'),
+                _buildProfileRow(
+                  'Experience',
+                  '${assistant['experienceYears'] ?? 0} years',
+                ),
                 if (assignedDoctor != null)
-                  _buildProfileRow('Assigned to', 'Dr. ${assignedDoctor['doctorName']}'),
+                  _buildProfileRow(
+                    'Assigned to',
+                    'Dr. ${assignedDoctor['doctorName']}',
+                  ),
               ],
             ),
           ),
@@ -1199,7 +1183,7 @@ class _HospitalAssistantDashboardScreenState extends State<HospitalAssistantDash
             width: double.infinity,
             child: ElevatedButton.icon(
               onPressed: () async {
-                await ApiService.clearAuthToken();
+                await HospitalApiService.logout();
                 Navigator.of(context).pushReplacementNamed('/login');
               },
               icon: Icon(Icons.logout),
@@ -1228,7 +1212,7 @@ class _HospitalAssistantDashboardScreenState extends State<HospitalAssistantDash
           SizedBox(
             width: 120,
             child: Text(
-              label + ':',
+              '$label:',
               style: TextStyle(
                 fontWeight: FontWeight.w500,
                 color: Colors.grey[700],
@@ -1238,9 +1222,7 @@ class _HospitalAssistantDashboardScreenState extends State<HospitalAssistantDash
           Expanded(
             child: Text(
               value?.toString() ?? 'N/A',
-              style: TextStyle(
-                color: Colors.grey[800],
-              ),
+              style: TextStyle(color: Colors.grey[800]),
             ),
           ),
         ],
@@ -1320,7 +1302,7 @@ class _HospitalAssistantDashboardScreenState extends State<HospitalAssistantDash
           SizedBox(
             width: 100,
             child: Text(
-              label + ':',
+              '$label:',
               style: TextStyle(fontWeight: FontWeight.w500),
             ),
           ),
@@ -1332,24 +1314,11 @@ class _HospitalAssistantDashboardScreenState extends State<HospitalAssistantDash
 
   Future<void> _updateTaskStatus(String taskId, String status) async {
     try {
-      final token = await ApiService.getAuthToken();
-      final response = await http.patch(
-        Uri.parse('${ApiConstants.baseUrl}/hospital/assistant/task/$taskId/status'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: json.encode({'status': status}),
+      await HospitalApiService.updateTaskStatus(taskId, status);
+      _loadAssistantData(); // Refresh data
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Task status updated successfully')),
       );
-
-      if (response.statusCode == 200) {
-        _loadAssistantData(); // Refresh data
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Task status updated successfully')),
-        );
-      } else {
-        _showError('Failed to update task status');
-      }
     } catch (e) {
       _showError('Error updating task status: $e');
     }

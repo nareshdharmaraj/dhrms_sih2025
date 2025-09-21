@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import '../services/api_service.dart';
-import '../utils/constants.dart';
+import '../services/hospital_api_service.dart';
+import '../services/api_client.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
 import 'hospital_admin_dashboard_screen.dart';
 
 class HospitalRegistrationScreen extends StatefulWidget {
+  const HospitalRegistrationScreen({super.key});
+
   @override
-  _HospitalRegistrationScreenState createState() => _HospitalRegistrationScreenState();
+  _HospitalRegistrationScreenState createState() =>
+      _HospitalRegistrationScreenState();
 }
 
-class _HospitalRegistrationScreenState extends State<HospitalRegistrationScreen> {
+class _HospitalRegistrationScreenState
+    extends State<HospitalRegistrationScreen> {
   final _formKey = GlobalKey<FormState>();
   final _pageController = PageController();
   int _currentPage = 0;
@@ -40,30 +42,76 @@ class _HospitalRegistrationScreenState extends State<HospitalRegistrationScreen>
 
   String _selectedState = 'Maharashtra';
   String _selectedHospitalType = 'Private';
-  List<String> _selectedSpecialties = [];
+  final List<String> _selectedSpecialties = [];
   bool _emergencyServices = false;
   bool _ambulanceServices = false;
   bool _isLoading = false;
 
   final List<String> _states = [
-    'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
-    'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand',
-    'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur',
-    'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab',
-    'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura',
-    'Uttar Pradesh', 'Uttarakhand', 'West Bengal'
+    'Andhra Pradesh',
+    'Arunachal Pradesh',
+    'Assam',
+    'Bihar',
+    'Chhattisgarh',
+    'Goa',
+    'Gujarat',
+    'Haryana',
+    'Himachal Pradesh',
+    'Jharkhand',
+    'Karnataka',
+    'Kerala',
+    'Madhya Pradesh',
+    'Maharashtra',
+    'Manipur',
+    'Meghalaya',
+    'Mizoram',
+    'Nagaland',
+    'Odisha',
+    'Punjab',
+    'Rajasthan',
+    'Sikkim',
+    'Tamil Nadu',
+    'Telangana',
+    'Tripura',
+    'Uttar Pradesh',
+    'Uttarakhand',
+    'West Bengal',
   ];
 
   final List<String> _hospitalTypes = [
-    'Government', 'Private', 'Semi-Government', 'Trust', 'Corporate'
+    'Government',
+    'Private',
+    'Semi-Government',
+    'Trust',
+    'Corporate',
   ];
 
   final List<String> _availableSpecialties = [
-    'General Medicine', 'Cardiology', 'Neurology', 'Orthopedics', 'Pediatrics',
-    'Gynecology', 'Dermatology', 'Psychiatry', 'Surgery', 'Anesthesiology',
-    'Emergency Medicine', 'Radiology', 'Pathology', 'Ophthalmology', 'ENT',
-    'Urology', 'Nephrology', 'Pulmonology', 'Gastroenterology', 'Endocrinology',
-    'Oncology', 'Rheumatology', 'Plastic Surgery', 'Neurosurgery', 'Cardiac Surgery'
+    'General Medicine',
+    'Cardiology',
+    'Neurology',
+    'Orthopedics',
+    'Pediatrics',
+    'Gynecology',
+    'Dermatology',
+    'Psychiatry',
+    'Surgery',
+    'Anesthesiology',
+    'Emergency Medicine',
+    'Radiology',
+    'Pathology',
+    'Ophthalmology',
+    'ENT',
+    'Urology',
+    'Nephrology',
+    'Pulmonology',
+    'Gastroenterology',
+    'Endocrinology',
+    'Oncology',
+    'Rheumatology',
+    'Plastic Surgery',
+    'Neurosurgery',
+    'Cardiac Surgery',
   ];
 
   @override
@@ -99,52 +147,44 @@ class _HospitalRegistrationScreenState extends State<HospitalRegistrationScreen>
     });
 
     try {
-      final response = await http.post(
-        Uri.parse('${ApiConstants.baseUrl}/hospital/register'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'hospitalName': _hospitalNameController.text.trim(),
-          'address': {
-            'street': _streetController.text.trim(),
-            'city': _cityController.text.trim(),
-            'state': _selectedState,
-            'district': _districtController.text.trim(),
-            'pincode': _pincodeController.text.trim(),
-          },
-          'contactNumber': _contactNumberController.text.trim(),
-          'email': _emailController.text.trim(),
-          'registrationNumber': _registrationNumberController.text.trim(),
-          'licenseId': _licenseIdController.text.trim(),
-          'hospitalType': _selectedHospitalType,
-          'specialties': _selectedSpecialties,
-          'totalBeds': int.tryParse(_totalBedsController.text) ?? 0,
-          'emergencyServices': _emergencyServices,
-          'ambulanceServices': _ambulanceServices,
-          'website': _websiteController.text.trim().isNotEmpty 
-              ? _websiteController.text.trim() 
-              : null,
-          'establishedYear': int.tryParse(_establishedYearController.text),
-          'adminDetails': {
-            'username': _adminUsernameController.text.trim(),
-            'password': _adminPasswordController.text,
-            'adminName': _adminNameController.text.trim(),
-            'adminEmail': _adminEmailController.text.trim(),
-            'adminPhone': _adminPhoneController.text.trim(),
-          },
-        }),
-      );
+      final hospitalData = {
+        'hospitalName': _hospitalNameController.text.trim(),
+        'address': {
+          'street': _streetController.text.trim(),
+          'city': _cityController.text.trim(),
+          'state': _selectedState,
+          'district': _districtController.text.trim(),
+          'pincode': _pincodeController.text.trim(),
+        },
+        'contactNumber': _contactNumberController.text.trim(),
+        'email': _emailController.text.trim(),
+        'registrationNumber': _registrationNumberController.text.trim(),
+        'licenseId': _licenseIdController.text.trim(),
+        'hospitalType': _selectedHospitalType,
+        'specialties': _selectedSpecialties,
+        'totalBeds': int.tryParse(_totalBedsController.text) ?? 0,
+        'emergencyServices': _emergencyServices,
+        'ambulanceServices': _ambulanceServices,
+        'website': _websiteController.text.trim().isNotEmpty
+            ? _websiteController.text.trim()
+            : null,
+        'establishedYear': int.tryParse(_establishedYearController.text),
+        'adminDetails': {
+          'username': _adminUsernameController.text.trim(),
+          'password': _adminPasswordController.text,
+          'adminName': _adminNameController.text.trim(),
+          'adminEmail': _adminEmailController.text.trim(),
+          'adminPhone': _adminPhoneController.text.trim(),
+        },
+      };
 
-      final data = json.decode(response.body);
+      final data = await HospitalApiService.registerHospital(hospitalData);
 
-      if (response.statusCode == 201 && data['success']) {
-        // Store token and admin data
-        await ApiService.setAuthToken(data['data']['token']);
-        
-        // Show success dialog
-        _showSuccessDialog(data['data']);
-      } else {
-        _showErrorDialog(data['message'] ?? 'Registration failed');
-      }
+      // Store token and admin data
+      await ApiClient.setAuthToken(data['data']['token']);
+
+      // Show success dialog
+      _showSuccessDialog(data['data']);
     } catch (e) {
       _showErrorDialog('Registration error: $e');
     } finally {
@@ -166,13 +206,19 @@ class _HospitalRegistrationScreenState extends State<HospitalRegistrationScreen>
           children: [
             Text('Your hospital has been registered successfully.'),
             SizedBox(height: 16),
-            Text('Hospital ID: ${data['hospital']['hospitalId']}',
-                style: TextStyle(fontWeight: FontWeight.bold)),
-            Text('Admin ID: ${data['admin']['adminId']}',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+            Text(
+              'Hospital ID: ${data['hospital']['hospitalId']}',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            Text(
+              'Admin ID: ${data['admin']['adminId']}',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             SizedBox(height: 16),
-            Text('Please save these IDs for future reference.',
-                style: TextStyle(color: Colors.orange[700])),
+            Text(
+              'Please save these IDs for future reference.',
+              style: TextStyle(color: Colors.orange[700]),
+            ),
           ],
         ),
         actions: [
@@ -238,7 +284,7 @@ class _HospitalRegistrationScreenState extends State<HospitalRegistrationScreen>
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           SizedBox(height: 24),
-          
+
           CustomTextField(
             controller: _hospitalNameController,
             labelText: 'Hospital Name',
@@ -253,9 +299,9 @@ class _HospitalRegistrationScreenState extends State<HospitalRegistrationScreen>
               return null;
             },
           ),
-          
+
           SizedBox(height: 16),
-          
+
           CustomTextField(
             controller: _streetController,
             labelText: 'Street Address',
@@ -267,9 +313,9 @@ class _HospitalRegistrationScreenState extends State<HospitalRegistrationScreen>
               return null;
             },
           ),
-          
+
           SizedBox(height: 16),
-          
+
           Row(
             children: [
               Expanded(
@@ -299,14 +345,14 @@ class _HospitalRegistrationScreenState extends State<HospitalRegistrationScreen>
               ),
             ],
           ),
-          
+
           SizedBox(height: 16),
-          
+
           Row(
             children: [
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: _selectedState,
+                  initialValue: _selectedState,
                   decoration: InputDecoration(
                     labelText: 'State',
                     border: OutlineInputBorder(),
@@ -341,9 +387,9 @@ class _HospitalRegistrationScreenState extends State<HospitalRegistrationScreen>
               ),
             ],
           ),
-          
+
           SizedBox(height: 16),
-          
+
           CustomTextField(
             controller: _contactNumberController,
             labelText: 'Contact Number',
@@ -359,9 +405,9 @@ class _HospitalRegistrationScreenState extends State<HospitalRegistrationScreen>
               return null;
             },
           ),
-          
+
           SizedBox(height: 16),
-          
+
           CustomTextField(
             controller: _emailController,
             labelText: 'Email',
@@ -393,7 +439,7 @@ class _HospitalRegistrationScreenState extends State<HospitalRegistrationScreen>
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           SizedBox(height: 24),
-          
+
           CustomTextField(
             controller: _registrationNumberController,
             labelText: 'Registration Number',
@@ -405,9 +451,9 @@ class _HospitalRegistrationScreenState extends State<HospitalRegistrationScreen>
               return null;
             },
           ),
-          
+
           SizedBox(height: 16),
-          
+
           CustomTextField(
             controller: _licenseIdController,
             labelText: 'License ID',
@@ -419,11 +465,11 @@ class _HospitalRegistrationScreenState extends State<HospitalRegistrationScreen>
               return null;
             },
           ),
-          
+
           SizedBox(height: 16),
-          
+
           DropdownButtonFormField<String>(
-            value: _selectedHospitalType,
+            initialValue: _selectedHospitalType,
             decoration: InputDecoration(
               labelText: 'Hospital Type',
               border: OutlineInputBorder(),
@@ -438,9 +484,9 @@ class _HospitalRegistrationScreenState extends State<HospitalRegistrationScreen>
               });
             },
           ),
-          
+
           SizedBox(height: 16),
-          
+
           Row(
             children: [
               Expanded(
@@ -470,7 +516,9 @@ class _HospitalRegistrationScreenState extends State<HospitalRegistrationScreen>
                   validator: (value) {
                     if (value != null && value.isNotEmpty) {
                       final year = int.tryParse(value);
-                      if (year == null || year < 1800 || year > DateTime.now().year) {
+                      if (year == null ||
+                          year < 1800 ||
+                          year > DateTime.now().year) {
                         return 'Please enter a valid year';
                       }
                     }
@@ -480,25 +528,25 @@ class _HospitalRegistrationScreenState extends State<HospitalRegistrationScreen>
               ),
             ],
           ),
-          
+
           SizedBox(height: 16),
-          
+
           CustomTextField(
             controller: _websiteController,
             labelText: 'Website (Optional)',
             prefixIcon: Icons.web,
             keyboardType: TextInputType.url,
           ),
-          
+
           SizedBox(height: 24),
-          
+
           Text(
             'Services Available',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
           ),
-          
+
           SizedBox(height: 16),
-          
+
           CheckboxListTile(
             title: Text('Emergency Services'),
             value: _emergencyServices,
@@ -508,7 +556,7 @@ class _HospitalRegistrationScreenState extends State<HospitalRegistrationScreen>
               });
             },
           ),
-          
+
           CheckboxListTile(
             title: Text('Ambulance Services'),
             value: _ambulanceServices,
@@ -518,9 +566,9 @@ class _HospitalRegistrationScreenState extends State<HospitalRegistrationScreen>
               });
             },
           ),
-          
+
           SizedBox(height: 24),
-          
+
           Text(
             'Specialties',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
@@ -530,9 +578,9 @@ class _HospitalRegistrationScreenState extends State<HospitalRegistrationScreen>
             'Select the medical specialties available at your hospital',
             style: TextStyle(color: Colors.grey[600]),
           ),
-          
+
           SizedBox(height: 16),
-          
+
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -574,7 +622,7 @@ class _HospitalRegistrationScreenState extends State<HospitalRegistrationScreen>
             style: TextStyle(color: Colors.grey[600]),
           ),
           SizedBox(height: 24),
-          
+
           CustomTextField(
             controller: _adminNameController,
             labelText: 'Admin Full Name',
@@ -589,9 +637,9 @@ class _HospitalRegistrationScreenState extends State<HospitalRegistrationScreen>
               return null;
             },
           ),
-          
+
           SizedBox(height: 16),
-          
+
           CustomTextField(
             controller: _adminUsernameController,
             labelText: 'Username',
@@ -609,9 +657,9 @@ class _HospitalRegistrationScreenState extends State<HospitalRegistrationScreen>
               return null;
             },
           ),
-          
+
           SizedBox(height: 16),
-          
+
           CustomTextField(
             controller: _adminPasswordController,
             labelText: 'Password',
@@ -627,9 +675,9 @@ class _HospitalRegistrationScreenState extends State<HospitalRegistrationScreen>
               return null;
             },
           ),
-          
+
           SizedBox(height: 16),
-          
+
           CustomTextField(
             controller: _adminEmailController,
             labelText: 'Admin Email',
@@ -645,9 +693,9 @@ class _HospitalRegistrationScreenState extends State<HospitalRegistrationScreen>
               return null;
             },
           ),
-          
+
           SizedBox(height: 16),
-          
+
           CustomTextField(
             controller: _adminPhoneController,
             labelText: 'Admin Phone',
@@ -691,7 +739,9 @@ class _HospitalRegistrationScreenState extends State<HospitalRegistrationScreen>
                         height: 4,
                         margin: EdgeInsets.symmetric(horizontal: 2),
                         decoration: BoxDecoration(
-                          color: i <= _currentPage ? Colors.blue[700] : Colors.grey[300],
+                          color: i <= _currentPage
+                              ? Colors.blue[700]
+                              : Colors.grey[300],
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -699,7 +749,7 @@ class _HospitalRegistrationScreenState extends State<HospitalRegistrationScreen>
                 ],
               ),
             ),
-            
+
             // Page content
             Expanded(
               child: PageView(
@@ -716,7 +766,7 @@ class _HospitalRegistrationScreenState extends State<HospitalRegistrationScreen>
                 ],
               ),
             ),
-            
+
             // Navigation buttons
             Container(
               padding: EdgeInsets.all(24),
@@ -729,9 +779,9 @@ class _HospitalRegistrationScreenState extends State<HospitalRegistrationScreen>
                         child: Text('Previous'),
                       ),
                     ),
-                  
+
                   if (_currentPage > 0) SizedBox(width: 16),
-                  
+
                   Expanded(
                     child: _currentPage < 2
                         ? ElevatedButton(

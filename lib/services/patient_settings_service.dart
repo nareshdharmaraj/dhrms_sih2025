@@ -155,7 +155,7 @@ class PatientSettingsService {
   }
 
   String _hashPassword(String password) {
-    var bytes = utf8.encode(password + 'DHRMS_SALT_2024'); // Add salt
+    var bytes = utf8.encode('${password}DHRMS_SALT_2024'); // Add salt
     var digest = sha256.convert(bytes);
     return digest.toString();
   }

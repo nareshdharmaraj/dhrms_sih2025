@@ -5,10 +5,10 @@ class AppBranding extends StatelessWidget {
   final double? height;
 
   const AppBranding({
-    Key? key,
+    super.key,
     this.backgroundColor,
     this.height = 80,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

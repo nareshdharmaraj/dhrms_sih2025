@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../services/api_client.dart';
 
 class RegionalOfficerDashboard extends StatefulWidget {
   final Map<String, dynamic> userData;
@@ -8,7 +8,8 @@ class RegionalOfficerDashboard extends StatefulWidget {
   const RegionalOfficerDashboard({super.key, required this.userData});
 
   @override
-  _RegionalOfficerDashboardState createState() => _RegionalOfficerDashboardState();
+  _RegionalOfficerDashboardState createState() =>
+      _RegionalOfficerDashboardState();
 }
 
 class _RegionalOfficerDashboardState extends State<RegionalOfficerDashboard> {
@@ -27,24 +28,13 @@ class _RegionalOfficerDashboardState extends State<RegionalOfficerDashboard> {
   Future<void> loadOfficerData() async {
     try {
       setState(() => isLoading = true);
-      
-      // Load health statistics
-      final statsResponse = await http.get(
-        Uri.parse('http://localhost:3000/api/health-statistics'),
-        headers: {'Content-Type': 'application/json'},
-      );
 
-      // Load hospital staff data for regional overview
-      final hospitalStaffResponse = await http.get(
-        Uri.parse('http://localhost:3000/api/hospital-staff'),
-        headers: {'Content-Type': 'application/json'},
-      );
+      // Load health statistics using centralized API client
+      final client = ApiClient.instance;
 
-      // Load patients data for regional overview
-      final patientsResponse = await http.get(
-        Uri.parse('http://localhost:3000/api/patients'),
-        headers: {'Content-Type': 'application/json'},
-      );
+      final statsResponse = await client.get('/health-statistics');
+      final hospitalStaffResponse = await client.get('/hospital-staff');
+      final patientsResponse = await client.get('/patients');
 
       if (statsResponse.statusCode == 200) {
         healthStats = json.decode(statsResponse.body);
@@ -73,7 +63,10 @@ class _RegionalOfficerDashboardState extends State<RegionalOfficerDashboard> {
     }
   }
 
-  void _processRegionalData(List<dynamic> hospitalStaff, List<dynamic> patients) {
+  void _processRegionalData(
+    List<dynamic> hospitalStaff,
+    List<dynamic> patients,
+  ) {
     // Group hospitals by name
     Map<String, List<dynamic>> hospitalGroups = {};
     for (var staff in hospitalStaff) {
@@ -84,21 +77,33 @@ class _RegionalOfficerDashboardState extends State<RegionalOfficerDashboard> {
       hospitalGroups[hospital]!.add(staff);
     }
 
-    hospitals = hospitalGroups.keys.map((hospitalName) => {
-      'name': hospitalName,
-      'staffCount': hospitalGroups[hospitalName]!.length,
-      'departments': hospitalGroups[hospitalName]!.map((s) => s['department']).toSet().toList(),
-      'staff': hospitalGroups[hospitalName]!,
-    }).toList();
+    hospitals = hospitalGroups.keys
+        .map(
+          (hospitalName) => {
+            'name': hospitalName,
+            'staffCount': hospitalGroups[hospitalName]!.length,
+            'departments': hospitalGroups[hospitalName]!
+                .map((s) => s['department'])
+                .toSet()
+                .toList(),
+            'staff': hospitalGroups[hospitalName]!,
+          },
+        )
+        .toList();
 
     // Calculate regional statistics
     regionalData = {
       'totalHospitals': hospitals.length,
       'totalStaff': hospitalStaff.length,
       'totalPatients': patients.length,
-      'totalDoctors': hospitalStaff.where((s) => s['staffRole'] == 'doctor').length,
-      'totalNurses': hospitalStaff.where((s) => s['staffRole'] == 'nurse').length,
-      'migrantWorkers': patients.length, // All patients in this system are migrant workers
+      'totalDoctors': hospitalStaff
+          .where((s) => s['staffRole'] == 'doctor')
+          .length,
+      'totalNurses': hospitalStaff
+          .where((s) => s['staffRole'] == 'nurse')
+          .length,
+      'migrantWorkers':
+          patients.length, // All patients in this system are migrant workers
       'activeRegions': widget.userData['assignedStates']?.length ?? 0,
     };
   }
@@ -111,10 +116,7 @@ class _RegionalOfficerDashboardState extends State<RegionalOfficerDashboard> {
         backgroundColor: Colors.purple.shade700,
         foregroundColor: Colors.white,
         actions: [
-          IconButton(
-            icon: Icon(Icons.refresh),
-            onPressed: loadOfficerData,
-          ),
+          IconButton(icon: Icon(Icons.refresh), onPressed: loadOfficerData),
           IconButton(
             icon: Icon(Icons.logout),
             onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
@@ -124,50 +126,50 @@ class _RegionalOfficerDashboardState extends State<RegionalOfficerDashboard> {
       body: isLoading
           ? Center(child: CircularProgressIndicator())
           : error != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.error_outline, size: 64, color: Colors.red),
-                      SizedBox(height: 16),
-                      Text(error!, style: TextStyle(color: Colors.red)),
-                      ElevatedButton(
-                        onPressed: loadOfficerData,
-                        child: Text('Retry'),
-                      ),
-                    ],
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, size: 64, color: Colors.red),
+                  SizedBox(height: 16),
+                  Text(error!, style: TextStyle(color: Colors.red)),
+                  ElevatedButton(
+                    onPressed: loadOfficerData,
+                    child: Text('Retry'),
                   ),
-                )
-              : SingleChildScrollView(
-                  padding: EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Officer Information Card
-                      _buildOfficerInfoCard(),
-                      SizedBox(height: 20),
-                      
-                      // Management Actions
-                      _buildManagementActions(),
-                      SizedBox(height: 20),
-                      
-                      // Regional Overview Stats
-                      _buildRegionalStats(),
-                      SizedBox(height: 20),
-                      
-                      // Health Statistics
-                      _buildHealthStatistics(),
-                      SizedBox(height: 20),
-                      
-                      // Hospital Network
-                      _buildHospitalNetwork(),
-                      SizedBox(height: 20),
-                      
-                      // Jurisdiction Details
-                      _buildJurisdictionDetails(),
-                    ],
-                  ),
-                ),
+                ],
+              ),
+            )
+          : SingleChildScrollView(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Officer Information Card
+                  _buildOfficerInfoCard(),
+                  SizedBox(height: 20),
+
+                  // Management Actions
+                  _buildManagementActions(),
+                  SizedBox(height: 20),
+
+                  // Regional Overview Stats
+                  _buildRegionalStats(),
+                  SizedBox(height: 20),
+
+                  // Health Statistics
+                  _buildHealthStatistics(),
+                  SizedBox(height: 20),
+
+                  // Hospital Network
+                  _buildHospitalNetwork(),
+                  SizedBox(height: 20),
+
+                  // Jurisdiction Details
+                  _buildJurisdictionDetails(),
+                ],
+              ),
+            ),
     );
   }
 
@@ -188,7 +190,11 @@ class _RegionalOfficerDashboardState extends State<RegionalOfficerDashboard> {
                 CircleAvatar(
                   radius: 30,
                   backgroundColor: Colors.purple.shade100,
-                  child: Icon(Icons.account_balance, size: 40, color: Colors.purple.shade700),
+                  child: Icon(
+                    Icons.account_balance,
+                    size: 40,
+                    color: Colors.purple.shade700,
+                  ),
                 ),
                 SizedBox(width: 16),
                 Expanded(
@@ -197,11 +203,18 @@ class _RegionalOfficerDashboardState extends State<RegionalOfficerDashboard> {
                     children: [
                       Text(
                         widget.userData['fullName'] ?? 'Unknown',
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       Text(
                         rank.replaceAll('_', ' ').toUpperCase(),
-                        style: TextStyle(color: Colors.grey[600], fontSize: 16, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       Text(
                         department,
@@ -209,7 +222,10 @@ class _RegionalOfficerDashboardState extends State<RegionalOfficerDashboard> {
                       ),
                       Text(
                         'Region: $region',
-                        style: TextStyle(color: Colors.purple.shade600, fontWeight: FontWeight.w500),
+                        style: TextStyle(
+                          color: Colors.purple.shade600,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ),
@@ -221,9 +237,18 @@ class _RegionalOfficerDashboardState extends State<RegionalOfficerDashboard> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildInfoItem('Service Years', '${widget.userData['yearsOfService'] ?? 0}'),
-                _buildInfoItem('Clearance', widget.userData['clearanceLevel'] ?? 'basic'),
-                _buildInfoItem('Employee ID', widget.userData['employeeId'] ?? 'N/A'),
+                _buildInfoItem(
+                  'Service Years',
+                  '${widget.userData['yearsOfService'] ?? 0}',
+                ),
+                _buildInfoItem(
+                  'Clearance',
+                  widget.userData['clearanceLevel'] ?? 'basic',
+                ),
+                _buildInfoItem(
+                  'Employee ID',
+                  widget.userData['employeeId'] ?? 'N/A',
+                ),
               ],
             ),
           ],
@@ -342,10 +367,7 @@ class _RegionalOfficerDashboardState extends State<RegionalOfficerDashboard> {
             SizedBox(height: 4),
             Text(
               subtitle,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade600,
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
             ),
           ],
         ),
@@ -397,10 +419,30 @@ class _RegionalOfficerDashboardState extends State<RegionalOfficerDashboard> {
               crossAxisSpacing: 16,
               mainAxisSpacing: 16,
               children: [
-                _buildStatCard('Hospitals', regionalData['totalHospitals']?.toString() ?? '0', Icons.local_hospital, Colors.blue),
-                _buildStatCard('Medical Staff', regionalData['totalStaff']?.toString() ?? '0', Icons.medical_services, Colors.green),
-                _buildStatCard('Registered Patients', regionalData['totalPatients']?.toString() ?? '0', Icons.people, Colors.orange),
-                _buildStatCard('Active Regions', regionalData['activeRegions']?.toString() ?? '0', Icons.map, Colors.purple),
+                _buildStatCard(
+                  'Hospitals',
+                  regionalData['totalHospitals']?.toString() ?? '0',
+                  Icons.local_hospital,
+                  Colors.blue,
+                ),
+                _buildStatCard(
+                  'Medical Staff',
+                  regionalData['totalStaff']?.toString() ?? '0',
+                  Icons.medical_services,
+                  Colors.green,
+                ),
+                _buildStatCard(
+                  'Registered Patients',
+                  regionalData['totalPatients']?.toString() ?? '0',
+                  Icons.people,
+                  Colors.orange,
+                ),
+                _buildStatCard(
+                  'Active Regions',
+                  regionalData['activeRegions']?.toString() ?? '0',
+                  Icons.map,
+                  Colors.purple,
+                ),
               ],
             ),
           ],
@@ -409,7 +451,12 @@ class _RegionalOfficerDashboardState extends State<RegionalOfficerDashboard> {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -424,7 +471,11 @@ class _RegionalOfficerDashboardState extends State<RegionalOfficerDashboard> {
           SizedBox(height: 8),
           Text(
             value,
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: color),
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
           ),
           SizedBox(height: 4),
           Text(
@@ -467,7 +518,11 @@ class _RegionalOfficerDashboardState extends State<RegionalOfficerDashboard> {
                     child: Center(
                       child: Column(
                         children: [
-                          Icon(Icons.analytics, size: 48, color: Colors.grey[400]),
+                          Icon(
+                            Icons.analytics,
+                            size: 48,
+                            color: Colors.grey[400],
+                          ),
                           SizedBox(height: 8),
                           Text(
                             'No health statistics available',
@@ -512,7 +567,10 @@ class _RegionalOfficerDashboardState extends State<RegionalOfficerDashboard> {
                   children: [
                     Text(
                       '${stat['region']} - ${stat['district']}',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
                     Text(
                       'Period: ${stat['reportingPeriod']}',
@@ -535,7 +593,11 @@ class _RegionalOfficerDashboardState extends State<RegionalOfficerDashboard> {
                       SizedBox(width: 4),
                       Text(
                         '${alerts.length} Alerts',
-                        style: TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
@@ -543,18 +605,30 @@ class _RegionalOfficerDashboardState extends State<RegionalOfficerDashboard> {
             ],
           ),
           SizedBox(height: 12),
-          
+
           // Key Statistics
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildMiniStat('Population', statistics['totalPopulation']?.toString() ?? '0'),
-              _buildMiniStat('Patients', statistics['totalPatients']?.toString() ?? '0'),
-              _buildMiniStat('Active Cases', statistics['activeCases']?.toString() ?? '0'),
-              _buildMiniStat('Emergencies', statistics['emergencyCases']?.toString() ?? '0'),
+              _buildMiniStat(
+                'Population',
+                statistics['totalPopulation']?.toString() ?? '0',
+              ),
+              _buildMiniStat(
+                'Patients',
+                statistics['totalPatients']?.toString() ?? '0',
+              ),
+              _buildMiniStat(
+                'Active Cases',
+                statistics['activeCases']?.toString() ?? '0',
+              ),
+              _buildMiniStat(
+                'Emergencies',
+                statistics['emergencyCases']?.toString() ?? '0',
+              ),
             ],
           ),
-          
+
           if (trends.isNotEmpty) ...[
             SizedBox(height: 12),
             Divider(),
@@ -567,11 +641,17 @@ class _RegionalOfficerDashboardState extends State<RegionalOfficerDashboard> {
               spacing: 8,
               runSpacing: 4,
               children: trends.take(3).map((trend) {
-                Color trendColor = trend['trend'] == 'increasing' ? Colors.red :
-                                 trend['trend'] == 'decreasing' ? Colors.green : Colors.orange;
-                IconData trendIcon = trend['trend'] == 'increasing' ? Icons.trending_up :
-                                   trend['trend'] == 'decreasing' ? Icons.trending_down : Icons.trending_flat;
-                
+                Color trendColor = trend['trend'] == 'increasing'
+                    ? Colors.red
+                    : trend['trend'] == 'decreasing'
+                    ? Colors.green
+                    : Colors.orange;
+                IconData trendIcon = trend['trend'] == 'increasing'
+                    ? Icons.trending_up
+                    : trend['trend'] == 'decreasing'
+                    ? Icons.trending_down
+                    : Icons.trending_flat;
+
                 return Container(
                   padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
@@ -603,12 +683,13 @@ class _RegionalOfficerDashboardState extends State<RegionalOfficerDashboard> {
       children: [
         Text(
           value,
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.purple),
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.purple,
+          ),
         ),
-        Text(
-          label,
-          style: TextStyle(fontSize: 10, color: Colors.grey[600]),
-        ),
+        Text(label, style: TextStyle(fontSize: 10, color: Colors.grey[600])),
       ],
     );
   }
@@ -634,7 +715,10 @@ class _RegionalOfficerDashboardState extends State<RegionalOfficerDashboard> {
                     SizedBox(width: 4),
                     Text(
                       '${hospitals.length} Hospitals',
-                      style: TextStyle(color: Colors.blue, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        color: Colors.blue,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
@@ -693,7 +777,11 @@ class _RegionalOfficerDashboardState extends State<RegionalOfficerDashboard> {
                 ),
                 child: Text(
                   '$staffCount Staff',
-                  style: TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: Colors.green,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
@@ -702,23 +790,31 @@ class _RegionalOfficerDashboardState extends State<RegionalOfficerDashboard> {
           if (departments.isNotEmpty) ...[
             Text(
               'Departments:',
-              style: TextStyle(fontSize: 12, color: Colors.grey[600], fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w600,
+              ),
             ),
             SizedBox(height: 4),
             Wrap(
               spacing: 6,
               runSpacing: 4,
-              children: departments.map((dept) => Container(
-                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  dept.toString(),
-                  style: TextStyle(fontSize: 10, color: Colors.blue),
-                ),
-              )).toList(),
+              children: departments
+                  .map(
+                    (dept) => Container(
+                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        dept.toString(),
+                        style: TextStyle(fontSize: 10, color: Colors.blue),
+                      ),
+                    ),
+                  )
+                  .toList(),
             ),
           ],
         ],
@@ -727,10 +823,14 @@ class _RegionalOfficerDashboardState extends State<RegionalOfficerDashboard> {
   }
 
   Widget _buildJurisdictionDetails() {
-    var responsibilities = widget.userData['responsibilities'] as List<dynamic>? ?? [];
-    var permissions = widget.userData['accessPermissions'] as List<dynamic>? ?? [];
-    var assignedStates = widget.userData['assignedStates'] as List<dynamic>? ?? [];
-    var assignedDistricts = widget.userData['assignedDistricts'] as List<dynamic>? ?? [];
+    var responsibilities =
+        widget.userData['responsibilities'] as List<dynamic>? ?? [];
+    var permissions =
+        widget.userData['accessPermissions'] as List<dynamic>? ?? [];
+    var assignedStates =
+        widget.userData['assignedStates'] as List<dynamic>? ?? [];
+    var assignedDistricts =
+        widget.userData['assignedDistricts'] as List<dynamic>? ?? [];
 
     return Card(
       elevation: 4,
@@ -744,7 +844,7 @@ class _RegionalOfficerDashboardState extends State<RegionalOfficerDashboard> {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 16),
-            
+
             // Assigned Areas
             if (assignedStates.isNotEmpty || assignedDistricts.isNotEmpty) ...[
               _buildJurisdictionSection('Assigned Areas', [
@@ -753,26 +853,30 @@ class _RegionalOfficerDashboardState extends State<RegionalOfficerDashboard> {
               ], Colors.purple),
               SizedBox(height: 12),
             ],
-            
+
             // Responsibilities
             if (responsibilities.isNotEmpty) ...[
               _buildJurisdictionSection(
-                'Key Responsibilities', 
-                responsibilities.map((r) => r.toString().replaceAll('_', ' ').toUpperCase()).toList(),
-                Colors.blue
+                'Key Responsibilities',
+                responsibilities
+                    .map((r) => r.toString().replaceAll('_', ' ').toUpperCase())
+                    .toList(),
+                Colors.blue,
               ),
               SizedBox(height: 12),
             ],
-            
+
             // Access Permissions
             if (permissions.isNotEmpty) ...[
               _buildJurisdictionSection(
-                'Access Permissions', 
-                permissions.map((p) => p.toString().replaceAll('_', ' ').toUpperCase()).toList(),
-                Colors.green
+                'Access Permissions',
+                permissions
+                    .map((p) => p.toString().replaceAll('_', ' ').toUpperCase())
+                    .toList(),
+                Colors.green,
               ),
             ],
-            
+
             // Office Information
             SizedBox(height: 16),
             _buildOfficeInfo(),
@@ -782,7 +886,11 @@ class _RegionalOfficerDashboardState extends State<RegionalOfficerDashboard> {
     );
   }
 
-  Widget _buildJurisdictionSection(String title, List<String> items, Color color) {
+  Widget _buildJurisdictionSection(
+    String title,
+    List<String> items,
+    Color color,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -807,18 +915,25 @@ class _RegionalOfficerDashboardState extends State<RegionalOfficerDashboard> {
         Wrap(
           spacing: 8,
           runSpacing: 4,
-          children: items.map((item) => Container(
-            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: color.withOpacity(0.3)),
-            ),
-            child: Text(
-              item,
-              style: TextStyle(fontSize: 12, color: color.withOpacity(0.8)),
-            ),
-          )).toList(),
+          children: items
+              .map(
+                (item) => Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: color.withOpacity(0.3)),
+                  ),
+                  child: Text(
+                    item,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: color.withOpacity(0.8),
+                    ),
+                  ),
+                ),
+              )
+              .toList(),
         ),
       ],
     );
@@ -844,13 +959,20 @@ class _RegionalOfficerDashboardState extends State<RegionalOfficerDashboard> {
               SizedBox(width: 8),
               Text(
                 'Office Information',
-                style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey[700]),
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[700],
+                ),
               ),
             ],
           ),
           SizedBox(height: 8),
-          Text('${officeAddress['buildingName'] ?? ''}, ${officeAddress['street'] ?? ''}'),
-          Text('${officeAddress['city'] ?? ''}, ${officeAddress['state'] ?? ''} ${officeAddress['zipCode'] ?? ''}'),
+          Text(
+            '${officeAddress['buildingName'] ?? ''}, ${officeAddress['street'] ?? ''}',
+          ),
+          Text(
+            '${officeAddress['city'] ?? ''}, ${officeAddress['state'] ?? ''} ${officeAddress['zipCode'] ?? ''}',
+          ),
           if (widget.userData['officePhone'] != null) ...[
             SizedBox(height: 4),
             Row(
@@ -859,7 +981,10 @@ class _RegionalOfficerDashboardState extends State<RegionalOfficerDashboard> {
                 SizedBox(width: 4),
                 Text(
                   widget.userData['officePhone'],
-                  style: TextStyle(fontWeight: FontWeight.w500, color: Colors.blue),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    color: Colors.blue,
+                  ),
                 ),
               ],
             ),

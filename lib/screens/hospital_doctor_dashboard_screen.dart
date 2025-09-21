@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import '../services/api_service.dart';
-import '../utils/constants.dart';
+import '../services/hospital_api_service.dart';
 import '../widgets/app_branding.dart';
 
 class HospitalDoctorDashboardScreen extends StatefulWidget {
+  const HospitalDoctorDashboardScreen({super.key});
+
   @override
-  _HospitalDoctorDashboardScreenState createState() => _HospitalDoctorDashboardScreenState();
+  _HospitalDoctorDashboardScreenState createState() =>
+      _HospitalDoctorDashboardScreenState();
 }
 
-class _HospitalDoctorDashboardScreenState extends State<HospitalDoctorDashboardScreen>
+class _HospitalDoctorDashboardScreenState
+    extends State<HospitalDoctorDashboardScreen>
     with SingleTickerProviderStateMixin {
   TabController? _tabController;
   bool _isLoading = false;
@@ -38,28 +39,13 @@ class _HospitalDoctorDashboardScreenState extends State<HospitalDoctorDashboardS
     });
 
     try {
-      final token = await ApiService.getAuthToken();
-      
-      // Load doctor dashboard data
-      final response = await http.get(
-        Uri.parse('${ApiConstants.baseUrl}/hospital/doctor/dashboard'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        setState(() {
-          _doctorData = data['data'];
-          _patients = data['data']['patients'] ?? [];
-          _appointments = data['data']['appointments'] ?? [];
-          _todayAppointments = data['data']['todayAppointments'] ?? [];
-        });
-      } else {
-        _showError('Failed to load doctor data');
-      }
+      final data = await HospitalApiService.getDoctorDashboard();
+      setState(() {
+        _doctorData = data['data'];
+        _patients = data['data']['patients'] ?? [];
+        _appointments = data['data']['appointments'] ?? [];
+        _todayAppointments = data['data']['todayAppointments'] ?? [];
+      });
     } catch (e) {
       _showError('Error loading doctor dashboard: $e');
     } finally {
@@ -71,10 +57,7 @@ class _HospitalDoctorDashboardScreenState extends State<HospitalDoctorDashboardS
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
   }
 
@@ -85,11 +68,8 @@ class _HospitalDoctorDashboardScreenState extends State<HospitalDoctorDashboardS
       body: Column(
         children: [
           // App Branding Header
-          AppBranding(
-            backgroundColor: Colors.green[700],
-            height: 100,
-          ),
-          
+          AppBranding(backgroundColor: Colors.green[700], height: 100),
+
           // Content Area
           Expanded(
             child: _isLoading
@@ -98,7 +78,9 @@ class _HospitalDoctorDashboardScreenState extends State<HospitalDoctorDashboardS
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.green[700]!),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.green[700]!,
+                          ),
                         ),
                         SizedBox(height: 16),
                         Text(
@@ -123,7 +105,7 @@ class _HospitalDoctorDashboardScreenState extends State<HospitalDoctorDashboardS
           ),
         ],
       ),
-      
+
       // Bottom Navigation
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
@@ -142,22 +124,10 @@ class _HospitalDoctorDashboardScreenState extends State<HospitalDoctorDashboardS
           unselectedLabelColor: Colors.grey[500],
           indicatorWeight: 3,
           tabs: [
-            Tab(
-              icon: Icon(Icons.dashboard),
-              text: 'Dashboard',
-            ),
-            Tab(
-              icon: Icon(Icons.people),
-              text: 'Patients',
-            ),
-            Tab(
-              icon: Icon(Icons.calendar_today),
-              text: 'Appointments',
-            ),
-            Tab(
-              icon: Icon(Icons.person),
-              text: 'Profile',
-            ),
+            Tab(icon: Icon(Icons.dashboard), text: 'Dashboard'),
+            Tab(icon: Icon(Icons.people), text: 'Patients'),
+            Tab(icon: Icon(Icons.calendar_today), text: 'Appointments'),
+            Tab(icon: Icon(Icons.person), text: 'Profile'),
           ],
         ),
       ),
@@ -170,11 +140,7 @@ class _HospitalDoctorDashboardScreenState extends State<HospitalDoctorDashboardS
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
             SizedBox(height: 16),
             Text(
               'No data available',
@@ -187,10 +153,7 @@ class _HospitalDoctorDashboardScreenState extends State<HospitalDoctorDashboardS
             SizedBox(height: 8),
             Text(
               'Please refresh to load dashboard data',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[500],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
             ),
             SizedBox(height: 24),
             ElevatedButton.icon(
@@ -279,9 +242,9 @@ class _HospitalDoctorDashboardScreenState extends State<HospitalDoctorDashboardS
                   ),
                 ),
               ),
-              
+
               SizedBox(width: 16),
-              
+
               // Quick Actions
               Expanded(
                 flex: 1,
@@ -299,7 +262,7 @@ class _HospitalDoctorDashboardScreenState extends State<HospitalDoctorDashboardS
                       Icons.logout,
                       Colors.red,
                       () async {
-                        await ApiService.clearAuthToken();
+                        await HospitalApiService.logout();
                         Navigator.of(context).pushReplacementNamed('/login');
                       },
                     ),
@@ -321,7 +284,7 @@ class _HospitalDoctorDashboardScreenState extends State<HospitalDoctorDashboardS
             ),
           ),
           SizedBox(height: 12),
-          
+
           Row(
             children: [
               Expanded(
@@ -394,11 +357,7 @@ class _HospitalDoctorDashboardScreenState extends State<HospitalDoctorDashboardS
               children: [
                 Row(
                   children: [
-                    Icon(
-                      Icons.today,
-                      color: Colors.green[700],
-                      size: 24,
-                    ),
+                    Icon(Icons.today, color: Colors.green[700], size: 24),
                     SizedBox(width: 8),
                     Text(
                       'Today\'s Appointments',
@@ -417,17 +376,15 @@ class _HospitalDoctorDashboardScreenState extends State<HospitalDoctorDashboardS
                       padding: EdgeInsets.all(20),
                       child: Text(
                         'No appointments for today',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 16,
-                        ),
+                        style: TextStyle(color: Colors.grey[600], fontSize: 16),
                       ),
                     ),
                   )
                 else
-                  ...(_todayAppointments.take(3).map((appointment) => 
-                    _buildAppointmentCard(appointment)
-                  ).toList()),
+                  ...(_todayAppointments
+                      .take(3)
+                      .map((appointment) => _buildAppointmentCard(appointment))
+                      .toList()),
                 if (_todayAppointments.length > 3)
                   TextButton(
                     onPressed: () {
@@ -443,7 +400,12 @@ class _HospitalDoctorDashboardScreenState extends State<HospitalDoctorDashboardS
     );
   }
 
-  Widget _buildQuickActionCard(String title, IconData icon, Color color, VoidCallback onTap) {
+  Widget _buildQuickActionCard(
+    String title,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -472,7 +434,13 @@ class _HospitalDoctorDashboardScreenState extends State<HospitalDoctorDashboardS
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color, Color backgroundColor) {
+  Widget _buildStatCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+    Color backgroundColor,
+  ) {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -529,25 +497,16 @@ class _HospitalDoctorDashboardScreenState extends State<HospitalDoctorDashboardS
               children: [
                 Text(
                   appointment['patientName'] ?? 'Unknown Patient',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                 ),
                 Text(
                   'Time: ${appointment['appointmentTime'] ?? 'Not specified'}',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
                 ),
                 if (appointment['reason'] != null)
                   Text(
                     'Reason: ${appointment['reason']}',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
                   ),
               ],
             ),
@@ -646,10 +605,7 @@ class _HospitalDoctorDashboardScreenState extends State<HospitalDoctorDashboardS
                       SizedBox(height: 8),
                       Text(
                         'Patients will appear here when assigned',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[500],
-                        ),
+                        style: TextStyle(fontSize: 14, color: Colors.grey[500]),
                       ),
                     ],
                   ),
@@ -690,14 +646,21 @@ class _HospitalDoctorDashboardScreenState extends State<HospitalDoctorDashboardS
                           children: [
                             SizedBox(height: 4),
                             Text('UHID: ${patient['uhid'] ?? 'N/A'}'),
-                            Text('Age: ${patient['age'] ?? 'N/A'} | Gender: ${patient['gender'] ?? 'N/A'}'),
-                            Text('Contact: ${patient['contactNumber'] ?? 'N/A'}'),
+                            Text(
+                              'Age: ${patient['age'] ?? 'N/A'} | Gender: ${patient['gender'] ?? 'N/A'}',
+                            ),
+                            Text(
+                              'Contact: ${patient['contactNumber'] ?? 'N/A'}',
+                            ),
                             if (patient['lastVisit'] != null)
                               Text('Last Visit: ${patient['lastVisit']}'),
                           ],
                         ),
                         trailing: IconButton(
-                          icon: Icon(Icons.medical_information, color: Colors.green[700]),
+                          icon: Icon(
+                            Icons.medical_information,
+                            color: Colors.green[700],
+                          ),
                           onPressed: () => _showPatientDetails(patient),
                         ),
                         isThreeLine: true,
@@ -771,10 +734,7 @@ class _HospitalDoctorDashboardScreenState extends State<HospitalDoctorDashboardS
                       SizedBox(height: 8),
                       Text(
                         'Appointments will appear here when scheduled',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[500],
-                        ),
+                        style: TextStyle(fontSize: 14, color: Colors.grey[500]),
                       ),
                     ],
                   ),
@@ -800,9 +760,11 @@ class _HospitalDoctorDashboardScreenState extends State<HospitalDoctorDashboardS
                       child: ListTile(
                         contentPadding: EdgeInsets.all(16),
                         leading: CircleAvatar(
-                          backgroundColor: _getStatusColor(appointment['status']).withOpacity(0.2),
+                          backgroundColor: _getStatusColor(
+                            appointment['status'],
+                          ).withOpacity(0.2),
                           child: Icon(
-                            Icons.calendar_today, 
+                            Icons.calendar_today,
                             color: _getStatusColor(appointment['status']),
                           ),
                         ),
@@ -817,15 +779,24 @@ class _HospitalDoctorDashboardScreenState extends State<HospitalDoctorDashboardS
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             SizedBox(height: 4),
-                            Text('Date: ${appointment['appointmentDate'] ?? 'Not specified'}'),
-                            Text('Time: ${appointment['appointmentTime'] ?? 'Not specified'}'),
+                            Text(
+                              'Date: ${appointment['appointmentDate'] ?? 'Not specified'}',
+                            ),
+                            Text(
+                              'Time: ${appointment['appointmentTime'] ?? 'Not specified'}',
+                            ),
                             if (appointment['reason'] != null)
                               Text('Reason: ${appointment['reason']}'),
                             SizedBox(height: 4),
                             Container(
-                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
-                                color: _getStatusColor(appointment['status']).withOpacity(0.2),
+                                color: _getStatusColor(
+                                  appointment['status'],
+                                ).withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
@@ -878,9 +849,15 @@ class _HospitalDoctorDashboardScreenState extends State<HospitalDoctorDashboardS
                             if (value == 'view') {
                               _showAppointmentDetails(appointment);
                             } else if (value == 'confirm') {
-                              _updateAppointmentStatus(appointment['_id'], 'confirmed');
+                              _updateAppointmentStatus(
+                                appointment['_id'],
+                                'confirmed',
+                              );
                             } else if (value == 'complete') {
-                              _updateAppointmentStatus(appointment['_id'], 'completed');
+                              _updateAppointmentStatus(
+                                appointment['_id'],
+                                'completed',
+                              );
                             }
                           },
                         ),
@@ -996,7 +973,10 @@ class _HospitalDoctorDashboardScreenState extends State<HospitalDoctorDashboardS
                 _buildProfileRow('Doctor ID', doctor['doctorId']),
                 _buildProfileRow('License Number', doctor['licenseNumber']),
                 _buildProfileRow('Qualification', doctor['qualification']),
-                _buildProfileRow('Experience', '${doctor['experienceYears'] ?? 0} years'),
+                _buildProfileRow(
+                  'Experience',
+                  '${doctor['experienceYears'] ?? 0} years',
+                ),
                 _buildProfileRow('Department', doctor['department']),
               ],
             ),
@@ -1082,7 +1062,7 @@ class _HospitalDoctorDashboardScreenState extends State<HospitalDoctorDashboardS
             width: double.infinity,
             child: ElevatedButton.icon(
               onPressed: () async {
-                await ApiService.clearAuthToken();
+                await HospitalApiService.logout();
                 Navigator.of(context).pushReplacementNamed('/login');
               },
               icon: Icon(Icons.logout),
@@ -1111,7 +1091,7 @@ class _HospitalDoctorDashboardScreenState extends State<HospitalDoctorDashboardS
           SizedBox(
             width: 120,
             child: Text(
-              label + ':',
+              '$label:',
               style: TextStyle(
                 fontWeight: FontWeight.w500,
                 color: Colors.grey[700],
@@ -1121,9 +1101,7 @@ class _HospitalDoctorDashboardScreenState extends State<HospitalDoctorDashboardS
           Expanded(
             child: Text(
               value?.toString() ?? 'N/A',
-              style: TextStyle(
-                color: Colors.grey[800],
-              ),
+              style: TextStyle(color: Colors.grey[800]),
             ),
           ),
         ],
@@ -1204,7 +1182,7 @@ class _HospitalDoctorDashboardScreenState extends State<HospitalDoctorDashboardS
           SizedBox(
             width: 100,
             child: Text(
-              label + ':',
+              '$label:',
               style: TextStyle(fontWeight: FontWeight.w500),
             ),
           ),
@@ -1214,26 +1192,16 @@ class _HospitalDoctorDashboardScreenState extends State<HospitalDoctorDashboardS
     );
   }
 
-  Future<void> _updateAppointmentStatus(String appointmentId, String status) async {
+  Future<void> _updateAppointmentStatus(
+    String appointmentId,
+    String status,
+  ) async {
     try {
-      final token = await ApiService.getAuthToken();
-      final response = await http.patch(
-        Uri.parse('${ApiConstants.baseUrl}/hospital/doctor/appointment/$appointmentId/status'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: json.encode({'status': status}),
+      await HospitalApiService.updateAppointmentStatus(appointmentId, status);
+      _loadDoctorData(); // Refresh data
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Appointment status updated successfully')),
       );
-
-      if (response.statusCode == 200) {
-        _loadDoctorData(); // Refresh data
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Appointment status updated successfully')),
-        );
-      } else {
-        _showError('Failed to update appointment status');
-      }
     } catch (e) {
       _showError('Error updating appointment status: $e');
     }

@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import '../services/api_service.dart';
-import '../utils/constants.dart';
+import '../services/hospital_api_service.dart';
+import '../services/api_client.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
 
 class HospitalAssistantLoginScreen extends StatefulWidget {
+  const HospitalAssistantLoginScreen({super.key});
+
   @override
-  _HospitalAssistantLoginScreenState createState() => _HospitalAssistantLoginScreenState();
+  _HospitalAssistantLoginScreenState createState() =>
+      _HospitalAssistantLoginScreenState();
 }
 
-class _HospitalAssistantLoginScreenState extends State<HospitalAssistantLoginScreen> {
+class _HospitalAssistantLoginScreenState
+    extends State<HospitalAssistantLoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  
+
   List<Map<String, dynamic>> _hospitals = [];
   Map<String, dynamic>? _selectedHospital;
   bool _isLoading = false;
@@ -40,19 +42,10 @@ class _HospitalAssistantLoginScreenState extends State<HospitalAssistantLoginScr
     });
 
     try {
-      final response = await http.get(
-        Uri.parse('${ApiConstants.baseUrl}/hospital/list'),
-        headers: {'Content-Type': 'application/json'},
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        if (data['success']) {
-          setState(() {
-            _hospitals = List<Map<String, dynamic>>.from(data['data']);
-          });
-        }
-      }
+      final hospitals = await HospitalApiService.getHospitalList();
+      setState(() {
+        _hospitals = hospitals;
+      });
     } catch (e) {
       _showErrorDialog('Failed to load hospitals: $e');
     } finally {
@@ -73,31 +66,21 @@ class _HospitalAssistantLoginScreenState extends State<HospitalAssistantLoginScr
     });
 
     try {
-      final response = await http.post(
-        Uri.parse('${ApiConstants.baseUrl}/hospital-assistant/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'hospitalId': _selectedHospital!['hospitalId'],
-          'username': _usernameController.text.trim(),
-          'password': _passwordController.text,
-        }),
+      final data = await HospitalApiService.assistantLogin(
+        _selectedHospital!['hospitalId'],
+        _usernameController.text.trim(),
+        _passwordController.text,
       );
 
-      final data = json.decode(response.body);
+      // Store token and assistant data
+      await ApiClient.setAuthToken(data['data']['token']);
 
-      if (response.statusCode == 200 && data['success']) {
-        // Store token and assistant data
-        await ApiService.setAuthToken(data['data']['token']);
-        
-        // Navigate to assistant dashboard
-        Navigator.pushReplacementNamed(
-          context,
-          '/hospital-staff-dashboard',
-          arguments: data['data']['assistant'],
-        );
-      } else {
-        _showErrorDialog(data['message'] ?? 'Login failed');
-      }
+      // Navigate to assistant dashboard
+      Navigator.pushReplacementNamed(
+        context,
+        '/hospital-staff-dashboard',
+        arguments: data['data']['assistant'],
+      );
     } catch (e) {
       _showErrorDialog('Login failed: $e');
     } finally {
@@ -136,10 +119,7 @@ class _HospitalAssistantLoginScreenState extends State<HospitalAssistantLoginScr
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFBA68C8),
-              Color(0xFF9C27B0),
-            ],
+            colors: [Color(0xFFBA68C8), Color(0xFF9C27B0)],
           ),
         ),
         child: SafeArea(
@@ -151,7 +131,7 @@ class _HospitalAssistantLoginScreenState extends State<HospitalAssistantLoginScr
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 40),
-                  
+
                   // Header
                   Container(
                     padding: const EdgeInsets.all(20),
@@ -161,11 +141,7 @@ class _HospitalAssistantLoginScreenState extends State<HospitalAssistantLoginScr
                     ),
                     child: Column(
                       children: [
-                        Icon(
-                          Icons.person_add,
-                          size: 60,
-                          color: Colors.white,
-                        ),
+                        Icon(Icons.person_add, size: 60, color: Colors.white),
                         const SizedBox(height: 16),
                         const Text(
                           'Assistant Portal',
@@ -177,17 +153,14 @@ class _HospitalAssistantLoginScreenState extends State<HospitalAssistantLoginScr
                         ),
                         const Text(
                           'Login to assist doctors and patients',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.white70,
-                          ),
+                          style: TextStyle(fontSize: 14, color: Colors.white70),
                         ),
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(height: 40),
-                  
+
                   // Hospital Selection
                   Container(
                     decoration: BoxDecoration(
@@ -202,14 +175,17 @@ class _HospitalAssistantLoginScreenState extends State<HospitalAssistantLoginScr
                       ],
                     ),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 4,
+                      ),
                       child: _isLoadingHospitals
                           ? const Padding(
                               padding: EdgeInsets.all(16.0),
                               child: Center(child: CircularProgressIndicator()),
                             )
                           : DropdownButtonFormField<Map<String, dynamic>>(
-                              value: _selectedHospital,
+                              initialValue: _selectedHospital,
                               decoration: const InputDecoration(
                                 labelText: 'Select Hospital',
                                 border: InputBorder.none,
@@ -218,7 +194,9 @@ class _HospitalAssistantLoginScreenState extends State<HospitalAssistantLoginScr
                               items: _hospitals.map((hospital) {
                                 return DropdownMenuItem<Map<String, dynamic>>(
                                   value: hospital,
-                                  child: Text(hospital['name'] ?? 'Unknown Hospital'),
+                                  child: Text(
+                                    hospital['name'] ?? 'Unknown Hospital',
+                                  ),
                                 );
                               }).toList(),
                               onChanged: (value) {
@@ -235,9 +213,9 @@ class _HospitalAssistantLoginScreenState extends State<HospitalAssistantLoginScr
                             ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 20),
-                  
+
                   // Username Field
                   CustomTextField(
                     controller: _usernameController,
@@ -250,9 +228,9 @@ class _HospitalAssistantLoginScreenState extends State<HospitalAssistantLoginScr
                       return null;
                     },
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // Password Field
                   CustomTextField(
                     controller: _passwordController,
@@ -266,18 +244,18 @@ class _HospitalAssistantLoginScreenState extends State<HospitalAssistantLoginScr
                       return null;
                     },
                   ),
-                  
+
                   const SizedBox(height: 30),
-                  
+
                   // Login Button
                   CustomButton(
                     text: 'Login as Assistant',
                     onPressed: _isLoading ? null : _login,
                     isLoading: _isLoading,
                   ),
-                  
+
                   const SizedBox(height: 20),
-                  
+
                   // Help Text
                   Center(
                     child: Text(

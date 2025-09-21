@@ -1,23 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import '../services/api_service.dart';
-import '../utils/constants.dart';
+import '../services/hospital_api_service.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
 import 'hospital_registration_screen.dart';
 import 'hospital_admin_dashboard_screen.dart';
 
 class HospitalAdminLoginScreen extends StatefulWidget {
+  const HospitalAdminLoginScreen({super.key});
+
   @override
-  _HospitalAdminLoginScreenState createState() => _HospitalAdminLoginScreenState();
+  _HospitalAdminLoginScreenState createState() =>
+      _HospitalAdminLoginScreenState();
 }
 
 class _HospitalAdminLoginScreenState extends State<HospitalAdminLoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  
+
   List<Map<String, dynamic>> _hospitals = [];
   Map<String, dynamic>? _selectedHospital;
   bool _isLoading = false;
@@ -42,19 +43,10 @@ class _HospitalAdminLoginScreenState extends State<HospitalAdminLoginScreen> {
     });
 
     try {
-      final response = await http.get(
-        Uri.parse('${ApiConstants.baseUrl}/hospital/list'),
-        headers: {'Content-Type': 'application/json'},
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        if (data['success']) {
-          setState(() {
-            _hospitals = List<Map<String, dynamic>>.from(data['data']);
-          });
-        }
-      }
+      final hospitals = await HospitalApiService.getHospitalList();
+      setState(() {
+        _hospitals = hospitals;
+      });
     } catch (e) {
       _showErrorDialog('Failed to load hospitals: $e');
     } finally {
@@ -75,23 +67,17 @@ class _HospitalAdminLoginScreenState extends State<HospitalAdminLoginScreen> {
     });
 
     try {
-      final response = await http.post(
-        Uri.parse('${ApiConstants.baseUrl}/hospital-admin/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'hospitalId': _selectedHospital!['hospitalId'],
-          'username': _usernameController.text.trim(),
-          'password': _passwordController.text,
-        }),
+      final data = await HospitalApiService.adminLogin(
+        _selectedHospital!['hospitalId'],
+        _usernameController.text.trim(),
+        _passwordController.text,
       );
 
-      final data = json.decode(response.body);
-
-      if (response.statusCode == 200 && data['success']) {
+      if (data['success']) {
         // Store token and admin data
         await ApiService.setAuthToken(data['data']['token']);
         await _storeAdminData(data['data']['admin']);
-        
+
         // Navigate to admin dashboard
         Navigator.pushReplacement(
           context,
@@ -145,7 +131,7 @@ class _HospitalAdminLoginScreenState extends State<HospitalAdminLoginScreen> {
           ),
         ),
         SizedBox(height: 8),
-        
+
         // Hospital dropdown
         Container(
           width: double.infinity,
@@ -211,7 +197,7 @@ class _HospitalAdminLoginScreenState extends State<HospitalAdminLoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 SizedBox(height: 40),
-                
+
                 // Header
                 Center(
                   child: Column(
@@ -240,23 +226,20 @@ class _HospitalAdminLoginScreenState extends State<HospitalAdminLoginScreen> {
                       SizedBox(height: 8),
                       Text(
                         'Manage your hospital staff and operations',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey[600],
-                        ),
+                        style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                         textAlign: TextAlign.center,
                       ),
                     ],
                   ),
                 ),
-                
+
                 SizedBox(height: 40),
-                
+
                 // Hospital selector
                 _buildHospitalSelector(),
-                
+
                 SizedBox(height: 24),
-                
+
                 // Username field
                 CustomTextField(
                   controller: _usernameController,
@@ -272,9 +255,9 @@ class _HospitalAdminLoginScreenState extends State<HospitalAdminLoginScreen> {
                     return null;
                   },
                 ),
-                
+
                 SizedBox(height: 20),
-                
+
                 // Password field
                 CustomTextField(
                   controller: _passwordController,
@@ -288,18 +271,18 @@ class _HospitalAdminLoginScreenState extends State<HospitalAdminLoginScreen> {
                     return null;
                   },
                 ),
-                
+
                 SizedBox(height: 32),
-                
+
                 // Login button
                 CustomButton(
                   text: 'Login',
                   onPressed: _isLoading ? null : _login,
                   isLoading: _isLoading,
                 ),
-                
+
                 SizedBox(height: 24),
-                
+
                 // Register new hospital link
                 Center(
                   child: Column(
@@ -314,7 +297,8 @@ class _HospitalAdminLoginScreenState extends State<HospitalAdminLoginScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => HospitalRegistrationScreen(),
+                              builder: (context) =>
+                                  HospitalRegistrationScreen(),
                             ),
                           );
                         },
@@ -329,7 +313,7 @@ class _HospitalAdminLoginScreenState extends State<HospitalAdminLoginScreen> {
                     ],
                   ),
                 ),
-                
+
                 SizedBox(height: 40),
               ],
             ),
