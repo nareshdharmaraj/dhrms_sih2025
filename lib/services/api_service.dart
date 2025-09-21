@@ -1,10 +1,35 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/app_constants.dart';
 
 class ApiService {
   // Use dynamic base URL from AppConstants
   static String get baseUrl => AppConstants.apiBaseUrl;
+  
+  // Token management
+  static Future<void> setAuthToken(String token) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('auth_token', token);
+  }
+  
+  static Future<String?> getAuthToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('auth_token');
+  }
+  
+  static Future<void> clearAuthToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('auth_token');
+  }
+  
+  static Future<Map<String, String>> getAuthHeaders() async {
+    final token = await getAuthToken();
+    return {
+      'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+  }
   
   // Universal login method - works for all roles (Patient, Hospital Staff, Regional Officer)
   static Future<Map<String, dynamic>> login(String username, String password) async {

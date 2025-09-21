@@ -270,6 +270,10 @@ class RoleSelectionScreen extends StatelessWidget {
     else if (role.route == '/sho') {
       Navigator.pushNamed(context, '/sho-login');
     } 
+    // Navigate to hospital role selection for hospital staff
+    else if (role.route == '/hospital') {
+      Navigator.pushNamed(context, '/hospital-role-selection');
+    }
     else {
       // Navigate directly to login screen for all other roles
       Navigator.push(

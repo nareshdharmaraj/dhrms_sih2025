@@ -10,6 +10,7 @@ dotenv.config();
 // Import routes
 const authRoutes = require('./routes/auth_routes');
 const patientRoutes = require('./routes/patientRoutes');
+const patientSettingsRoutes = require('./routes/patient_settings_routes');
 const userRoutes = require('./routes/user_routes');
 const allRolesRoutes = require('./routes/all_roles_routes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
@@ -17,6 +18,12 @@ const wearableRoutes = require('./routes/wearableRoutes');
 const whoRoutes = require('./routes/whoRoutes');
 const shoRoutes = require('./routes/shoRoutes');
 const shoAuthRoutes = require('./routes/shoAuthRoutes');
+
+// Hospital Management Routes
+const hospitalManagementRoutes = require('./routes/hospital_management_routes');
+const hospitalAdminRoutes = require('./routes/hospital_admin_routes');
+const hospitalDoctorRoutes = require('./routes/hospital_doctor_routes');
+const hospitalAssistantRoutes = require('./routes/hospital_assistant_routes');
 
 // Import middleware
 const errorHandler = require('./middleware/error_handler');
@@ -45,6 +52,7 @@ app.get('/health', (req, res) => {
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/patients', patientRoutes);
+app.use('/api/patients', patientSettingsRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/roles', allRolesRoutes);
 app.use('/api', dashboardRoutes);
@@ -52,6 +60,12 @@ app.use('/api/wearables', wearableRoutes);
 app.use('/api/who', whoRoutes);
 app.use('/api/sho', shoRoutes);
 app.use('/api/sho-auth', shoAuthRoutes);
+
+// Hospital Management API Routes
+app.use('/api/hospital', hospitalManagementRoutes);
+app.use('/api/hospital-admin', hospitalAdminRoutes);
+app.use('/api/hospital-doctor', hospitalDoctorRoutes);
+app.use('/api/hospital-assistant', hospitalAssistantRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

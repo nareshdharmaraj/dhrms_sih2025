@@ -13,6 +13,12 @@ import 'screens/wearable_data_screen.dart';
 import 'screens/ai_health_chatbot_screen.dart';
 import 'screens/who_login_screen.dart';
 import 'screens/sho_login_screen.dart';
+import 'screens/hospital_registration_screen.dart';
+import 'screens/hospital_admin_login_screen.dart';
+import 'screens/hospital_admin_dashboard_screen.dart';
+import 'screens/hospital_role_selection_screen.dart';
+import 'screens/hospital_doctor_login_screen.dart';
+import 'screens/hospital_assistant_login_screen.dart';
 import 'utils/environment_config.dart';
 import 'widgets/configuration_switcher.dart';
 
@@ -90,6 +96,12 @@ class DHRMSApp extends StatelessWidget {
           return _wrapWithConfigSwitcher(WearableDataScreen(userData: userData ?? {}));
         },
         '/ai-health-chatbot': (context) => _wrapWithConfigSwitcher(const AIHealthChatBotScreen()),
+        '/hospital-registration': (context) => _wrapWithConfigSwitcher(HospitalRegistrationScreen()),
+        '/hospital-admin-login': (context) => _wrapWithConfigSwitcher(HospitalAdminLoginScreen()),
+        '/hospital-admin-dashboard': (context) => _wrapWithConfigSwitcher(HospitalAdminDashboardScreen()),
+        '/hospital-role-selection': (context) => _wrapWithConfigSwitcher(const HospitalRoleSelectionScreen()),
+        '/hospital-doctor-login': (context) => _wrapWithConfigSwitcher(HospitalDoctorLoginScreen()),
+        '/hospital-assistant-login': (context) => _wrapWithConfigSwitcher(HospitalAssistantLoginScreen()),
       },
     );
   }
