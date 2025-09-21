@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/sho.dart';
 import '../utils/colors.dart';
-import 'sho/regional_health_officer_screen.dart';
+import 'regional_health_officer_screen.dart';
 
 class ShoDashboardScreen extends StatefulWidget {
   final SHO sho;
@@ -50,9 +50,9 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen> {
       setState(() {
         _isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading dashboard: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error loading dashboard: $e')));
     }
   }
 
@@ -180,18 +180,12 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen> {
             const SizedBox(height: 8),
             Text(
               'State Health Officer - ${widget.sho.assignedState}',
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.white70,
-              ),
+              style: const TextStyle(fontSize: 16, color: Colors.white70),
             ),
             const SizedBox(height: 8),
             Text(
               'Overseeing ${_dashboardData['totalRegions']} regions',
-              style: const TextStyle(
-                fontSize: 14,
-                color: Colors.white60,
-              ),
+              style: const TextStyle(fontSize: 14, color: Colors.white60),
             ),
           ],
         ),
@@ -207,15 +201,40 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen> {
       crossAxisSpacing: 16,
       mainAxisSpacing: 16,
       children: [
-        _buildStatCard('Total RHOs', '${_dashboardData['totalRHOs']}', Icons.people, AppColors.primary),
-        _buildStatCard('Active RHOs', '${_dashboardData['activeRHOs']}', Icons.check_circle, AppColors.success),
-        _buildStatCard('Total Staff', '${_dashboardData['totalStaff']}', Icons.group, AppColors.info),
-        _buildStatCard('Pending Approvals', '${_dashboardData['pendingApprovals']}', Icons.pending, AppColors.warning),
+        _buildStatCard(
+          'Total RHOs',
+          '${_dashboardData['totalRHOs']}',
+          Icons.people,
+          AppColors.primary,
+        ),
+        _buildStatCard(
+          'Active RHOs',
+          '${_dashboardData['activeRHOs']}',
+          Icons.check_circle,
+          AppColors.success,
+        ),
+        _buildStatCard(
+          'Total Staff',
+          '${_dashboardData['totalStaff']}',
+          Icons.group,
+          AppColors.info,
+        ),
+        _buildStatCard(
+          'Pending Approvals',
+          '${_dashboardData['pendingApprovals']}',
+          Icons.pending,
+          AppColors.warning,
+        ),
       ],
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Card(
       elevation: 3,
       child: Container(
@@ -336,12 +355,16 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen> {
             itemCount: (_dashboardData['recentActivity'] as List).length,
             separatorBuilder: (context, index) => const Divider(height: 1),
             itemBuilder: (context, index) {
-              final activity = (_dashboardData['recentActivity'] as List)[index];
+              final activity =
+                  (_dashboardData['recentActivity'] as List)[index];
               return ListTile(
                 leading: const Icon(Icons.history, color: AppColors.primary),
                 title: Text(activity['action']),
                 subtitle: Text(activity['time']),
-                trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+                trailing: const Icon(
+                  Icons.chevron_right,
+                  color: AppColors.textSecondary,
+                ),
               );
             },
           ),
