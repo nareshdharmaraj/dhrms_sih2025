@@ -35,7 +35,7 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen>
   @override
   void initState() {
     super.initState();
-    
+
     // Initialize animation controllers
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 800),
@@ -51,9 +51,10 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen>
     );
 
     // Initialize animations
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fadeController, curve: Curves.easeOut),
-    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeOut));
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.3),
       end: Offset.zero,
@@ -62,7 +63,9 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen>
       CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut),
     );
 
-    print('🔍 WhoDashboardScreen initState called for admin: ${widget.whoAdmin.fullName}');
+    print(
+      '🔍 WhoDashboardScreen initState called for admin: ${widget.whoAdmin.fullName}',
+    );
     print('🔍 Admin permissions: ${widget.whoAdmin.permissions}');
     _loadDashboardData();
   }
@@ -83,14 +86,14 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen>
       });
 
       final result = await WhoService.getDashboardStatistics();
-      
+
       if (result['success']) {
         setState(() {
           dashboardStats = result['statistics'];
           stateStats = result['stateStats'];
           isLoading = false;
         });
-        
+
         // Start animations after data is loaded
         _fadeController.forward();
         Future.delayed(const Duration(milliseconds: 200), () {
@@ -229,7 +232,9 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen>
           child: PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert_rounded, color: Colors.white),
             color: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             onSelected: (value) {
               switch (value) {
                 case 'profile':
@@ -317,12 +322,16 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen>
             icon: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: _currentIndex == 0 ? Colors.blue.shade50 : Colors.transparent,
+                color: _currentIndex == 0
+                    ? Colors.blue.shade50
+                    : Colors.transparent,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 Icons.dashboard_rounded,
-                color: _currentIndex == 0 ? Colors.blue.shade600 : Colors.grey.shade500,
+                color: _currentIndex == 0
+                    ? Colors.blue.shade600
+                    : Colors.grey.shade500,
               ),
             ),
             label: 'Overview',
@@ -331,12 +340,16 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen>
             icon: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: _currentIndex == 1 ? Colors.purple.shade50 : Colors.transparent,
+                color: _currentIndex == 1
+                    ? Colors.purple.shade50
+                    : Colors.transparent,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 Icons.admin_panel_settings_rounded,
-                color: _currentIndex == 1 ? Colors.purple.shade600 : Colors.grey.shade500,
+                color: _currentIndex == 1
+                    ? Colors.purple.shade600
+                    : Colors.grey.shade500,
               ),
             ),
             label: 'Officers',
@@ -345,12 +358,16 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen>
             icon: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: _currentIndex == 2 ? Colors.blue.shade50 : Colors.transparent,
+                color: _currentIndex == 2
+                    ? Colors.blue.shade50
+                    : Colors.transparent,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 Icons.local_hospital_rounded,
-                color: _currentIndex == 2 ? Colors.blue.shade600 : Colors.grey.shade500,
+                color: _currentIndex == 2
+                    ? Colors.blue.shade600
+                    : Colors.grey.shade500,
               ),
             ),
             label: 'Hospitals',
@@ -359,12 +376,16 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen>
             icon: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: _currentIndex == 3 ? Colors.green.shade50 : Colors.transparent,
+                color: _currentIndex == 3
+                    ? Colors.green.shade50
+                    : Colors.transparent,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 Icons.analytics_rounded,
-                color: _currentIndex == 3 ? Colors.green.shade600 : Colors.grey.shade500,
+                color: _currentIndex == 3
+                    ? Colors.green.shade600
+                    : Colors.grey.shade500,
               ),
             ),
             label: 'Analytics',
@@ -373,12 +394,16 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen>
             icon: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: _currentIndex == 4 ? Colors.grey.shade100 : Colors.transparent,
+                color: _currentIndex == 4
+                    ? Colors.grey.shade100
+                    : Colors.transparent,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 Icons.settings_rounded,
-                color: _currentIndex == 4 ? Colors.grey.shade700 : Colors.grey.shade500,
+                color: _currentIndex == 4
+                    ? Colors.grey.shade700
+                    : Colors.grey.shade500,
               ),
             ),
             label: 'Settings',
@@ -434,7 +459,9 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen>
               child: Column(
                 children: [
                   CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue.shade600),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Colors.blue.shade600,
+                    ),
                     strokeWidth: 3,
                   ),
                   const SizedBox(height: 16),
@@ -525,7 +552,10 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen>
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue.shade600,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -550,10 +580,7 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen>
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Colors.blue.shade700,
-              Colors.blue.shade800,
-            ],
+            colors: [Colors.blue.shade700, Colors.blue.shade800],
           ),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
@@ -610,7 +637,10 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen>
                       ),
                       const SizedBox(height: 2),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(15),
@@ -739,90 +769,9 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen>
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color, int index) {
-    return AnimatedBuilder(
-      animation: _fadeAnimation,
-      builder: (context, child) {
-        return Transform.translate(
-          offset: Offset(0, (1 - _fadeAnimation.value) * 20),
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: color.withOpacity(0.1),
-                  spreadRadius: 2,
-                  blurRadius: 15,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-              border: Border.all(
-                color: color.withOpacity(0.1),
-                width: 1,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        color.withOpacity(0.8),
-                        color,
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(15),
-                    boxShadow: [
-                      BoxShadow(
-                        color: color.withOpacity(0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    icon,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey.shade800,
-                    height: 1.0,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey.shade600,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   Widget _buildChartsSection() {
     if (stateStats.isEmpty) {
-      return SizedBox(
+      return Container(
         height: 200,
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
@@ -864,10 +813,7 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen>
               const SizedBox(height: 8),
               Text(
                 'Statistics will appear here once data is loaded',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade500,
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
               ),
             ],
           ),
@@ -893,10 +839,7 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen>
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Colors.blue.withOpacity(0.1),
-              width: 1,
-            ),
+            border: Border.all(color: Colors.blue.withOpacity(0.1), width: 1),
             boxShadow: [
               BoxShadow(
                 color: Colors.blue.withOpacity(0.1),
@@ -964,10 +907,7 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen>
       children: [
         Text(
           'Hospitals by State (Top 10)',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         SizedBox(height: 16),
         Expanded(
@@ -990,7 +930,10 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen>
                       style: TextStyle(fontWeight: FontWeight.w600),
                     ),
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.blue.shade600,
                         borderRadius: BorderRadius.circular(12),
@@ -1027,10 +970,7 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen>
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Colors.grey.withOpacity(0.1),
-              width: 1,
-            ),
+            border: Border.all(color: Colors.grey.withOpacity(0.1), width: 1),
             boxShadow: [
               BoxShadow(
                 color: Colors.grey.withOpacity(0.1),
@@ -1138,7 +1078,7 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen>
                       'color': Colors.purple,
                     },
                   ];
-                  
+
                   final activity = activities[index];
                   return _buildActivityItem(
                     activity['title'] as String,
@@ -1179,10 +1119,7 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen>
                   height: 50,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [
-                        color.withOpacity(0.8),
-                        color,
-                      ],
+                      colors: [color.withOpacity(0.8), color],
                     ),
                     borderRadius: BorderRadius.circular(15),
                     boxShadow: [
@@ -1193,11 +1130,7 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen>
                       ),
                     ],
                   ),
-                  child: Icon(
-                    icon,
-                    color: Colors.white,
-                    size: 24,
-                  ),
+                  child: Icon(icon, color: Colors.white, size: 24),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -1224,7 +1157,10 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen>
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(20),
@@ -1259,16 +1195,17 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => WhoHospitalManagementScreen(whoAdmin: widget.whoAdmin),
+        builder: (context) =>
+            WhoHospitalManagementScreen(whoAdmin: widget.whoAdmin),
       ),
     );
   }
 
   void _navigateToStateAnalytics() {
     // TODO: Navigate to State Analytics screen when implemented
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('State analytics coming soon...')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('State analytics coming soon...')));
   }
 
   void _showExportDialog() {
@@ -1389,7 +1326,8 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen>
             const SizedBox(height: 16),
             WhoActionButton(
               title: 'Manage State Health Officers',
-              subtitle: 'Add, edit, and monitor State Health Officers across all states',
+              subtitle:
+                  'Add, edit, and monitor State Health Officers across all states',
               icon: Icons.admin_panel_settings_rounded,
               color: Colors.purple,
               onTap: () => _navigateToStateHealthOfficers(),
@@ -1642,10 +1580,26 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen>
                     ),
                   ),
                   const SizedBox(height: 16),
-                  WhoProfileItem(label: 'Name', value: widget.whoAdmin.fullName, icon: Icons.person_rounded),
-                  WhoProfileItem(label: 'Email', value: widget.whoAdmin.email, icon: Icons.email_rounded),
-                  WhoProfileItem(label: 'Designation', value: widget.whoAdmin.designation, icon: Icons.work_rounded),
-                  WhoProfileItem(label: 'Region', value: widget.whoAdmin.region, icon: Icons.location_on_rounded),
+                  WhoProfileItem(
+                    label: 'Name',
+                    value: widget.whoAdmin.fullName,
+                    icon: Icons.person_rounded,
+                  ),
+                  WhoProfileItem(
+                    label: 'Email',
+                    value: widget.whoAdmin.email,
+                    icon: Icons.email_rounded,
+                  ),
+                  WhoProfileItem(
+                    label: 'Designation',
+                    value: widget.whoAdmin.designation,
+                    icon: Icons.work_rounded,
+                  ),
+                  WhoProfileItem(
+                    label: 'Region',
+                    value: widget.whoAdmin.region,
+                    icon: Icons.location_on_rounded,
+                  ),
                 ],
               ),
             ),
@@ -1682,7 +1636,10 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen>
                         color: Colors.blue.shade100,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Icon(Icons.refresh_rounded, color: Colors.blue.shade600),
+                      child: Icon(
+                        Icons.refresh_rounded,
+                        color: Colors.blue.shade600,
+                      ),
                     ),
                     title: const Text('Refresh Data'),
                     subtitle: const Text('Reload dashboard statistics'),
@@ -1695,7 +1652,10 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen>
                         color: Colors.green.shade100,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Icon(Icons.settings_rounded, color: Colors.green.shade600),
+                      child: Icon(
+                        Icons.settings_rounded,
+                        color: Colors.green.shade600,
+                      ),
                     ),
                     title: const Text('App Settings'),
                     subtitle: const Text('Configure application preferences'),
@@ -1708,7 +1668,10 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen>
                         color: Colors.red.shade100,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Icon(Icons.logout_rounded, color: Colors.red.shade600),
+                      child: Icon(
+                        Icons.logout_rounded,
+                        color: Colors.red.shade600,
+                      ),
                     ),
                     title: const Text('Logout'),
                     subtitle: const Text('Sign out of your account'),
@@ -1719,49 +1682,6 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen>
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildProfileItem(String label, String value, IconData icon) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.blue.shade100,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, color: Colors.blue.shade600, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey.shade800,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
