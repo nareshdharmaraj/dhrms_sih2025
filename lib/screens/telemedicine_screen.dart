@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class TelemedicineScreen extends StatefulWidget {
   final Map<String, dynamic>? patientData;
@@ -13,6 +15,70 @@ class _TelemedicineScreenState extends State<TelemedicineScreen> {
   final List<Map<String, dynamic>> _doctors = [];
   final List<Map<String, dynamic>> _appointments = [];
   String _selectedSpecialty = 'All';
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDoctors();
+    _loadAppointments();
+  }
+
+  Future<void> _loadDoctors() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      const baseUrl = 'https://dhrms-sih2025.onrender.com/api';
+      final response = await http.get(
+        Uri.parse('$baseUrl/telemedicine/doctors'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          _doctors.clear();
+          _doctors.addAll(List<Map<String, dynamic>>.from(data['doctors'] ?? []));
+        });
+      } else {
+        print('Failed to load doctors: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error loading doctors: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadAppointments() async {
+    try {
+      const baseUrl = 'https://dhrms-sih2025.onrender.com/api';
+      final response = await http.get(
+        Uri.parse('$baseUrl/telemedicine/appointments'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          _appointments.clear();
+          _appointments.addAll(List<Map<String, dynamic>>.from(data['appointments'] ?? []));
+        });
+      } else {
+        print('Failed to load appointments: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error loading appointments: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,8 +114,14 @@ class _TelemedicineScreenState extends State<TelemedicineScreen> {
                 ],
               ),
               Expanded(
-                child: TabBarView(
-                  children: [_buildDoctorsTab(), _buildAppointmentsTab()],
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    await _loadDoctors();
+                    await _loadAppointments();
+                  },
+                  child: TabBarView(
+                    children: [_buildDoctorsTab(), _buildAppointmentsTab()],
+                  ),
                 ),
               ),
             ],
@@ -117,37 +189,30 @@ class _TelemedicineScreenState extends State<TelemedicineScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.video_call_outlined,
-            size: 120,
-            color: Colors.green.shade300,
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'No Doctors Available',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey.shade700,
+          if (_isLoading)
+            const CircularProgressIndicator()
+          else ...[
+            Icon(
+              Icons.video_call_outlined,
+              size: 120,
+              color: Colors.green.shade300,
             ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Connect with healthcare professionals remotely',
-            style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 32),
-          ElevatedButton.icon(
-            onPressed: _loadSampleDoctors,
-            icon: const Icon(Icons.refresh),
-            label: const Text('Load Available Doctors'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green.shade600,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            const SizedBox(height: 24),
+            Text(
+              'No Doctors Available',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey.shade700,
+              ),
             ),
-          ),
+            const SizedBox(height: 12),
+            Text(
+              'Pull down to refresh and check for available doctors',
+              style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ],
       ),
     );
@@ -681,68 +746,5 @@ class _TelemedicineScreenState extends State<TelemedicineScreen> {
         ],
       ),
     );
-  }
-
-  void _loadSampleDoctors() {
-    setState(() {
-      _doctors.clear();
-      _doctors.addAll([
-        {
-          'name': 'Sarah Johnson',
-          'specialty': 'General',
-          'experience': 8,
-          'rating': 4.5,
-          'reviews': 127,
-          'fee': 50,
-          'isAvailable': true,
-          'languages': ['English', 'Spanish'],
-          'education': 'MD from Harvard Medical School',
-        },
-        {
-          'name': 'Michael Chen',
-          'specialty': 'Cardiology',
-          'experience': 12,
-          'rating': 4.8,
-          'reviews': 203,
-          'fee': 75,
-          'isAvailable': true,
-          'languages': ['English', 'Mandarin'],
-          'education': 'MD from Johns Hopkins University',
-        },
-        {
-          'name': 'Emily Rodriguez',
-          'specialty': 'Dermatology',
-          'experience': 6,
-          'rating': 4.3,
-          'reviews': 89,
-          'fee': 60,
-          'isAvailable': false,
-          'languages': ['English', 'Spanish'],
-          'education': 'MD from UCLA Medical School',
-        },
-        {
-          'name': 'David Thompson',
-          'specialty': 'Psychiatry',
-          'experience': 15,
-          'rating': 4.7,
-          'reviews': 156,
-          'fee': 80,
-          'isAvailable': true,
-          'languages': ['English'],
-          'education': 'MD, PhD from Stanford University',
-        },
-        {
-          'name': 'Lisa Park',
-          'specialty': 'Pediatrics',
-          'experience': 10,
-          'rating': 4.6,
-          'reviews': 234,
-          'fee': 55,
-          'isAvailable': true,
-          'languages': ['English', 'Korean'],
-          'education': 'MD from Yale Medical School',
-        },
-      ]);
-    });
   }
 }

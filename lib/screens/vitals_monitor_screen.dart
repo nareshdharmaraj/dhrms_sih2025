@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class VitalsMonitorScreen extends StatefulWidget {
   final Map<String, dynamic>? patientData;
@@ -12,6 +14,45 @@ class VitalsMonitorScreen extends StatefulWidget {
 class _VitalsMonitorScreenState extends State<VitalsMonitorScreen> {
   final List<Map<String, dynamic>> _vitalRecords = [];
   String _selectedPeriod = '7 days';
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVitalRecords();
+  }
+
+  Future<void> _loadVitalRecords() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      const baseUrl = 'https://dhrms-sih2025.onrender.com/api';
+      final response = await http.get(
+        Uri.parse('$baseUrl/vitals/records'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          _vitalRecords.clear();
+          _vitalRecords.addAll(List<Map<String, dynamic>>.from(data['vitals'] ?? []));
+        });
+      } else {
+        print('Failed to load vitals: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error loading vitals: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +105,10 @@ class _VitalsMonitorScreenState extends State<VitalsMonitorScreen> {
             colors: [Colors.red.shade50, Colors.white],
           ),
         ),
-        child: _vitalRecords.isEmpty ? _buildEmptyState() : _buildVitalsList(),
+        child: RefreshIndicator(
+          onRefresh: _loadVitalRecords,
+          child: _vitalRecords.isEmpty ? _buildEmptyState() : _buildVitalsList(),
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showAddVitalDialog,
@@ -86,45 +130,34 @@ class _VitalsMonitorScreenState extends State<VitalsMonitorScreen> {
             color: Colors.red.shade300,
           ),
           const SizedBox(height: 24),
-          Text(
-            'No Vital Records',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey.shade700,
+          if (_isLoading)
+            const CircularProgressIndicator()
+          else ...[
+            Text(
+              'No Vital Records',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey.shade700,
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Track your vital signs and health metrics',
-            style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 32),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ElevatedButton.icon(
-                onPressed: _loadSampleData,
-                icon: const Icon(Icons.refresh),
-                label: const Text('Load Sample'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey.shade600,
-                  foregroundColor: Colors.white,
-                ),
+            const SizedBox(height: 12),
+            Text(
+              'Pull down to refresh or add your first vital reading',
+              style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: _showAddVitalDialog,
+              icon: const Icon(Icons.add),
+              label: const Text('Add Reading'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.shade600,
+                foregroundColor: Colors.white,
               ),
-              const SizedBox(width: 16),
-              ElevatedButton.icon(
-                onPressed: _showAddVitalDialog,
-                icon: const Icon(Icons.add),
-                label: const Text('Add Reading'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red.shade600,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ],
       ),
     );
@@ -667,27 +700,5 @@ class _VitalsMonitorScreenState extends State<VitalsMonitorScreen> {
         ],
       ),
     );
-  }
-
-  void _loadSampleData() {
-    setState(() {
-      _vitalRecords.clear();
-      final now = DateTime.now();
-
-      for (int i = 0; i < 7; i++) {
-        final date = now.subtract(Duration(days: i));
-        _vitalRecords.add({
-          'systolic': 120 + (i * 2),
-          'diastolic': 80 + i,
-          'heartRate': 72 + (i * 3),
-          'temperature': 98.6 + (i * 0.1),
-          'weight': 150.0 + (i * 0.5),
-          'notes': i == 0 ? 'Feeling good today' : '',
-          'date': '${date.day}/${date.month}/${date.year}',
-          'time': '${(8 + i).toString().padLeft(2, '0')}:00',
-          'timestamp': date,
-        });
-      }
-    });
   }
 }

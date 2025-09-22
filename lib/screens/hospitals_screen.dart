@@ -111,10 +111,7 @@ class _HospitalsScreenState extends State<HospitalsScreen> {
           const SizedBox(height: 32),
           Text(
             'Tap the filter icon above to refine your search',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade500,
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
           ),
         ],
       ),
