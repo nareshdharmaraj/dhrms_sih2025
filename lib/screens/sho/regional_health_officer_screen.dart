@@ -55,9 +55,9 @@ class _RegionalHealthOfficerScreenState extends State<RegionalHealthOfficerScree
         
         // Backend now filters by state, so no need for frontend filtering
         print('🔍 Received ${rhoData.length} RHOs from backend');
-        rhoData.forEach((rho) {
+        for (var rho in rhoData) {
           print('🔍 RHO: ${rho.officerId} - ${rho.fullName} (${rho.assignedDistrict})');
-        });
+        }
         
         setState(() {
           rhos = rhoData;

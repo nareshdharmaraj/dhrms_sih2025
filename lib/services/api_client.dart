@@ -246,7 +246,7 @@ class ApiClient {
   /// Log response for debugging
   void _logResponse(String method, String url, http.Response response) {
     final statusEmoji = response.statusCode < 300 ? '✅' : '❌';
-    print('$statusEmoji $method ${response.statusCode}: ${url}');
+    print('$statusEmoji $method ${response.statusCode}: $url');
 
     if (response.statusCode >= 400) {
       print('📥 Error Response: ${response.body}');

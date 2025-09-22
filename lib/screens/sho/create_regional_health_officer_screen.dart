@@ -24,7 +24,7 @@ class _CreateRegionalHealthOfficerScreenState extends State<CreateRegionalHealth
   
   String? _selectedDistrict;
   List<Map<String, dynamic>> _availableDistricts = [];
-  List<String> _selectedAreas = [];
+  final List<String> _selectedAreas = [];
   Map<String, dynamic>? _districtAssignmentInfo;
   
   // Zone selection variables
@@ -662,7 +662,7 @@ class _CreateRegionalHealthOfficerScreenState extends State<CreateRegionalHealth
                     dense: true,
                     activeColor: AppColors.primary,
                   );
-                }).toList(),
+                }),
               ],
             ),
           ),
@@ -975,7 +975,7 @@ class _CreateRegionalHealthOfficerScreenState extends State<CreateRegionalHealth
                 controlAffinity: ListTileControlAffinity.trailing,
               ),
             );
-          }).toList(),
+          }),
           
           if (_selectedAreas.isNotEmpty) ...[
             const SizedBox(height: 16),

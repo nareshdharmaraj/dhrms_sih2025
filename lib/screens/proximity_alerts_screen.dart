@@ -242,9 +242,9 @@ class _ProximityAlertsScreenState extends State<ProximityAlertsScreen> {
                     Switch(
                       value: alert['isEnabled'],
                       onChanged: (value) => _toggleAlert(index, value),
-                      thumbColor: MaterialStateProperty.resolveWith<Color>(
-                        (Set<MaterialState> states) {
-                          if (states.contains(MaterialState.selected)) {
+                      thumbColor: WidgetStateProperty.resolveWith<Color>(
+                        (Set<WidgetState> states) {
+                          if (states.contains(WidgetState.selected)) {
                             return Colors.cyan.shade600;
                           }
                           return Colors.grey.shade400;
