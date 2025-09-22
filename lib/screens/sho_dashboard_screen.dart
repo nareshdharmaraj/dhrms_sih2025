@@ -859,7 +859,7 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen>
                   ),
                 ],
               ),
-            )).toList(),
+            )),
           ],
         ),
       ),
