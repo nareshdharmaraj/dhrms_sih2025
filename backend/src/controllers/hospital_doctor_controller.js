@@ -35,10 +35,13 @@ const doctorLogin = async (req, res) => {
       });
     }
 
-    // Find doctor for this hospital
+    // Find doctor for this hospital (check both doctorId and username)
     const doctor = await HospitalDoctor.findOne({
       hospitalId,
-      username,
+      $or: [
+        { username },
+        { doctorId: username }
+      ],
       isActive: true
     });
 
@@ -50,7 +53,7 @@ const doctorLogin = async (req, res) => {
     }
 
     // Check account lock
-    if (doctor.accountLocked && doctor.lockUntil > new Date()) {
+    if (doctor.accountLocked && doctor.lockUntil && doctor.lockUntil > new Date()) {
       return res.status(423).json({
         success: false,
         message: 'Account is temporarily locked due to multiple failed login attempts'
@@ -60,7 +63,7 @@ const doctorLogin = async (req, res) => {
     // Validate password (plain text comparison as requested)
     if (doctor.password !== password) {
       // Increment failed login attempts
-      doctor.failedLoginAttempts += 1;
+      doctor.failedLoginAttempts = (doctor.failedLoginAttempts || 0) + 1;
       
       if (doctor.failedLoginAttempts >= 5) {
         doctor.accountLocked = true;
@@ -80,6 +83,7 @@ const doctorLogin = async (req, res) => {
     doctor.accountLocked = false;
     doctor.lockUntil = null;
     doctor.lastLoginAt = new Date();
+    doctor.lastLogin = new Date(); // Also update this field for compatibility
     await doctor.save();
 
     // Create JWT token
@@ -99,15 +103,22 @@ const doctorLogin = async (req, res) => {
       data: {
         token,
         doctor: {
+          _id: doctor._id, // MongoDB ObjectId for compatibility
           doctorId: doctor.doctorId,
-          doctorName: doctor.doctorName,
+          doctorName: doctor.doctorName || doctor.name,
+          name: doctor.name || doctor.doctorName,
           username: doctor.username,
           email: doctor.email,
+          contactNumber: doctor.contactNumber,
           specialization: doctor.specialization,
+          specializations: doctor.specializations || [doctor.specialization],
           department: doctor.department,
           hospitalId: doctor.hospitalId,
           hospitalName: hospital.name,
-          permissions: doctor.permissions
+          designation: doctor.designation || 'Doctor',
+          permissions: doctor.permissions,
+          isActive: doctor.isActive,
+          isOnDuty: doctor.isOnDuty
         }
       }
     });

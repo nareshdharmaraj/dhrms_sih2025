@@ -150,21 +150,96 @@ const validateAdminLogin = [
  * Validate doctor creation
  */
 const validateDoctorCreation = [
+  // Support both new and legacy field names
+  body('name')
+    .optional()
+    .isLength({ min: 3, max: 50 })
+    .withMessage('Name must be between 3 and 50 characters')
+    .matches(/^[a-zA-Z\s\.]+$/)
+    .withMessage('Name can only contain letters, spaces, and dots'),
+  
   body('doctorName')
-    .notEmpty()
-    .withMessage('Doctor name is required')
+    .optional()
     .isLength({ min: 2, max: 100 })
     .withMessage('Doctor name must be between 2 and 100 characters')
     .matches(/^[a-zA-Z\s\.]+$/)
     .withMessage('Doctor name can only contain letters, spaces, and dots'),
   
+  // Either name or doctorName must be provided
+  body().custom((body) => {
+    if (!body.name && !body.doctorName) {
+      throw new Error('Name is required (provide either name or doctorName)');
+    }
+    return true;
+  }),
+  
+  body('gender')
+    .optional()
+    .isIn(['Male', 'Female', 'Other'])
+    .withMessage('Gender must be Male, Female, or Other'),
+  
+  body('dateOfBirth')
+    .optional()
+    .isISO8601()
+    .withMessage('Date of birth must be a valid date')
+    .custom((value) => {
+      const age = (new Date().getFullYear()) - (new Date(value).getFullYear());
+      if (age < 18 || age > 100) {
+        throw new Error('Doctor must be between 18 and 100 years old');
+      }
+      return true;
+    }),
+  
+  body('specializations')
+    .optional()
+    .isArray({ min: 1, max: 5 })
+    .withMessage('Specializations must be an array with 1-5 items')
+    .custom((specializations) => {
+      const validSpecializations = [
+        'General Medicine', 'Cardiology', 'Neurology', 'Orthopedics', 'Pediatrics',
+        'Gynecology', 'Dermatology', 'Psychiatry', 'Surgery', 'Anesthesiology',
+        'Emergency Medicine', 'Radiology', 'Pathology', 'Ophthalmology', 'ENT',
+        'Urology', 'Nephrology', 'Pulmonology', 'Gastroenterology', 'Endocrinology',
+        'Oncology', 'Rheumatology', 'Plastic Surgery', 'Neurosurgery', 'Cardiac Surgery'
+      ];
+      for (const spec of specializations) {
+        if (!validSpecializations.includes(spec)) {
+          throw new Error(`Invalid specialization: ${spec}`);
+        }
+      }
+      return true;
+    }),
+  
+  body('specialization')
+    .optional()
+    .isIn([
+      'General Medicine', 'Cardiology', 'Neurology', 'Orthopedics', 'Pediatrics',
+      'Gynecology', 'Dermatology', 'Psychiatry', 'Surgery', 'Anesthesiology',
+      'Emergency Medicine', 'Radiology', 'Pathology', 'Ophthalmology', 'ENT',
+      'Urology', 'Nephrology', 'Pulmonology', 'Gastroenterology', 'Endocrinology',
+      'Oncology', 'Rheumatology', 'Plastic Surgery', 'Neurosurgery', 'Cardiac Surgery'
+    ])
+    .withMessage('Invalid specialization'),
+  
+  // Either specializations or specialization must be provided
+  body().custom((body) => {
+    if (!body.specializations && !body.specialization) {
+      throw new Error('Specialization is required (provide either specializations array or specialization)');
+    }
+    return true;
+  }),
+  
   body('username')
-    .notEmpty()
-    .withMessage('Username is required')
+    .optional()
     .isLength({ min: 3, max: 30 })
     .withMessage('Username must be between 3 and 30 characters')
     .matches(/^[a-zA-Z0-9_]+$/)
     .withMessage('Username can only contain letters, numbers, and underscores'),
+  
+  body('doctorId')
+    .optional()
+    .isLength({ min: 3, max: 30 })
+    .withMessage('Doctor ID must be between 3 and 30 characters'),
   
   body('password')
     .notEmpty()
@@ -180,27 +255,37 @@ const validateDoctorCreation = [
   body('contactNumber')
     .notEmpty()
     .withMessage('Contact number is required')
-    .isMobilePhone('en-IN')
-    .withMessage('Please provide a valid Indian mobile number'),
+    .isLength({ min: 10, max: 10 })
+    .withMessage('Contact number must be exactly 10 digits')
+    .isNumeric()
+    .withMessage('Contact number must contain only numbers'),
   
-  body('specialization')
-    .notEmpty()
-    .withMessage('Specialization is required')
-    .isIn([
-      'General Medicine', 'Cardiology', 'Neurology', 'Orthopedics', 'Pediatrics',
-      'Gynecology', 'Dermatology', 'Psychiatry', 'Surgery', 'Anesthesiology',
-      'Emergency Medicine', 'Radiology', 'Pathology', 'Ophthalmology', 'ENT',
-      'Urology', 'Nephrology', 'Pulmonology', 'Gastroenterology', 'Endocrinology',
-      'Oncology', 'Rheumatology', 'Plastic Surgery', 'Neurosurgery', 'Cardiac Surgery'
-    ])
-    .withMessage('Invalid specialization'),
+  body('qualification')
+    .optional()
+    .isLength({ min: 2, max: 30 })
+    .withMessage('Qualification must be between 2 and 30 characters'),
+  
+  body('experienceYears')
+    .optional()
+    .isInt({ min: 0, max: 50 })
+    .withMessage('Experience years must be between 0 and 50'),
+  
+  body('availableTimings')
+    .optional()
+    .isIn(['9:00 AM - 12:00 PM', '12:00 PM - 3:00 PM', '3:00 PM - 6:00 PM', '6:00 PM - 9:00 PM', '24/7 Emergency', 'Flexible'])
+    .withMessage('Invalid available timings'),
+  
+  body('consultationFee')
+    .optional()
+    .isInt({ min: 0, max: 99999 })
+    .withMessage('Consultation fee must be between 0 and 99999'),
   
   body('department')
-    .notEmpty()
-    .withMessage('Department is required')
+    .optional()
     .isLength({ min: 2, max: 50 })
     .withMessage('Department must be between 2 and 50 characters'),
   
+  // Legacy support
   body('qualifications')
     .optional()
     .isArray()

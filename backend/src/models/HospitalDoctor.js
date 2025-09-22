@@ -26,16 +26,57 @@ const hospitalDoctorSchema = new mongoose.Schema({
     minlength: 6
   },
   
-  doctorName: {
+  name: {
     type: String,
     required: true,
+    trim: true,
+    minlength: 3,
+    maxlength: 50
+  },
+  
+  // Keep backwards compatibility
+  doctorName: {
+    type: String,
     trim: true,
     maxlength: 100
   },
   
-  specialization: {
+  gender: {
     type: String,
     required: true,
+    enum: ['Male', 'Female', 'Other']
+  },
+  
+  dateOfBirth: {
+    type: Date,
+    required: true,
+    validate: {
+      validator: function(v) {
+        const age = (new Date().getFullYear()) - (new Date(v).getFullYear());
+        return age >= 18 && age <= 100;
+      },
+      message: 'Doctor must be at least 18 years old'
+    }
+  },
+  
+  specializations: [{
+    type: String,
+    required: true,
+    trim: true,
+    enum: [
+      'General Medicine', 'Cardiology', 'Neurology', 'Orthopedics', 
+      'Pediatrics', 'Gynecology', 'Dermatology', 'Psychiatry',
+      'ENT', 'Ophthalmology', 'Emergency Medicine', 'Anesthesia',
+      'Radiology', 'Pathology', 'Surgery', 'Urology',
+      'Oncology', 'Nephrology', 'Gastroenterology', 'Pulmonology',
+      'Endocrinology', 'Rheumatology', 'Hematology', 'Infectious Disease',
+      'Family Medicine', 'Internal Medicine', 'Critical Care'
+    ]
+  }],
+  
+  // Keep backwards compatibility
+  specialization: {
+    type: String,
     trim: true,
     enum: [
       'General Medicine', 'Cardiology', 'Neurology', 'Orthopedics', 
@@ -62,9 +103,17 @@ const hospitalDoctorSchema = new mongoose.Schema({
   },
   
   qualification: {
+    type: String,
+    required: true,
+    trim: true,
+    minlength: 2,
+    maxlength: 30
+  },
+  
+  // Keep old structure for backwards compatibility
+  qualificationDetails: {
     degree: {
       type: String,
-      required: true,
       trim: true
     },
     university: {
@@ -82,7 +131,28 @@ const hospitalDoctorSchema = new mongoose.Schema({
     }]
   },
   
-  experience: {
+  experienceYears: {
+    type: Number,
+    min: 0,
+    max: 50,
+    default: 0
+  },
+  
+  availableTimings: {
+    type: String,
+    enum: ['9:00 AM - 12:00 PM', '12:00 PM - 3:00 PM', '3:00 PM - 6:00 PM', '6:00 PM - 9:00 PM', '24/7 Emergency', 'Flexible'],
+    default: '9:00 AM - 12:00 PM'
+  },
+  
+  consultationFee: {
+    type: Number,
+    min: 0,
+    max: 99999,
+    default: 0
+  },
+  
+  // Keep old experience structure for backwards compatibility
+  experienceDetails: {
     totalYears: {
       type: Number,
       min: 0,
@@ -160,6 +230,24 @@ const hospitalDoctorSchema = new mongoose.Schema({
   loginAttempts: {
     type: Number,
     default: 0
+  },
+  
+  failedLoginAttempts: {
+    type: Number,
+    default: 0
+  },
+  
+  accountLocked: {
+    type: Boolean,
+    default: false
+  },
+  
+  lockUntil: {
+    type: Date
+  },
+  
+  lastLoginAt: {
+    type: Date
   },
   
   isActive: {

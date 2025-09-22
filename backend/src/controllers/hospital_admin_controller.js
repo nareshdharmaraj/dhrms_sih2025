@@ -211,23 +211,42 @@ const getAdminDashboard = async (req, res) => {
 const createDoctor = async (req, res) => {
   try {
     const { hospitalId } = req.admin;
+    
+    // Debug: Log the received data
+    console.log('🔍 Received doctor creation request:');
+    console.log('Hospital ID:', hospitalId);
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+    
     const {
+      doctorId,
+      name,
+      gender,
+      dateOfBirth,
+      specializations,
+      department,
+      contactNumber,
+      email,
+      qualification,
+      experienceYears,
+      availableTimings,
+      consultationFee,
+      password,
+      // Legacy fields for backwards compatibility
       doctorName,
       username,
-      password,
-      email,
-      contactNumber,
-      specialization,
-      qualifications,
-      department,
-      dutySchedule,
-      emergencyContact
+      specialization
     } = req.body;
 
-    // Check if username or email already exists
+    // Use new field names or fall back to legacy ones
+    const finalDoctorName = name || doctorName;
+    const finalSpecializations = specializations || [specialization];
+    const finalDoctorId = doctorId || username;
+
+    // Check if doctorId or email already exists
     const existingDoctor = await HospitalDoctor.findOne({
       $or: [
-        { username },
+        { doctorId: finalDoctorId },
+        { username: finalDoctorId },
         { email }
       ]
     });
@@ -235,24 +254,121 @@ const createDoctor = async (req, res) => {
     if (existingDoctor) {
       return res.status(400).json({
         success: false,
-        message: 'Doctor with this username or email already exists'
+        message: 'Doctor with this ID or email already exists'
       });
     }
 
-    // Create doctor
+    // Auto-generate doctor ID if not provided (fix the generation)
+    const generatedDoctorId = finalDoctorId || `DR${Date.now().toString().slice(-6)}`;
+
+    // Ensure all required fields are present
+    if (!finalDoctorName) {
+      return res.status(400).json({
+        success: false,
+        message: 'Doctor name is required'
+      });
+    }
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required'
+      });
+    }
+
+    if (!contactNumber) {
+      return res.status(400).json({
+        success: false,
+        message: 'Contact number is required'
+      });
+    }
+
+    if (!qualification) {
+      return res.status(400).json({
+        success: false,
+        message: 'Qualification is required'
+      });
+    }
+
+    if (!password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password is required'
+      });
+    }
+
+    // Ensure specializations array is not empty
+    if (!finalSpecializations || finalSpecializations.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'At least one specialization is required'
+      });
+    }
+
+    // Auto-generate department if not provided
+    const departmentMapping = {
+      'General Medicine': 'Internal Medicine',
+      'Cardiology': 'Cardiology',
+      'Neurology': 'Neurology',
+      'Orthopedics': 'Orthopedics',
+      'Pediatrics': 'Pediatrics',
+      'Gynecology': 'Obstetrics & Gynecology',
+      'Dermatology': 'Dermatology',
+      'Psychiatry': 'Psychiatry',
+      'Surgery': 'General Surgery',
+      'ENT': 'ENT',
+      'Ophthalmology': 'Ophthalmology',
+      'Emergency Medicine': 'Emergency',
+      'Anesthesia': 'Anesthesiology',
+      'Radiology': 'Radiology',
+      'Pathology': 'Pathology',
+      'Urology': 'Urology',
+      'Oncology': 'Oncology',
+      'Nephrology': 'Nephrology',
+      'Gastroenterology': 'Gastroenterology',
+      'Pulmonology': 'Pulmonology',
+      'Endocrinology': 'Endocrinology',
+      'Rheumatology': 'Rheumatology',
+      'Hematology': 'Hematology',
+      'Infectious Disease': 'Infectious Disease',
+      'Family Medicine': 'Family Medicine',
+      'Internal Medicine': 'Internal Medicine',
+      'Critical Care': 'ICU'
+    };
+
+    const finalDepartment = department || departmentMapping[finalSpecializations[0]] || 'General Medicine';
+
+    // Create doctor with new field structure
     const doctor = new HospitalDoctor({
+      doctorId: generatedDoctorId,
       hospitalId,
-      doctorName,
-      username,
+      username: generatedDoctorId, // Username = Doctor ID
       password, // Plain text as requested
+      name: finalDoctorName,
+      doctorName: finalDoctorName, // Backwards compatibility
+      gender: gender || 'Other',
+      dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
+      specializations: finalSpecializations,
+      specialization: finalSpecializations[0], // Backwards compatibility
+      department: finalDepartment,
       email,
       contactNumber,
-      specialization,
-      qualifications: qualifications || [],
-      department,
-      dutySchedule: dutySchedule || {},
-      emergencyContact,
-      joiningDate: new Date()
+      qualification,
+      experienceYears: experienceYears || 0,
+      availableTimings: availableTimings || '9:00 AM - 12:00 PM',
+      consultationFee: consultationFee || 0,
+      // Set defaults for required legacy fields
+      registrationNumber: `REG${Date.now()}`,
+      // Initialize login fields
+      failedLoginAttempts: 0,
+      accountLocked: false,
+      lockUntil: null,
+      lastLogin: null,
+      isActive: true,
+      isOnDuty: false,
+      isLocked: false,
+      createdAt: new Date(),
+      createdBy: req.admin.adminId
     });
 
     await doctor.save();
@@ -262,11 +378,15 @@ const createDoctor = async (req, res) => {
       message: 'Doctor created successfully',
       data: {
         doctorId: doctor.doctorId,
-        doctorName: doctor.doctorName,
+        name: doctor.name,
         username: doctor.username,
         email: doctor.email,
-        specialization: doctor.specialization,
-        department: doctor.department
+        specializations: doctor.specializations,
+        department: doctor.department,
+        contactNumber: doctor.contactNumber,
+        experienceYears: doctor.experienceYears,
+        availableTimings: doctor.availableTimings,
+        consultationFee: doctor.consultationFee
       }
     });
 
@@ -274,17 +394,35 @@ const createDoctor = async (req, res) => {
     console.error('Create doctor error:', error);
     
     if (error.name === 'ValidationError') {
-      const errors = Object.values(error.errors).map(err => err.message);
+      const errors = Object.values(error.errors).map(err => ({
+        field: err.path,
+        message: err.message,
+        value: err.value
+      }));
+      
+      console.log('Validation errors:', errors);
+      
       return res.status(400).json({
         success: false,
         message: 'Validation error',
-        errors
+        errors,
+        details: error.message
+      });
+    }
+    
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0];
+      return res.status(400).json({
+        success: false,
+        message: `Doctor with this ${field} already exists`,
+        field
       });
     }
     
     res.status(500).json({
       success: false,
-      message: 'Server error while creating doctor'
+      message: 'Server error while creating doctor',
+      error: error.message
     });
   }
 };

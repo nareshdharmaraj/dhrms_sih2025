@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/hospital_api_service.dart';
 import '../services/api_client.dart';
 import '../widgets/custom_text_field.dart';
@@ -71,8 +73,15 @@ class _HospitalDoctorLoginScreenState extends State<HospitalDoctorLoginScreen> {
         _passwordController.text,
       );
 
+      print('🔍 Login response data: $data');
+      print('🔍 Doctor data: ${data['data']['doctor']}');
+
       // Store token and doctor data
       await ApiClient.setAuthToken(data['data']['token']);
+      
+      // Also store doctor data in SharedPreferences as backup
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('doctor_data', jsonEncode(data['data']['doctor']));
 
       // Navigate to doctor dashboard
       Navigator.pushReplacementNamed(

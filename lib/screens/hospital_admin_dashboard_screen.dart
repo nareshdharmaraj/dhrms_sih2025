@@ -1073,29 +1073,85 @@ class AddDoctorDialog extends StatefulWidget {
 
 class _AddDoctorDialogState extends State<AddDoctorDialog> {
   final _formKey = GlobalKey<FormState>();
-  final _usernameController = TextEditingController();
-  final _passwordController = TextEditingController();
   final _doctorNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _contactNumberController = TextEditingController();
-  final _specializationController = TextEditingController();
-  final _licenseNumberController = TextEditingController();
   final _qualificationController = TextEditingController();
   final _experienceYearsController = TextEditingController();
+  final _consultationFeeController = TextEditingController();
+  final _passwordController = TextEditingController();
+  
+  String? _selectedGender;
+  DateTime? _selectedDateOfBirth;
+  List<String> _selectedSpecializations = [];
+  String? _selectedDepartment;
+  String? _selectedAvailableTimings;
+  
   bool _isLoading = false;
+
+  final List<String> _genderOptions = ['Male', 'Female', 'Other'];
+  
+  final List<String> _specializationOptions = [
+    'Cardiology',
+    'Neurology', 
+    'Pediatrics',
+    'Orthopedics',
+    'General Medicine',
+    'Dermatology',
+    'Psychiatry',
+    'Gynecology',
+    'Surgery',
+    'Radiology'
+  ];
+
+  final Map<String, String> _departmentMapping = {
+    'Cardiology': 'Cardiology Department',
+    'Neurology': 'Neurology Department',
+    'Pediatrics': 'Pediatrics Department',
+    'Orthopedics': 'Orthopedics Department',
+    'General Medicine': 'General Medicine Department',
+    'Dermatology': 'Dermatology Department',
+    'Psychiatry': 'Psychiatry Department',
+    'Gynecology': 'Gynecology Department',
+    'Surgery': 'Surgery Department',
+    'Radiology': 'Radiology Department'
+  };
+
+  final List<String> _timingOptions = [
+    '9:00 AM - 5:00 PM',
+    '10:00 AM - 6:00 PM',
+    '11:00 AM - 7:00 PM',
+    '2:00 PM - 10:00 PM',
+    '6:00 PM - 2:00 AM',
+    '24/7 Emergency'
+  ];
 
   @override
   void dispose() {
-    _usernameController.dispose();
-    _passwordController.dispose();
     _doctorNameController.dispose();
     _emailController.dispose();
     _contactNumberController.dispose();
-    _specializationController.dispose();
-    _licenseNumberController.dispose();
     _qualificationController.dispose();
     _experienceYearsController.dispose();
+    _consultationFeeController.dispose();
+    _passwordController.dispose();
     super.dispose();
+  }
+
+  String _generateDoctorId(String hospitalId, String doctorName) {
+    // Generate Doctor ID = <HospitalID> + first 4 letters of Doctor Name (uppercase)
+    final namePrefix = doctorName.replaceAll(' ', '').toUpperCase();
+    final prefix = namePrefix.length >= 4 ? namePrefix.substring(0, 4) : namePrefix.padRight(4, 'X');
+    return '$hospitalId$prefix';
+  }
+
+  int _calculateAge(DateTime birthDate) {
+    final now = DateTime.now();
+    int age = now.year - birthDate.year;
+    if (now.month < birthDate.month || (now.month == birthDate.month && now.day < birthDate.day)) {
+      age--;
+    }
+    return age;
   }
 
   Future<void> _addDoctor() async {
@@ -1106,24 +1162,34 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
     });
 
     try {
+      // Get hospital ID from stored data (you may need to adjust this based on your auth system)
+      final hospitalId = 'H001'; // This should come from your auth/storage system
+      
+      final doctorId = _generateDoctorId(hospitalId, _doctorNameController.text.trim());
+      
       final doctorData = {
-        'username': _usernameController.text.trim(),
-        'password': _passwordController.text,
+        'doctorId': doctorId,
+        'username': doctorId, // Username = Doctor ID
+        'password': _passwordController.text, // Store as plain text as requested
         'doctorName': _doctorNameController.text.trim(),
+        'gender': _selectedGender,
+        'dateOfBirth': _selectedDateOfBirth?.toIso8601String(),
+        'specializations': _selectedSpecializations,
+        'department': _selectedDepartment ?? _departmentMapping[_selectedSpecializations.first],
         'email': _emailController.text.trim(),
         'contactNumber': _contactNumberController.text.trim(),
-        'specialization': _specializationController.text.trim(),
-        'licenseNumber': _licenseNumberController.text.trim(),
         'qualification': _qualificationController.text.trim(),
         'experienceYears': int.tryParse(_experienceYearsController.text) ?? 0,
+        'availableTimings': _selectedAvailableTimings,
+        'consultationFee': int.tryParse(_consultationFeeController.text) ?? 0,
+        'hospitalId': hospitalId,
       };
 
       await HospitalApiService.createDoctor(doctorData);
-      Navigator.pop(context);
-      widget.onDoctorAdded();
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Doctor added successfully')));
+      
+      // Show success popup with credentials
+      _showSuccessDialog(doctorId, _passwordController.text);
+      
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1138,128 +1204,381 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
     }
   }
 
+  void _showSuccessDialog(String username, String password) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.green, size: 28),
+            SizedBox(width: 8),
+            Text('Doctor Created Successfully'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Doctor has been added successfully!', style: TextStyle(fontSize: 16)),
+            SizedBox(height: 16),
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey[300]!),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Login Credentials:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  SizedBox(height: 8),
+                  Text('Username: $username', style: TextStyle(fontFamily: 'monospace')),
+                  Text('Password: $password', style: TextStyle(fontFamily: 'monospace')),
+                ],
+              ),
+            ),
+            SizedBox(height: 12),
+            Text('Please save these credentials securely.', 
+                 style: TextStyle(color: Colors.orange[700], fontWeight: FontWeight.w500)),
+          ],
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context); // Close success dialog
+              Navigator.pop(context); // Close add doctor dialog
+              widget.onDoctorAdded(); // Refresh the dashboard
+            },
+            child: Text('OK'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text('Add New Doctor'),
-      content: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CustomTextField(
-                controller: _doctorNameController,
-                labelText: 'Doctor Name',
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter doctor name';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 16),
-              CustomTextField(
-                controller: _usernameController,
-                labelText: 'Username',
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter username';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 16),
-              CustomTextField(
-                controller: _passwordController,
-                labelText: 'Password',
-                isPassword: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter password';
-                  }
-                  if (value.length < 6) {
-                    return 'Password must be at least 6 characters';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 16),
-              CustomTextField(
-                controller: _emailController,
-                labelText: 'Email',
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter email';
-                  }
-                  if (!value.contains('@')) {
-                    return 'Please enter a valid email';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 16),
-              CustomTextField(
-                controller: _contactNumberController,
-                labelText: 'Contact Number',
-                keyboardType: TextInputType.phone,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter contact number';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 16),
-              CustomTextField(
-                controller: _specializationController,
-                labelText: 'Specialization',
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter specialization';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 16),
-              CustomTextField(
-                controller: _licenseNumberController,
-                labelText: 'License Number',
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter license number';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 16),
-              CustomTextField(
-                controller: _qualificationController,
-                labelText: 'Qualification',
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter qualification';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 16),
-              CustomTextField(
-                controller: _experienceYearsController,
-                labelText: 'Experience (Years)',
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value != null && value.isNotEmpty) {
-                    final years = int.tryParse(value);
-                    if (years == null || years < 0) {
-                      return 'Please enter a valid number';
-                    }
-                  }
-                  return null;
-                },
-              ),
-            ],
+      content: SizedBox(
+        width: MediaQuery.of(context).size.width * 0.9,
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Name field
+                _buildFieldWithCriteria(
+                  child: CustomTextField(
+                    controller: _doctorNameController,
+                    labelText: 'Name *',
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter doctor name';
+                      }
+                      if (value.length < 3 || value.length > 50) {
+                        return 'Name must be 3-50 characters';
+                      }
+                      return null;
+                    },
+                  ),
+                  criteria: 'Min 3, max 50 characters',
+                ),
+                
+                SizedBox(height: 16),
+                
+                // Gender dropdown
+                _buildFieldWithCriteria(
+                  child: DropdownButtonFormField<String>(
+                    value: _selectedGender,
+                    decoration: InputDecoration(
+                      labelText: 'Gender *',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: _genderOptions.map((gender) {
+                      return DropdownMenuItem(value: gender, child: Text(gender));
+                    }).toList(),
+                    onChanged: (value) => setState(() => _selectedGender = value),
+                    validator: (value) => value == null ? 'Please select gender' : null,
+                  ),
+                  criteria: 'Required selection',
+                ),
+                
+                SizedBox(height: 16),
+                
+                // Date of Birth
+                _buildFieldWithCriteria(
+                  child: InkWell(
+                    onTap: () async {
+                      final date = await showDatePicker(
+                        context: context,
+                        initialDate: DateTime(1990),
+                        firstDate: DateTime(1950),
+                        lastDate: DateTime.now().subtract(Duration(days: 365 * 18)),
+                      );
+                      if (date != null) {
+                        setState(() => _selectedDateOfBirth = date);
+                      }
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            _selectedDateOfBirth == null
+                                ? 'Date of Birth *'
+                                : '${_selectedDateOfBirth!.day}/${_selectedDateOfBirth!.month}/${_selectedDateOfBirth!.year}',
+                            style: TextStyle(
+                              color: _selectedDateOfBirth == null ? Colors.grey[600] : Colors.black,
+                            ),
+                          ),
+                          Icon(Icons.calendar_today),
+                        ],
+                      ),
+                    ),
+                  ),
+                  criteria: 'Must be valid past date (18+ years)',
+                ),
+                
+                SizedBox(height: 16),
+                
+                // Specializations (multi-select)
+                _buildFieldWithCriteria(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Specializations * (Max 5)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                      SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: _specializationOptions.map((spec) {
+                          final isSelected = _selectedSpecializations.contains(spec);
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                if (isSelected) {
+                                  _selectedSpecializations.remove(spec);
+                                } else if (_selectedSpecializations.length < 5) {
+                                  _selectedSpecializations.add(spec);
+                                  // Auto-fill department
+                                  if (_selectedDepartment == null) {
+                                    _selectedDepartment = _departmentMapping[spec];
+                                  }
+                                }
+                              });
+                            },
+                            child: Container(
+                              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: isSelected ? Colors.blue[100] : Colors.grey[200],
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: isSelected ? Colors.blue : Colors.grey,
+                                ),
+                              ),
+                              child: Text(
+                                spec,
+                                style: TextStyle(
+                                  color: isSelected ? Colors.blue[800] : Colors.black,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                      if (_selectedSpecializations.isEmpty)
+                        Padding(
+                          padding: EdgeInsets.only(top: 8),
+                          child: Text('Please select at least one specialization', 
+                               style: TextStyle(color: Colors.red, fontSize: 12)),
+                        ),
+                    ],
+                  ),
+                  criteria: 'Select 1-5 specializations',
+                ),
+                
+                SizedBox(height: 16),
+                
+                // Department (auto-filled)
+                _buildFieldWithCriteria(
+                  child: TextFormField(
+                    readOnly: true,
+                    decoration: InputDecoration(
+                      labelText: 'Department',
+                      border: OutlineInputBorder(),
+                      fillColor: Colors.grey[100],
+                      filled: true,
+                    ),
+                    controller: TextEditingController(text: _selectedDepartment ?? ''),
+                  ),
+                  criteria: 'Auto-filled based on specialization',
+                ),
+                
+                SizedBox(height: 16),
+                
+                // Contact Number
+                _buildFieldWithCriteria(
+                  child: CustomTextField(
+                    controller: _contactNumberController,
+                    labelText: 'Contact Number *',
+                    keyboardType: TextInputType.phone,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter contact number';
+                      }
+                      if (value.length != 10 || !RegExp(r'^[0-9]+$').hasMatch(value)) {
+                        return 'Enter exactly 10 digits';
+                      }
+                      return null;
+                    },
+                  ),
+                  criteria: 'Exactly 10 digits',
+                ),
+                
+                SizedBox(height: 16),
+                
+                // Email
+                _buildFieldWithCriteria(
+                  child: CustomTextField(
+                    controller: _emailController,
+                    labelText: 'Email *',
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter email';
+                      }
+                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                        return 'Enter valid email format';
+                      }
+                      return null;
+                    },
+                  ),
+                  criteria: 'Valid email format required',
+                ),
+                
+                SizedBox(height: 16),
+                
+                // Qualification
+                _buildFieldWithCriteria(
+                  child: CustomTextField(
+                    controller: _qualificationController,
+                    labelText: 'Qualification *',
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter qualification';
+                      }
+                      if (value.length < 2 || value.length > 30) {
+                        return 'Qualification must be 2-30 characters';
+                      }
+                      return null;
+                    },
+                  ),
+                  criteria: 'Min 2, max 30 characters',
+                ),
+                
+                SizedBox(height: 16),
+                
+                // Experience
+                _buildFieldWithCriteria(
+                  child: CustomTextField(
+                    controller: _experienceYearsController,
+                    labelText: 'Experience (Years)',
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value != null && value.isNotEmpty) {
+                        final years = int.tryParse(value);
+                        if (years == null || years < 0 || years > 50) {
+                          return 'Experience must be 0-50 years';
+                        }
+                        // Check if experience is reasonable compared to age
+                        if (_selectedDateOfBirth != null) {
+                          final age = DateTime.now().year - _selectedDateOfBirth!.year;
+                          if (years > (age - 22)) { // Assuming minimum 22 years to complete medical education
+                            return 'Experience cannot exceed ${age - 22} years';
+                          }
+                        }
+                      }
+                      return null;
+                    },
+                  ),
+                  criteria: 'Optional, max 50 years, should be less than age',
+                ),
+                
+                SizedBox(height: 16),
+                
+                // Available Timings
+                _buildFieldWithCriteria(
+                  child: DropdownButtonFormField<String>(
+                    value: _selectedAvailableTimings,
+                    decoration: InputDecoration(
+                      labelText: 'Available Timings',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: _timingOptions.map((timing) {
+                      return DropdownMenuItem(value: timing, child: Text(timing));
+                    }).toList(),
+                    onChanged: (value) => setState(() => _selectedAvailableTimings = value),
+                  ),
+                  criteria: 'Select from available options',
+                ),
+                
+                SizedBox(height: 16),
+                
+                // Consultation Fee
+                _buildFieldWithCriteria(
+                  child: CustomTextField(
+                    controller: _consultationFeeController,
+                    labelText: 'Consultation Fee (₹)',
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value != null && value.isNotEmpty) {
+                        final fee = int.tryParse(value);
+                        if (fee == null || fee < 0 || value.length > 5) {
+                          return 'Enter valid fee (max 5 digits)';
+                        }
+                      }
+                      return null;
+                    },
+                  ),
+                  criteria: 'Optional, max 5 digits',
+                ),
+                
+                SizedBox(height: 16),
+                
+                // Password
+                _buildFieldWithCriteria(
+                  child: CustomTextField(
+                    controller: _passwordController,
+                    labelText: 'Password *',
+                    isPassword: true,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter password';
+                      }
+                      if (value.length < 6) {
+                        return 'Password must be at least 6 characters';
+                      }
+                      return null;
+                    },
+                  ),
+                  criteria: 'Minimum 6 characters',
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -1269,13 +1588,46 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
           child: Text('Cancel'),
         ),
         ElevatedButton(
-          onPressed: _isLoading ? null : _addDoctor,
+          onPressed: _isLoading ? null : _canSubmit() ? _addDoctor : null,
           child: _isLoading
               ? CircularProgressIndicator(strokeWidth: 2)
               : Text('Add Doctor'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blue[700],
+            foregroundColor: Colors.white,
+          ),
         ),
       ],
     );
+  }
+
+  Widget _buildFieldWithCriteria({required Widget child, required String criteria}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        child,
+        SizedBox(height: 4),
+        Text(
+          criteria,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.blue[600],
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+      ],
+    );
+  }
+
+  bool _canSubmit() {
+    return _doctorNameController.text.trim().isNotEmpty &&
+           _selectedGender != null &&
+           _selectedDateOfBirth != null &&
+           _selectedSpecializations.isNotEmpty &&
+           _contactNumberController.text.trim().isNotEmpty &&
+           _emailController.text.trim().isNotEmpty &&
+           _qualificationController.text.trim().isNotEmpty &&
+           _passwordController.text.trim().isNotEmpty;
   }
 }
 

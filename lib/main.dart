@@ -83,6 +83,8 @@ class DHRMSApp extends StatelessWidget {
           final userData =
               ModalRoute.of(context)?.settings.arguments
                   as Map<String, dynamic>?;
+          print('🛣️ Route userData: $userData');
+          print('🛣️ Route userData type: ${userData.runtimeType}');
           return _wrapWithConfigSwitcher(
             HospitalStaffDashboard(userData: userData ?? {}),
           );
