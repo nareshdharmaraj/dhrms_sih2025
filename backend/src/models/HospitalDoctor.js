@@ -140,8 +140,25 @@ const hospitalDoctorSchema = new mongoose.Schema({
   
   availableTimings: {
     type: String,
-    enum: ['9:00 AM - 12:00 PM', '12:00 PM - 3:00 PM', '3:00 PM - 6:00 PM', '6:00 PM - 9:00 PM', '24/7 Emergency', 'Flexible'],
-    default: '9:00 AM - 12:00 PM'
+    trim: true,
+    minlength: 5,
+    maxlength: 100,
+    default: '9:00 AM - 12:00 PM',
+    validate: {
+      validator: function(v) {
+        // Allow predefined slots
+        const predefinedSlots = ['9:00 AM - 12:00 PM', '12:00 PM - 3:00 PM', '3:00 PM - 6:00 PM', '6:00 PM - 9:00 PM', '24/7 Emergency', 'Flexible'];
+        if (predefinedSlots.includes(v)) return true;
+        
+        // Allow custom time format: "HH:MM AM/PM - HH:MM AM/PM"
+        const timePattern = /^(\d{1,2}:\d{2}\s?(AM|PM))\s?-\s?(\d{1,2}:\d{2}\s?(AM|PM))$/i;
+        if (timePattern.test(v)) return true;
+        
+        // Allow any reasonable text format for flexibility
+        return v && v.length >= 5 && v.length <= 100;
+      },
+      message: 'Available timings must be in format "HH:MM AM/PM - HH:MM AM/PM" or descriptive text'
+    }
   },
   
   consultationFee: {

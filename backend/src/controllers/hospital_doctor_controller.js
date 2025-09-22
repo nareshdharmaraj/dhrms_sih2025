@@ -4,6 +4,27 @@ const Hospital = require('../models/Hospital');
 const jwt = require('jsonwebtoken');
 
 // ==================== HOSPITAL DOCTOR CONTROLLERS ====================
+// 
+// TEMPORARY FIX APPLIED (Sept 22, 2025):
+// ------------------------------------
+// Due to schema conflicts after recent model updates, several .save() operations
+// now use { validateBeforeSave: false } to prevent validation errors on existing
+// database records. This affects:
+// 
+// 1. Login attempt tracking (failed/successful logins)
+// 2. Password change operations
+// 
+// ISSUES ADDRESSED:
+// - ValidationError: Cast to string failed for "qualification" field
+// - Required field errors: name, gender, dateOfBirth
+// 
+// FUTURE ACTION REQUIRED:
+// - Run data migration script to fix existing records
+// - Remove { validateBeforeSave: false } after migration
+// - Restore proper validation for profile updates
+// 
+// See similar fixes in: hospital_admin_controller.js, hospital_assistant_controller.js
+// ==================================================================================
 
 /**
  * @desc    Doctor login
@@ -70,7 +91,9 @@ const doctorLogin = async (req, res) => {
         doctor.lockUntil = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
       }
       
-      await doctor.save();
+      // IMPORTANT: Skip validation during failed login attempt tracking
+      // to prevent schema validation errors on existing records
+      await doctor.save({ validateBeforeSave: false });
       
       return res.status(401).json({
         success: false,
@@ -84,7 +107,18 @@ const doctorLogin = async (req, res) => {
     doctor.lockUntil = null;
     doctor.lastLoginAt = new Date();
     doctor.lastLogin = new Date(); // Also update this field for compatibility
-    await doctor.save();
+    
+    // IMPORTANT: Use validateBeforeSave: false to bypass full model validation
+    // during login updates. This prevents validation errors for fields like
+    // 'qualification', 'name', 'gender', 'dateOfBirth' that may have schema
+    // mismatches in existing database records after model updates.
+    // 
+    // Future maintainers: If you need to update doctor profile data (not just login),
+    // remove this option or create a separate method that validates properly.
+    // 
+    // This fix addresses: ValidationError for required fields and type casting
+    // issues when updating login timestamps on existing doctor records.
+    await doctor.save({ validateBeforeSave: false });
 
     // Create JWT token
     const token = jwt.sign(
@@ -451,7 +485,11 @@ const changePassword = async (req, res) => {
     // Update password (plain text as requested)
     doctor.password = newPassword;
     doctor.updatedAt = new Date();
-    await doctor.save();
+    
+    // FUTURE: For password changes, consider if validation should be enforced
+    // Currently using skipValidation to prevent schema conflicts with existing records
+    // When data migration is complete, remove { validateBeforeSave: false }
+    await doctor.save({ validateBeforeSave: false });
 
     res.json({
       success: true,

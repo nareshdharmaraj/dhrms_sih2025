@@ -68,7 +68,8 @@ const adminLogin = async (req, res) => {
         admin.lockUntil = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
       }
       
-      await admin.save();
+      // Skip validation for login attempt tracking to prevent schema conflicts
+      await admin.save({ validateBeforeSave: false });
       
       return res.status(401).json({
         success: false,
@@ -81,7 +82,10 @@ const adminLogin = async (req, res) => {
     admin.accountLocked = false;
     admin.lockUntil = null;
     admin.lastLoginAt = new Date();
-    await admin.save();
+    
+    // Skip validation during login updates to prevent schema validation errors
+    // on existing records after model schema changes
+    await admin.save({ validateBeforeSave: false });
 
     // Create JWT token
     const token = jwt.sign(
