@@ -78,7 +78,7 @@ class _HospitalDoctorLoginScreenState extends State<HospitalDoctorLoginScreen> {
 
       // Store token and doctor data
       await ApiClient.setAuthToken(data['data']['token']);
-      
+
       // Also store doctor data in SharedPreferences as backup
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('doctor_data', jsonEncode(data['data']['doctor']));

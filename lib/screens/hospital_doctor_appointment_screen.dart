@@ -10,18 +10,20 @@ class HospitalDoctorAppointmentScreen extends StatefulWidget {
   const HospitalDoctorAppointmentScreen({super.key, required this.doctorData});
 
   @override
-  _HospitalDoctorAppointmentScreenState createState() => _HospitalDoctorAppointmentScreenState();
+  _HospitalDoctorAppointmentScreenState createState() =>
+      _HospitalDoctorAppointmentScreenState();
 }
 
-class _HospitalDoctorAppointmentScreenState extends State<HospitalDoctorAppointmentScreen> {
+class _HospitalDoctorAppointmentScreenState
+    extends State<HospitalDoctorAppointmentScreen> {
   List<dynamic> appointments = [];
   List<dynamic> filteredAppointments = [];
-  
+
   bool isLoading = true;
   String searchQuery = '';
   String statusFilter = 'All';
   DateTime? dateFilter;
-  
+
   final TextEditingController _searchController = TextEditingController();
 
   @override
@@ -91,7 +93,7 @@ class _HospitalDoctorAppointmentScreenState extends State<HospitalDoctorAppointm
                     ],
                   ),
                   SizedBox(height: 16),
-                  
+
                   // Doctor Info
                   Row(
                     children: [
@@ -99,7 +101,9 @@ class _HospitalDoctorAppointmentScreenState extends State<HospitalDoctorAppointm
                         radius: 20,
                         backgroundColor: Colors.white,
                         child: Text(
-                          _getInitials(widget.doctorData['doctorName'] ?? 'Doctor'),
+                          _getInitials(
+                            widget.doctorData['doctorName'] ?? 'Doctor',
+                          ),
                           style: TextStyle(
                             color: Colors.blue.shade700,
                             fontWeight: FontWeight.bold,
@@ -135,7 +139,7 @@ class _HospitalDoctorAppointmentScreenState extends State<HospitalDoctorAppointm
               ),
             ),
           ),
-          
+
           // Search and Filter Section
           Container(
             padding: EdgeInsets.all(16),
@@ -161,7 +165,7 @@ class _HospitalDoctorAppointmentScreenState extends State<HospitalDoctorAppointm
                   },
                 ),
                 SizedBox(height: 12),
-                
+
                 // Filter Row
                 Row(
                   children: [
@@ -177,12 +181,25 @@ class _HospitalDoctorAppointmentScreenState extends State<HospitalDoctorAppointm
                           filled: true,
                           fillColor: Colors.grey.shade50,
                         ),
-                        items: ['All', 'pending', 'approved', 'rejected', 'completed']
-                            .map((status) => DropdownMenuItem<String>(
-                                  value: status,
-                                  child: Text(status == 'All' ? 'All Status' : status.toUpperCase()),
-                                ))
-                            .toList(),
+                        items:
+                            [
+                                  'All',
+                                  'pending',
+                                  'approved',
+                                  'rejected',
+                                  'completed',
+                                ]
+                                .map(
+                                  (status) => DropdownMenuItem<String>(
+                                    value: status,
+                                    child: Text(
+                                      status == 'All'
+                                          ? 'All Status'
+                                          : status.toUpperCase(),
+                                    ),
+                                  ),
+                                )
+                                .toList(),
                         onChanged: (value) {
                           setState(() {
                             statusFilter = value!;
@@ -192,15 +209,15 @@ class _HospitalDoctorAppointmentScreenState extends State<HospitalDoctorAppointm
                       ),
                     ),
                     SizedBox(width: 12),
-                    
+
                     // Date Filter
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: _selectDateFilter,
                         icon: Icon(Icons.calendar_today),
                         label: Text(
-                          dateFilter == null 
-                              ? 'All Dates' 
+                          dateFilter == null
+                              ? 'All Dates'
                               : '${dateFilter!.day}/${dateFilter!.month}',
                         ),
                         style: ElevatedButton.styleFrom(
@@ -209,7 +226,7 @@ class _HospitalDoctorAppointmentScreenState extends State<HospitalDoctorAppointm
                       ),
                     ),
                     SizedBox(width: 8),
-                    
+
                     // Clear Date Filter
                     if (dateFilter != null)
                       IconButton(
@@ -226,23 +243,25 @@ class _HospitalDoctorAppointmentScreenState extends State<HospitalDoctorAppointm
               ],
             ),
           ),
-          
+
           // Appointments List
           Expanded(
             child: isLoading
                 ? Center(child: CircularProgressIndicator())
                 : filteredAppointments.isEmpty
-                    ? _buildEmptyState()
-                    : RefreshIndicator(
-                        onRefresh: _loadAppointments,
-                        child: ListView.builder(
-                          padding: EdgeInsets.symmetric(horizontal: 16),
-                          itemCount: filteredAppointments.length,
-                          itemBuilder: (context, index) {
-                            return _buildAppointmentCard(filteredAppointments[index]);
-                          },
-                        ),
-                      ),
+                ? _buildEmptyState()
+                : RefreshIndicator(
+                    onRefresh: _loadAppointments,
+                    child: ListView.builder(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: filteredAppointments.length,
+                      itemBuilder: (context, index) {
+                        return _buildAppointmentCard(
+                          filteredAppointments[index],
+                        );
+                      },
+                    ),
+                  ),
           ),
         ],
       ),
@@ -252,7 +271,7 @@ class _HospitalDoctorAppointmentScreenState extends State<HospitalDoctorAppointm
   Widget _buildAppointmentCard(Map<String, dynamic> appointment) {
     String status = appointment['status'] ?? 'pending';
     Color statusColor = _getStatusColor(status);
-    
+
     return Card(
       margin: EdgeInsets.only(bottom: 12),
       elevation: 2,
@@ -288,7 +307,10 @@ class _HospitalDoctorAppointmentScreenState extends State<HospitalDoctorAppointm
                       ),
                       Text(
                         'UHID: ${appointment['patientUhid'] ?? 'N/A'}',
-                        style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
@@ -311,7 +333,7 @@ class _HospitalDoctorAppointmentScreenState extends State<HospitalDoctorAppointm
               ],
             ),
             SizedBox(height: 12),
-            
+
             // Patient Details
             Container(
               padding: EdgeInsets.all(12),
@@ -321,23 +343,39 @@ class _HospitalDoctorAppointmentScreenState extends State<HospitalDoctorAppointm
               ),
               child: Column(
                 children: [
-                  _buildInfoRow('Gender & Age', '${appointment['patientGender'] ?? 'N/A'} • ${appointment['patientAge'] ?? 'N/A'} years'),
-                  _buildInfoRow('Home State', appointment['patientState'] ?? 'N/A'),
-                  _buildInfoRow('Date & Time', '${appointment['appointmentDate'] ?? 'N/A'} at ${appointment['appointmentTime'] ?? 'N/A'}'),
-                  _buildInfoRow('Reason', appointment['reason'] ?? 'No reason provided'),
-                  _buildInfoRow('Consultation Fee', '₹${appointment['consultationFee'] ?? 'N/A'}'),
+                  _buildInfoRow(
+                    'Gender & Age',
+                    '${appointment['patientGender'] ?? 'N/A'} • ${appointment['patientAge'] ?? 'N/A'} years',
+                  ),
+                  _buildInfoRow(
+                    'Home State',
+                    appointment['patientState'] ?? 'N/A',
+                  ),
+                  _buildInfoRow(
+                    'Date & Time',
+                    '${appointment['appointmentDate'] ?? 'N/A'} at ${appointment['appointmentTime'] ?? 'N/A'}',
+                  ),
+                  _buildInfoRow(
+                    'Reason',
+                    appointment['reason'] ?? 'No reason provided',
+                  ),
+                  _buildInfoRow(
+                    'Consultation Fee',
+                    '₹${appointment['consultationFee'] ?? 'N/A'}',
+                  ),
                 ],
               ),
             ),
             SizedBox(height: 12),
-            
+
             // Action Buttons (only for pending appointments)
             if (status == 'pending')
               Row(
                 children: [
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: () => _updateAppointmentStatus(appointment, 'rejected'),
+                      onPressed: () =>
+                          _updateAppointmentStatus(appointment, 'rejected'),
                       icon: Icon(Icons.close, size: 18),
                       label: Text('Reject'),
                       style: ElevatedButton.styleFrom(
@@ -349,7 +387,8 @@ class _HospitalDoctorAppointmentScreenState extends State<HospitalDoctorAppointm
                   SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: () => _updateAppointmentStatus(appointment, 'approved'),
+                      onPressed: () =>
+                          _updateAppointmentStatus(appointment, 'approved'),
                       icon: Icon(Icons.check, size: 18),
                       label: Text('Approve'),
                       style: ElevatedButton.styleFrom(
@@ -360,13 +399,14 @@ class _HospitalDoctorAppointmentScreenState extends State<HospitalDoctorAppointm
                   ),
                 ],
               ),
-            
+
             // Mark as Completed (only for approved appointments)
             if (status == 'approved')
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: () => _updateAppointmentStatus(appointment, 'completed'),
+                  onPressed: () =>
+                      _updateAppointmentStatus(appointment, 'completed'),
                   icon: Icon(Icons.done_all, size: 18),
                   label: Text('Mark as Completed'),
                   style: ElevatedButton.styleFrom(
@@ -375,15 +415,12 @@ class _HospitalDoctorAppointmentScreenState extends State<HospitalDoctorAppointm
                   ),
                 ),
               ),
-            
+
             // Appointment ID (small text at bottom)
             SizedBox(height: 8),
             Text(
               'Appointment ID: ${appointment['appointmentId'] ?? 'N/A'}',
-              style: TextStyle(
-                fontSize: 10,
-                color: Colors.grey.shade500,
-              ),
+              style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
             ),
           ],
         ),
@@ -408,12 +445,7 @@ class _HospitalDoctorAppointmentScreenState extends State<HospitalDoctorAppointm
               ),
             ),
           ),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(fontSize: 12),
-            ),
-          ),
+          Expanded(child: Text(value, style: TextStyle(fontSize: 12))),
         ],
       ),
     );
@@ -486,12 +518,13 @@ class _HospitalDoctorAppointmentScreenState extends State<HospitalDoctorAppointm
 
   Future<void> _loadAppointments() async {
     setState(() => isLoading = true);
-    
+
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('auth_token');
-      final doctorId = widget.doctorData['_id'] ?? widget.doctorData['doctorId'];
-      
+      final doctorId =
+          widget.doctorData['_id'] ?? widget.doctorData['doctorId'];
+
       final response = await http.get(
         Uri.parse('${AppConstants.baseUrl}/appointments/doctor/$doctorId'),
         headers: {
@@ -521,23 +554,33 @@ class _HospitalDoctorAppointmentScreenState extends State<HospitalDoctorAppointm
   void _filterAppointments() {
     List<dynamic> filtered = appointments.where((appointment) {
       // Search filter
-      bool matchesSearch = searchQuery.isEmpty ||
-          appointment['patientName'].toString().toLowerCase().contains(searchQuery.toLowerCase()) ||
-          appointment['patientUhid'].toString().toLowerCase().contains(searchQuery.toLowerCase()) ||
-          appointment['reason'].toString().toLowerCase().contains(searchQuery.toLowerCase());
+      bool matchesSearch =
+          searchQuery.isEmpty ||
+          appointment['patientName'].toString().toLowerCase().contains(
+            searchQuery.toLowerCase(),
+          ) ||
+          appointment['patientUhid'].toString().toLowerCase().contains(
+            searchQuery.toLowerCase(),
+          ) ||
+          appointment['reason'].toString().toLowerCase().contains(
+            searchQuery.toLowerCase(),
+          );
 
       // Status filter
-      bool matchesStatus = statusFilter == 'All' ||
-          appointment['status'] == statusFilter;
+      bool matchesStatus =
+          statusFilter == 'All' || appointment['status'] == statusFilter;
 
       // Date filter
       bool matchesDate = dateFilter == null;
       if (dateFilter != null && appointment['appointmentDate'] != null) {
         try {
-          DateTime appointmentDate = DateTime.parse(appointment['appointmentDate']);
-          matchesDate = appointmentDate.year == dateFilter!.year &&
-                       appointmentDate.month == dateFilter!.month &&
-                       appointmentDate.day == dateFilter!.day;
+          DateTime appointmentDate = DateTime.parse(
+            appointment['appointmentDate'],
+          );
+          matchesDate =
+              appointmentDate.year == dateFilter!.year &&
+              appointmentDate.month == dateFilter!.month &&
+              appointmentDate.day == dateFilter!.day;
         } catch (e) {
           matchesDate = false;
         }
@@ -548,8 +591,10 @@ class _HospitalDoctorAppointmentScreenState extends State<HospitalDoctorAppointm
 
     // Sort by date and time
     filtered.sort((a, b) {
-      DateTime dateA = DateTime.tryParse(a['appointmentDate'] ?? '') ?? DateTime.now();
-      DateTime dateB = DateTime.tryParse(b['appointmentDate'] ?? '') ?? DateTime.now();
+      DateTime dateA =
+          DateTime.tryParse(a['appointmentDate'] ?? '') ?? DateTime.now();
+      DateTime dateB =
+          DateTime.tryParse(b['appointmentDate'] ?? '') ?? DateTime.now();
       return dateA.compareTo(dateB);
     });
 
@@ -573,13 +618,18 @@ class _HospitalDoctorAppointmentScreenState extends State<HospitalDoctorAppointm
     }
   }
 
-  Future<void> _updateAppointmentStatus(Map<String, dynamic> appointment, String newStatus) async {
+  Future<void> _updateAppointmentStatus(
+    Map<String, dynamic> appointment,
+    String newStatus,
+  ) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('auth_token');
-      
+
       final response = await http.put(
-        Uri.parse('${AppConstants.baseUrl}/appointments/${appointment['appointmentId']}/status'),
+        Uri.parse(
+          '${AppConstants.baseUrl}/appointments/${appointment['appointmentId']}/status',
+        ),
         headers: {
           'Content-Type': 'application/json',
           if (token != null) 'Authorization': 'Bearer $token',
@@ -593,7 +643,7 @@ class _HospitalDoctorAppointmentScreenState extends State<HospitalDoctorAppointm
           appointment['status'] = newStatus;
           _filterAppointments();
         });
-        
+
         String message = '';
         switch (newStatus) {
           case 'approved':
@@ -606,7 +656,7 @@ class _HospitalDoctorAppointmentScreenState extends State<HospitalDoctorAppointm
             message = 'Appointment marked as completed';
             break;
         }
-        
+
         _showSuccessSnackBar(message);
       } else {
         throw Exception('Failed to update appointment status');
@@ -619,19 +669,13 @@ class _HospitalDoctorAppointmentScreenState extends State<HospitalDoctorAppointm
 
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
   }
 
   void _showSuccessSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.green),
     );
   }
 }

@@ -10,20 +10,20 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   final PatientSettingsService _settingsService = PatientSettingsService();
-  
+
   // State variables
   bool _notificationsEnabled = true;
   bool _locationEnabled = false;
   bool _biometricEnabled = false;
   bool _healthRemindersEnabled = true;
   bool _emergencyAlertsEnabled = true;
-  
+
   String _language = 'English';
   String _theme = 'System';
-  
+
   // Patient ID - In real app, get from authentication service
   final String _patientId = 'PATIENT_001';
-  
+
   bool _isLoading = true;
   bool _biometricAvailable = false;
 
@@ -37,7 +37,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       // Initialize the settings service
       await _settingsService.initialize();
-      
+
       // Load all settings
       await Future.wait([
         _loadNotificationSettings(),
@@ -45,7 +45,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _checkBiometricAvailability(),
         _checkLocationPermission(),
       ]);
-      
+
       setState(() {
         _isLoading = false;
       });
@@ -59,7 +59,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadNotificationSettings() async {
     try {
-      final settings = await _settingsService.getNotificationSettings(_patientId);
+      final settings = await _settingsService.getNotificationSettings(
+        _patientId,
+      );
       setState(() {
         _notificationsEnabled = settings['pushNotifications'] ?? true;
         _healthRemindersEnabled = settings['medicationReminders'] ?? true;
@@ -119,9 +121,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           foregroundColor: Colors.white,
           elevation: 0,
         ),
-        body: const Center(
-          child: CircularProgressIndicator(),
-        ),
+        body: const Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -190,21 +190,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   'Receive health alerts and reminders',
                   Icons.notifications_active,
                   _notificationsEnabled,
-                  (value) => _updateNotificationSetting('pushNotifications', value),
+                  (value) =>
+                      _updateNotificationSetting('pushNotifications', value),
                 ),
                 _buildSwitchTile(
                   'Health Reminders',
                   'Get medication and appointment reminders',
                   Icons.schedule,
                   _healthRemindersEnabled,
-                  (value) => _updateNotificationSetting('medicationReminders', value),
+                  (value) =>
+                      _updateNotificationSetting('medicationReminders', value),
                 ),
                 _buildSwitchTile(
                   'Emergency Alerts',
                   'Critical health and safety notifications',
                   Icons.emergency,
                   _emergencyAlertsEnabled,
-                  (value) => _updateNotificationSetting('emergencyAlerts', value),
+                  (value) =>
+                      _updateNotificationSetting('emergencyAlerts', value),
                 ),
               ],
             ),
@@ -222,7 +225,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   'Select your preferred language',
                   Icons.language,
                   _language,
-                  _settingsService.getSupportedLanguages().map((lang) => lang['name']!).toList(),
+                  _settingsService
+                      .getSupportedLanguages()
+                      .map((lang) => lang['name']!)
+                      .toList(),
                   (value) => _updateLanguage(value!),
                 ),
                 _buildDropdownTile(
@@ -242,9 +248,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _buildSectionCard('Security', Icons.security, Colors.red.shade600, [
               _buildSwitchTile(
                 'Biometric Login',
-                _biometricAvailable 
-                  ? 'Use fingerprint or face recognition'
-                  : 'Biometric sensor not available',
+                _biometricAvailable
+                    ? 'Use fingerprint or face recognition'
+                    : 'Biometric sensor not available',
                 Icons.fingerprint,
                 _biometricEnabled,
                 _biometricAvailable ? (value) => _toggleBiometric(value) : null,
@@ -406,14 +412,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       trailing: Switch(
         value: value,
         onChanged: onChanged,
-        thumbColor: WidgetStateProperty.resolveWith<Color?>(
-          (Set<WidgetState> states) {
-            if (states.contains(WidgetState.selected)) {
-              return Colors.blue.shade600;
-            }
-            return null;
-          },
-        ),
+        thumbColor: WidgetStateProperty.resolveWith<Color?>((
+          Set<WidgetState> states,
+        ) {
+          if (states.contains(WidgetState.selected)) {
+            return Colors.blue.shade600;
+          }
+          return null;
+        }),
       ),
     );
   }
@@ -442,19 +448,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red.shade600,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.red.shade600),
     );
   }
 
   void _showSuccessSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green.shade600,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.green.shade600),
     );
   }
 
@@ -542,7 +542,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Future<void> _updateProfile(String name, String email, String phone, String address) async {
+  Future<void> _updateProfile(
+    String name,
+    String email,
+    String phone,
+    String address,
+  ) async {
     try {
       final profileData = {
         'fullName': name,
@@ -551,7 +556,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         'address': address,
       };
 
-      final success = await _settingsService.updatePatientProfile(_patientId, profileData);
+      final success = await _settingsService.updatePatientProfile(
+        _patientId,
+        profileData,
+      );
       Navigator.pop(context);
 
       if (success) {
@@ -568,9 +576,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // ==================== PASSWORD MANAGEMENT ====================
 
   void _showChangePasswordDialog() {
-    final TextEditingController currentPasswordController = TextEditingController();
+    final TextEditingController currentPasswordController =
+        TextEditingController();
     final TextEditingController newPasswordController = TextEditingController();
-    final TextEditingController confirmPasswordController = TextEditingController();
+    final TextEditingController confirmPasswordController =
+        TextEditingController();
 
     showDialog(
       context: context,
@@ -595,7 +605,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   decoration: const InputDecoration(
                     labelText: 'New Password',
                     border: OutlineInputBorder(),
-                    helperText: 'Min 8 chars, uppercase, lowercase, number, special char',
+                    helperText:
+                        'Min 8 chars, uppercase, lowercase, number, special char',
                   ),
                   obscureText: true,
                   maxLines: 1,
@@ -631,7 +642,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Future<void> _changePassword(String currentPassword, String newPassword, String confirmPassword) async {
+  Future<void> _changePassword(
+    String currentPassword,
+    String newPassword,
+    String confirmPassword,
+  ) async {
     if (newPassword != confirmPassword) {
       Navigator.pop(context);
       _showErrorSnackBar('New passwords do not match');
@@ -645,13 +660,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
 
     try {
-      final success = await _settingsService.changePassword(_patientId, currentPassword, newPassword);
+      final success = await _settingsService.changePassword(
+        _patientId,
+        currentPassword,
+        newPassword,
+      );
       Navigator.pop(context);
 
       if (success) {
         _showSuccessSnackBar('Password changed successfully!');
       } else {
-        _showErrorSnackBar('Failed to change password. Check your current password.');
+        _showErrorSnackBar(
+          'Failed to change password. Check your current password.',
+        );
       }
     } catch (e) {
       Navigator.pop(context);
@@ -677,40 +698,60 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   }
 
                   final settings = snapshot.data ?? {};
-                  
+
                   return SingleChildScrollView(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         SwitchListTile(
                           title: const Text('Share with Doctors'),
-                          subtitle: const Text('Allow doctors to access your health data'),
+                          subtitle: const Text(
+                            'Allow doctors to access your health data',
+                          ),
                           value: settings['shareDataWithDoctors'] ?? true,
-                          onChanged: (value) => setState(() => settings['shareDataWithDoctors'] = value),
+                          onChanged: (value) => setState(
+                            () => settings['shareDataWithDoctors'] = value,
+                          ),
                         ),
                         SwitchListTile(
                           title: const Text('Research Participation'),
-                          subtitle: const Text('Share anonymized data for research'),
+                          subtitle: const Text(
+                            'Share anonymized data for research',
+                          ),
                           value: settings['shareDataWithResearchers'] ?? false,
-                          onChanged: (value) => setState(() => settings['shareDataWithResearchers'] = value),
+                          onChanged: (value) => setState(
+                            () => settings['shareDataWithResearchers'] = value,
+                          ),
                         ),
                         SwitchListTile(
                           title: const Text('Location Data'),
-                          subtitle: const Text('Share location for emergency services'),
+                          subtitle: const Text(
+                            'Share location for emergency services',
+                          ),
                           value: settings['shareLocationData'] ?? false,
-                          onChanged: (value) => setState(() => settings['shareLocationData'] = value),
+                          onChanged: (value) => setState(
+                            () => settings['shareLocationData'] = value,
+                          ),
                         ),
                         SwitchListTile(
                           title: const Text('Health Metrics'),
-                          subtitle: const Text('Share vital signs and health metrics'),
+                          subtitle: const Text(
+                            'Share vital signs and health metrics',
+                          ),
                           value: settings['shareHealthMetrics'] ?? true,
-                          onChanged: (value) => setState(() => settings['shareHealthMetrics'] = value),
+                          onChanged: (value) => setState(
+                            () => settings['shareHealthMetrics'] = value,
+                          ),
                         ),
                         SwitchListTile(
                           title: const Text('Emergency Access'),
-                          subtitle: const Text('Allow emergency access to critical data'),
+                          subtitle: const Text(
+                            'Allow emergency access to critical data',
+                          ),
                           value: settings['allowEmergencyAccess'] ?? true,
-                          onChanged: (value) => setState(() => settings['allowEmergencyAccess'] = value),
+                          onChanged: (value) => setState(
+                            () => settings['allowEmergencyAccess'] = value,
+                          ),
                         ),
                       ],
                     ),
@@ -738,10 +779,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       // Get current settings from the dialog
       final settings = await _settingsService.getPrivacySettings(_patientId);
-      final success = await _settingsService.updatePrivacySettings(_patientId, settings);
-      
+      final success = await _settingsService.updatePrivacySettings(
+        _patientId,
+        settings,
+      );
+
       Navigator.pop(context);
-      
+
       if (success) {
         _showSuccessSnackBar('Privacy settings updated successfully!');
       } else {
@@ -757,11 +801,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _updateNotificationSetting(String settingKey, bool value) async {
     try {
-      final settings = await _settingsService.getNotificationSettings(_patientId);
+      final settings = await _settingsService.getNotificationSettings(
+        _patientId,
+      );
       settings[settingKey] = value;
-      
-      final success = await _settingsService.updateNotificationSettings(_patientId, settings);
-      
+
+      final success = await _settingsService.updateNotificationSettings(
+        _patientId,
+        settings,
+      );
+
       if (success) {
         setState(() {
           switch (settingKey) {
@@ -790,7 +839,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _updateLanguage(String language) async {
     try {
       final success = await _settingsService.updateLanguage(language);
-      
+
       if (success) {
         setState(() {
           _language = language;
@@ -807,7 +856,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _updateTheme(String theme) async {
     try {
       final success = await _settingsService.updateTheme(theme);
-      
+
       if (success) {
         setState(() {
           _theme = theme;
@@ -826,7 +875,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _toggleBiometric(bool value) async {
     try {
       bool success;
-      
+
       if (value) {
         success = await _settingsService.enableBiometricAuth(_patientId);
         if (success) {
@@ -842,7 +891,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _showErrorSnackBar('Failed to disable biometric authentication');
         }
       }
-      
+
       if (success) {
         setState(() {
           _biometricEnabled = value;
@@ -858,13 +907,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _toggleLocation(bool value) async {
     try {
       bool success;
-      
+
       if (value) {
         success = await _settingsService.enableLocationServices(_patientId);
         if (success) {
           _showSuccessSnackBar('Location services enabled!');
         } else {
-          _showErrorSnackBar('Failed to enable location services. Please check app permissions.');
+          _showErrorSnackBar(
+            'Failed to enable location services. Please check app permissions.',
+          );
         }
       } else {
         success = await _settingsService.disableLocationServices(_patientId);
@@ -874,7 +925,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _showErrorSnackBar('Failed to disable location services');
         }
       }
-      
+
       if (success) {
         setState(() {
           _locationEnabled = value;
@@ -889,7 +940,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _showAppInfoDialog() async {
     final appInfo = await _settingsService.getAppInfo();
-    
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -905,15 +956,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildInfoRow('Build Number', appInfo['buildNumber'] ?? '1'),
                 _buildInfoRow('Platform', appInfo['platform'] ?? 'Unknown'),
                 _buildInfoRow('OS Version', appInfo['osVersion'] ?? 'Unknown'),
-                _buildInfoRow('Device Model', appInfo['deviceModel'] ?? 'Unknown'),
-                _buildInfoRow('Manufacturer', appInfo['manufacturer'] ?? 'Unknown'),
+                _buildInfoRow(
+                  'Device Model',
+                  appInfo['deviceModel'] ?? 'Unknown',
+                ),
+                _buildInfoRow(
+                  'Manufacturer',
+                  appInfo['manufacturer'] ?? 'Unknown',
+                ),
                 const SizedBox(height: 16),
                 const Text(
                   'System Information',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 const SizedBox(height: 8),
-                Text('Package: ${appInfo['packageName'] ?? 'com.example.dhrms'}'),
+                Text(
+                  'Package: ${appInfo['packageName'] ?? 'com.example.dhrms'}',
+                ),
               ],
             ),
           ),
@@ -941,9 +1000,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               style: const TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
-          Expanded(
-            child: Text(value),
-          ),
+          Expanded(child: Text(value)),
         ],
       ),
     );
@@ -953,7 +1010,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _showHelpSupportDialog() {
     final supportInfo = _settingsService.getSupportInfo();
-    
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -991,7 +1048,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   'Email',
                   supportInfo['email']!,
                   Icons.email,
-                  () => _settingsService.sendSupportEmail(supportInfo['email']!),
+                  () =>
+                      _settingsService.sendSupportEmail(supportInfo['email']!),
                 ),
                 _buildSupportItem(
                   'Location',
@@ -1019,7 +1077,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildSupportItem(String label, String value, IconData icon, VoidCallback? onTap) {
+  Widget _buildSupportItem(
+    String label,
+    String value,
+    IconData icon,
+    VoidCallback? onTap,
+  ) {
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -1044,8 +1107,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     value,
                     style: TextStyle(
                       fontSize: 14,
-                      color: onTap != null ? Colors.blue.shade600 : Colors.black87,
-                      decoration: onTap != null ? TextDecoration.underline : null,
+                      color: onTap != null
+                          ? Colors.blue.shade600
+                          : Colors.black87,
+                      decoration: onTap != null
+                          ? TextDecoration.underline
+                          : null,
                     ),
                   ),
                 ],
@@ -1085,10 +1152,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             width: double.maxFinite,
             height: MediaQuery.of(context).size.height * 0.7,
             child: SingleChildScrollView(
-              child: Text(
-                content,
-                style: const TextStyle(fontSize: 12),
-              ),
+              child: Text(content, style: const TextStyle(fontSize: 12)),
             ),
           ),
           actions: [

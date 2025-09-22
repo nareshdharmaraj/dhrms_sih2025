@@ -21,20 +21,20 @@ class _HospitalStaffDashboardState extends State<HospitalStaffDashboard>
   bool isLoading = true;
   String? error;
   Map<String, dynamic> userData = {};
-  
+
   late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    
+
     // Initialize userData with widget data
     userData = Map<String, dynamic>.from(widget.userData);
-    
+
     print('🔄 HospitalStaffDashboard initState');
     print('📋 UserData received: ${widget.userData}');
-    
+
     // If userData is empty, try to load from SharedPreferences
     if (widget.userData.isEmpty) {
       print('⚠️ UserData is empty, trying to load from SharedPreferences');
@@ -54,11 +54,11 @@ class _HospitalStaffDashboardState extends State<HospitalStaffDashboard>
     try {
       final prefs = await SharedPreferences.getInstance();
       final doctorDataString = prefs.getString('doctor_data');
-      
+
       if (doctorDataString != null) {
         final doctorData = json.decode(doctorDataString);
         print('🔄 Loaded doctor data from SharedPreferences: $doctorData');
-        
+
         // Update the userData to use this data
         userData = Map<String, dynamic>.from(doctorData);
         loadStaffData();
@@ -81,15 +81,18 @@ class _HospitalStaffDashboardState extends State<HospitalStaffDashboard>
   Future<void> loadStaffData() async {
     try {
       setState(() => isLoading = true);
-      
+
       // Use userData if available, otherwise fall back to widget.userData
       final currentUserData = userData.isNotEmpty ? userData : widget.userData;
       print('🔍 Loading staff data for user: $currentUserData');
-      
+
       // Safely get the staff ID
-      final staffId = currentUserData['_id'] ?? currentUserData['doctorId'] ?? currentUserData['assistantId'];
+      final staffId =
+          currentUserData['_id'] ??
+          currentUserData['doctorId'] ??
+          currentUserData['assistantId'];
       print('📋 Using staff ID: $staffId');
-      
+
       if (staffId == null) {
         throw Exception('No valid staff ID found in user data');
       }
@@ -106,15 +109,17 @@ class _HospitalStaffDashboardState extends State<HospitalStaffDashboard>
             if (token != null) 'Authorization': 'Bearer $token',
           },
         );
-        
+
         print('👥 Patients response status: ${patientsResponse.statusCode}');
-        
+
         if (patientsResponse.statusCode == 200) {
           final patientsData = json.decode(patientsResponse.body);
           if (patientsData is List) {
             patients = patientsData;
           } else {
-            print('⚠️ Patients response is not a list: ${patientsData.runtimeType}');
+            print(
+              '⚠️ Patients response is not a list: ${patientsData.runtimeType}',
+            );
             patients = [];
           }
         } else {
@@ -135,15 +140,19 @@ class _HospitalStaffDashboardState extends State<HospitalStaffDashboard>
             if (token != null) 'Authorization': 'Bearer $token',
           },
         );
-        
-        print('📅 Appointments response status: ${appointmentsResponse.statusCode}');
-        
+
+        print(
+          '📅 Appointments response status: ${appointmentsResponse.statusCode}',
+        );
+
         if (appointmentsResponse.statusCode == 200) {
           final appointmentsData = json.decode(appointmentsResponse.body);
           if (appointmentsData is List) {
             appointments = appointmentsData;
           } else {
-            print('⚠️ Appointments response is not a list: ${appointmentsData.runtimeType}');
+            print(
+              '⚠️ Appointments response is not a list: ${appointmentsData.runtimeType}',
+            );
             appointments = [];
           }
         } else {
@@ -164,15 +173,19 @@ class _HospitalStaffDashboardState extends State<HospitalStaffDashboard>
             if (token != null) 'Authorization': 'Bearer $token',
           },
         );
-        
-        print('🏥 Medical records response status: ${recordsResponse.statusCode}');
-        
+
+        print(
+          '🏥 Medical records response status: ${recordsResponse.statusCode}',
+        );
+
         if (recordsResponse.statusCode == 200) {
           final recordsData = json.decode(recordsResponse.body);
           if (recordsData is List) {
             medicalRecords = recordsData;
           } else {
-            print('⚠️ Medical records response is not a list: ${recordsData.runtimeType}');
+            print(
+              '⚠️ Medical records response is not a list: ${recordsData.runtimeType}',
+            );
             medicalRecords = [];
           }
         } else {
@@ -186,7 +199,6 @@ class _HospitalStaffDashboardState extends State<HospitalStaffDashboard>
 
       setState(() => isLoading = false);
       print('✅ Staff data loading completed');
-      
     } catch (e) {
       print('💥 Critical error loading staff data: $e');
       setState(() {
@@ -242,7 +254,8 @@ class _HospitalStaffDashboardState extends State<HospitalStaffDashboard>
                       Spacer(),
                       IconButton(
                         icon: Icon(Icons.logout, color: Colors.white),
-                        onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
+                        onPressed: () =>
+                            Navigator.pushReplacementNamed(context, '/login'),
                       ),
                     ],
                   ),
@@ -254,7 +267,11 @@ class _HospitalStaffDashboardState extends State<HospitalStaffDashboard>
                         radius: 25,
                         backgroundColor: Colors.white,
                         child: Text(
-                          _getInitials(userData['doctorName'] ?? userData['name'] ?? 'Doctor'),
+                          _getInitials(
+                            userData['doctorName'] ??
+                                userData['name'] ??
+                                'Doctor',
+                          ),
                           style: TextStyle(
                             color: Colors.blue.shade700,
                             fontWeight: FontWeight.bold,
@@ -268,7 +285,9 @@ class _HospitalStaffDashboardState extends State<HospitalStaffDashboard>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              userData['doctorName'] ?? userData['name'] ?? 'Doctor',
+                              userData['doctorName'] ??
+                                  userData['name'] ??
+                                  'Doctor',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 18,
@@ -298,32 +317,23 @@ class _HospitalStaffDashboardState extends State<HospitalStaffDashboard>
               ),
             ),
           ),
-          
+
           // Tab Bar
           Container(
             color: Colors.white,
             child: TabBar(
               controller: _tabController,
               tabs: [
-                Tab(
-                  icon: Icon(Icons.dashboard),
-                  text: 'Dashboard',
-                ),
-                Tab(
-                  icon: Icon(Icons.calendar_today),
-                  text: 'Appointments',
-                ),
-                Tab(
-                  icon: Icon(Icons.medical_services),
-                  text: 'Patients',
-                ),
+                Tab(icon: Icon(Icons.dashboard), text: 'Dashboard'),
+                Tab(icon: Icon(Icons.calendar_today), text: 'Appointments'),
+                Tab(icon: Icon(Icons.medical_services), text: 'Patients'),
               ],
               labelColor: Colors.blue.shade700,
               unselectedLabelColor: Colors.grey,
               indicatorColor: Colors.blue.shade700,
             ),
           ),
-          
+
           // Tab Views
           Expanded(
             child: TabBarView(
@@ -355,7 +365,7 @@ class _HospitalStaffDashboardState extends State<HospitalStaffDashboard>
     if (isLoading) {
       return Center(child: CircularProgressIndicator());
     }
-    
+
     if (error != null) {
       return Center(
         child: Column(
@@ -364,10 +374,7 @@ class _HospitalStaffDashboardState extends State<HospitalStaffDashboard>
             Icon(Icons.error_outline, size: 64, color: Colors.red),
             SizedBox(height: 16),
             Text(error!, style: TextStyle(color: Colors.red)),
-            ElevatedButton(
-              onPressed: loadStaffData,
-              child: Text('Retry'),
-            ),
+            ElevatedButton(onPressed: loadStaffData, child: Text('Retry')),
           ],
         ),
       );
@@ -481,7 +488,12 @@ class _HospitalStaffDashboardState extends State<HospitalStaffDashboard>
     );
   }
 
-  Widget _buildStatItem(String title, String count, IconData icon, Color color) {
+  Widget _buildStatItem(
+    String title,
+    String count,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -502,10 +514,7 @@ class _HospitalStaffDashboardState extends State<HospitalStaffDashboard>
           ),
           Text(
             title,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey.shade600,
-            ),
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
             textAlign: TextAlign.center,
           ),
         ],
@@ -519,8 +528,8 @@ class _HospitalStaffDashboardState extends State<HospitalStaffDashboard>
       try {
         final aptDate = DateTime.parse(apt['appointmentDate'] ?? '');
         return aptDate.year == today.year &&
-               aptDate.month == today.month &&
-               aptDate.day == today.day;
+            aptDate.month == today.month &&
+            aptDate.day == today.day;
       } catch (e) {
         return false;
       }
@@ -553,7 +562,9 @@ class _HospitalStaffDashboardState extends State<HospitalStaffDashboard>
                 ),
               )
             else
-              ...todayAppointments.take(3).map((apt) => _buildAppointmentItem(apt)),
+              ...todayAppointments
+                  .take(3)
+                  .map((apt) => _buildAppointmentItem(apt)),
           ],
         ),
       ),
@@ -598,11 +609,12 @@ class _HospitalStaffDashboardState extends State<HospitalStaffDashboard>
   Widget _buildAppointmentsList() {
     final now = DateTime.now();
     final oneWeekLater = now.add(Duration(days: 7));
-    
+
     final filteredAppointments = appointments.where((apt) {
       try {
         final aptDate = DateTime.parse(apt['appointmentDate'] ?? '');
-        return aptDate.isAfter(now.subtract(Duration(days: 1))) && aptDate.isBefore(oneWeekLater);
+        return aptDate.isAfter(now.subtract(Duration(days: 1))) &&
+            aptDate.isBefore(oneWeekLater);
       } catch (e) {
         return false;
       }
@@ -672,7 +684,9 @@ class _HospitalStaffDashboardState extends State<HospitalStaffDashboard>
         child: Icon(Icons.person, color: Colors.blue.shade700),
       ),
       title: Text(appointment['patientName'] ?? 'Unknown Patient'),
-      subtitle: Text('${appointment['appointmentTime'] ?? 'No time'} - ${appointment['reason'] ?? 'No reason'}'),
+      subtitle: Text(
+        '${appointment['appointmentTime'] ?? 'No time'} - ${appointment['reason'] ?? 'No reason'}',
+      ),
       trailing: Chip(
         label: Text(
           appointment['status'] ?? 'pending',
@@ -726,7 +740,9 @@ class _HospitalStaffDashboardState extends State<HospitalStaffDashboard>
                 appointment['status'] ?? 'pending',
                 style: TextStyle(fontSize: 10),
               ),
-              backgroundColor: _getStatusColor(appointment['status'] ?? 'pending'),
+              backgroundColor: _getStatusColor(
+                appointment['status'] ?? 'pending',
+              ),
             ),
           ],
         ),
@@ -751,7 +767,9 @@ class _HospitalStaffDashboardState extends State<HospitalStaffDashboard>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('UHID: ${patient['uhid'] ?? 'N/A'}'),
-            Text('Age: ${patient['age'] ?? 'N/A'} • Gender: ${patient['gender'] ?? 'N/A'}'),
+            Text(
+              'Age: ${patient['age'] ?? 'N/A'} • Gender: ${patient['gender'] ?? 'N/A'}',
+            ),
             Text('State: ${patient['state'] ?? 'N/A'}'),
           ],
         ),

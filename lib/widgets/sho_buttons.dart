@@ -26,10 +26,7 @@ class ShoActionButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: color.withOpacity(0.1),
-            width: 1,
-          ),
+          border: Border.all(color: color.withOpacity(0.1), width: 1),
           boxShadow: [
             BoxShadow(
               color: color.withOpacity(0.15),
@@ -64,11 +61,7 @@ class ShoActionButton extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Icon(
-                icon,
-                color: Colors.white,
-                size: 30,
-              ),
+              child: Icon(icon, color: Colors.white, size: 30),
             ),
             const SizedBox(height: 18),
             Text(
@@ -100,11 +93,7 @@ class ShoActionButton extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    color: color,
-                    size: 14,
-                  ),
+                  Icon(Icons.arrow_forward_ios_rounded, color: color, size: 14),
                   const SizedBox(width: 6),
                   Text(
                     'Open',
@@ -156,10 +145,7 @@ class ShoStatCard extends StatelessWidget {
             offset: const Offset(0, 12),
           ),
         ],
-        border: Border.all(
-          color: color.withOpacity(0.08),
-          width: 1.5,
-        ),
+        border: Border.all(color: color.withOpacity(0.08), width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -171,11 +157,7 @@ class ShoStatCard extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  color.withOpacity(0.8),
-                  color,
-                  color.withOpacity(0.9),
-                ],
+                colors: [color.withOpacity(0.8), color, color.withOpacity(0.9)],
               ),
               borderRadius: BorderRadius.circular(18),
               boxShadow: [
@@ -186,11 +168,7 @@ class ShoStatCard extends StatelessWidget {
                 ),
               ],
             ),
-            child: Icon(
-              icon,
-              color: Colors.white,
-              size: 26,
-            ),
+            child: Icon(icon, color: Colors.white, size: 26),
           ),
           const SizedBox(height: 18),
           Text(
@@ -237,10 +215,7 @@ class ShoProfileItem extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.teal.withOpacity(0.1),
-          width: 1,
-        ),
+        border: Border.all(color: Colors.teal.withOpacity(0.1), width: 1),
         boxShadow: [
           BoxShadow(
             color: Colors.teal.withOpacity(0.05),
@@ -321,10 +296,7 @@ class ShoActivityCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withOpacity(0.1),
-          width: 1,
-        ),
+        border: Border.all(color: color.withOpacity(0.1), width: 1),
         boxShadow: [
           BoxShadow(
             color: color.withOpacity(0.08),
@@ -359,10 +331,7 @@ class ShoActivityCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   time,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey.shade500,
-                  ),
+                  style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
                 ),
               ],
             ),

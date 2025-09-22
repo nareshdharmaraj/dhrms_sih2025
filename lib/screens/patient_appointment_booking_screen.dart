@@ -10,35 +10,47 @@ class PatientAppointmentBookingScreen extends StatefulWidget {
   const PatientAppointmentBookingScreen({super.key, required this.patientData});
 
   @override
-  _PatientAppointmentBookingScreenState createState() => _PatientAppointmentBookingScreenState();
+  _PatientAppointmentBookingScreenState createState() =>
+      _PatientAppointmentBookingScreenState();
 }
 
-class _PatientAppointmentBookingScreenState extends State<PatientAppointmentBookingScreen> {
+class _PatientAppointmentBookingScreenState
+    extends State<PatientAppointmentBookingScreen> {
   List<dynamic> hospitals = [];
   List<dynamic> doctors = [];
   List<dynamic> filteredDoctors = [];
-  
+
   Map<String, dynamic>? selectedHospital;
   Map<String, dynamic>? selectedDoctor;
-  
+
   String searchQuery = '';
   String selectedSpecialization = 'All';
   RangeValues feeRange = RangeValues(0, 5000);
-  
+
   DateTime? selectedDate;
   String? selectedTime;
   String appointmentReason = '';
-  
+
   bool isLoadingHospitals = true;
   bool isLoadingDoctors = false;
   bool isBooking = false;
-  
+
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _reasonController = TextEditingController();
-  
+
   List<String> availableTimes = [
-    '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
-    '02:00 PM', '02:30 PM', '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM'
+    '09:00 AM',
+    '09:30 AM',
+    '10:00 AM',
+    '10:30 AM',
+    '11:00 AM',
+    '11:30 AM',
+    '02:00 PM',
+    '02:30 PM',
+    '03:00 PM',
+    '03:30 PM',
+    '04:00 PM',
+    '04:30 PM',
   ];
 
   @override
@@ -93,13 +105,13 @@ class _PatientAppointmentBookingScreenState extends State<PatientAppointmentBook
               ),
             ),
           ),
-          
+
           Expanded(
-            child: selectedHospital == null 
+            child: selectedHospital == null
                 ? _buildHospitalSelection()
                 : selectedDoctor == null
-                    ? _buildDoctorSelection()
-                    : _buildAppointmentBooking(),
+                ? _buildDoctorSelection()
+                : _buildAppointmentBooking(),
           ),
         ],
       ),
@@ -126,7 +138,7 @@ class _PatientAppointmentBookingScreenState extends State<PatientAppointmentBook
             style: TextStyle(color: Colors.grey.shade600),
           ),
           SizedBox(height: 20),
-          
+
           if (isLoadingHospitals)
             Center(child: CircularProgressIndicator())
           else if (hospitals.isEmpty)
@@ -179,7 +191,7 @@ class _PatientAppointmentBookingScreenState extends State<PatientAppointmentBook
             ],
           ),
         ),
-        
+
         // Search and Filter Section
         Container(
           padding: EdgeInsets.symmetric(horizontal: 16),
@@ -205,7 +217,7 @@ class _PatientAppointmentBookingScreenState extends State<PatientAppointmentBook
                 },
               ),
               SizedBox(height: 12),
-              
+
               // Filters Row
               Row(
                 children: [
@@ -236,7 +248,7 @@ class _PatientAppointmentBookingScreenState extends State<PatientAppointmentBook
                     ),
                   ),
                   SizedBox(width: 12),
-                  
+
                   // Fee Range Filter
                   Expanded(
                     child: ElevatedButton.icon(
@@ -254,20 +266,20 @@ class _PatientAppointmentBookingScreenState extends State<PatientAppointmentBook
           ),
         ),
         SizedBox(height: 16),
-        
+
         // Doctors List
         Expanded(
           child: isLoadingDoctors
               ? Center(child: CircularProgressIndicator())
               : filteredDoctors.isEmpty
-                  ? _buildEmptyState('No doctors found', Icons.person_search)
-                  : ListView.builder(
-                      padding: EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: filteredDoctors.length,
-                      itemBuilder: (context, index) {
-                        return _buildDoctorCard(filteredDoctors[index]);
-                      },
-                    ),
+              ? _buildEmptyState('No doctors found', Icons.person_search)
+              : ListView.builder(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: filteredDoctors.length,
+                  itemBuilder: (context, index) {
+                    return _buildDoctorCard(filteredDoctors[index]);
+                  },
+                ),
         ),
       ],
     );
@@ -308,23 +320,23 @@ class _PatientAppointmentBookingScreenState extends State<PatientAppointmentBook
             ],
           ),
           SizedBox(height: 20),
-          
+
           // Doctor Summary Card
           _buildSelectedDoctorSummary(),
           SizedBox(height: 20),
-          
+
           // Date Selection
           _buildDateSelection(),
           SizedBox(height: 20),
-          
+
           // Time Selection
           _buildTimeSelection(),
           SizedBox(height: 20),
-          
+
           // Reason for Visit
           _buildReasonInput(),
           SizedBox(height: 30),
-          
+
           // Book Button
           CustomButton(
             text: isBooking ? 'Booking...' : 'Book Appointment',
@@ -403,7 +415,10 @@ class _PatientAppointmentBookingScreenState extends State<PatientAppointmentBook
                       ),
                       Text(
                         '${doctor['designation'] ?? 'Doctor'} • ${doctor['experienceYears'] ?? 0} years exp',
-                        style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
@@ -428,12 +443,14 @@ class _PatientAppointmentBookingScreenState extends State<PatientAppointmentBook
               ],
             ),
             SizedBox(height: 12),
-            
+
             // Available Times Preview
             if (doctor['availableTimings'] != null)
               Wrap(
                 spacing: 4,
-                children: (doctor['availableTimings'] as List).take(3).map((time) {
+                children: (doctor['availableTimings'] as List).take(3).map((
+                  time,
+                ) {
                   return Chip(
                     label: Text(
                       time.toString(),
@@ -443,7 +460,7 @@ class _PatientAppointmentBookingScreenState extends State<PatientAppointmentBook
                   );
                 }).toList(),
               ),
-            
+
             SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
@@ -528,8 +545,8 @@ class _PatientAppointmentBookingScreenState extends State<PatientAppointmentBook
             onPressed: _selectDate,
             icon: Icon(Icons.calendar_today),
             label: Text(
-              selectedDate == null 
-                  ? 'Choose Date' 
+              selectedDate == null
+                  ? 'Choose Date'
                   : '${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}',
             ),
             style: ElevatedButton.styleFrom(
@@ -564,15 +581,14 @@ class _PatientAppointmentBookingScreenState extends State<PatientAppointmentBook
           itemBuilder: (context, index) {
             String time = availableTimes[index];
             bool isSelected = selectedTime == time;
-            
+
             return ElevatedButton(
               onPressed: () => setState(() => selectedTime = time),
-              child: Text(
-                time,
-                style: TextStyle(fontSize: 12),
-              ),
+              child: Text(time, style: TextStyle(fontSize: 12)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: isSelected ? Colors.blue.shade600 : Colors.grey.shade200,
+                backgroundColor: isSelected
+                    ? Colors.blue.shade600
+                    : Colors.grey.shade200,
                 foregroundColor: isSelected ? Colors.white : Colors.black87,
               ),
             );
@@ -595,9 +611,7 @@ class _PatientAppointmentBookingScreenState extends State<PatientAppointmentBook
           controller: _reasonController,
           decoration: InputDecoration(
             hintText: 'Describe your symptoms or reason for visit',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
             filled: true,
             fillColor: Colors.grey.shade50,
           ),
@@ -616,10 +630,7 @@ class _PatientAppointmentBookingScreenState extends State<PatientAppointmentBook
           children: [
             Icon(icon, size: 64, color: Colors.grey),
             SizedBox(height: 16),
-            Text(
-              message,
-              style: TextStyle(fontSize: 18, color: Colors.grey),
-            ),
+            Text(message, style: TextStyle(fontSize: 18, color: Colors.grey)),
           ],
         ),
       ),
@@ -661,10 +672,12 @@ class _PatientAppointmentBookingScreenState extends State<PatientAppointmentBook
 
   Future<void> _loadDoctors(String hospitalId) async {
     setState(() => isLoadingDoctors = true);
-    
+
     try {
       final response = await http.get(
-        Uri.parse('${AppConstants.baseUrl}/appointments/hospitals/$hospitalId/doctors'),
+        Uri.parse(
+          '${AppConstants.baseUrl}/appointments/hospitals/$hospitalId/doctors',
+        ),
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -701,12 +714,18 @@ class _PatientAppointmentBookingScreenState extends State<PatientAppointmentBook
   void _filterDoctors() {
     List<dynamic> filtered = doctors.where((doctor) {
       // Search filter
-      bool matchesSearch = searchQuery.isEmpty ||
-          doctor['doctorName'].toString().toLowerCase().contains(searchQuery.toLowerCase()) ||
-          doctor['specialization'].toString().toLowerCase().contains(searchQuery.toLowerCase());
+      bool matchesSearch =
+          searchQuery.isEmpty ||
+          doctor['doctorName'].toString().toLowerCase().contains(
+            searchQuery.toLowerCase(),
+          ) ||
+          doctor['specialization'].toString().toLowerCase().contains(
+            searchQuery.toLowerCase(),
+          );
 
       // Specialization filter
-      bool matchesSpecialization = selectedSpecialization == 'All' ||
+      bool matchesSpecialization =
+          selectedSpecialization == 'All' ||
           doctor['specialization'] == selectedSpecialization;
 
       // Fee range filter
@@ -740,7 +759,9 @@ class _PatientAppointmentBookingScreenState extends State<PatientAppointmentBook
           builder: (context, setDialogState) => Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Fee Range: ₹${feeRange.start.round()} - ₹${feeRange.end.round()}'),
+              Text(
+                'Fee Range: ₹${feeRange.start.round()} - ₹${feeRange.end.round()}',
+              ),
               RangeSlider(
                 values: feeRange,
                 min: 0,
@@ -791,7 +812,7 @@ class _PatientAppointmentBookingScreenState extends State<PatientAppointmentBook
     try {
       // Generate appointment ID
       final appointmentId = 'APT${DateTime.now().millisecondsSinceEpoch}';
-      
+
       final appointmentData = {
         'appointmentId': appointmentId,
         'patientId': widget.patientData['_id'],
@@ -802,7 +823,8 @@ class _PatientAppointmentBookingScreenState extends State<PatientAppointmentBook
         'patientState': widget.patientData['state'],
         'doctorId': selectedDoctor!['_id'],
         'doctorName': selectedDoctor!['doctorName'],
-        'hospitalId': selectedHospital!['hospitalId'] ?? selectedHospital!['_id'],
+        'hospitalId':
+            selectedHospital!['hospitalId'] ?? selectedHospital!['_id'],
         'hospitalName': selectedHospital!['name'],
         'appointmentDate': selectedDate!.toIso8601String().split('T')[0],
         'appointmentTime': selectedTime,
@@ -857,10 +879,15 @@ class _PatientAppointmentBookingScreenState extends State<PatientAppointmentBook
           children: [
             Text('Your appointment has been booked successfully.'),
             SizedBox(height: 8),
-            Text('Appointment ID: $appointmentId', style: TextStyle(fontWeight: FontWeight.bold)),
+            Text(
+              'Appointment ID: $appointmentId',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             Text('Status: Pending (waiting for doctor approval)'),
             SizedBox(height: 8),
-            Text('You will be notified once the doctor approves your appointment.'),
+            Text(
+              'You will be notified once the doctor approves your appointment.',
+            ),
           ],
         ),
         actions: [
