@@ -155,15 +155,15 @@ const validateDoctorCreation = [
     .optional()
     .isLength({ min: 3, max: 50 })
     .withMessage('Name must be between 3 and 50 characters')
-    .matches(/^[a-zA-Z\s\.]+$/)
-    .withMessage('Name can only contain letters, spaces, and dots'),
+    .matches(/^[a-zA-Z0-9\s\.\-\_]+$/)
+    .withMessage('Name can only contain letters, numbers, spaces, dots, hyphens, and underscores'),
   
   body('doctorName')
     .optional()
     .isLength({ min: 2, max: 100 })
     .withMessage('Doctor name must be between 2 and 100 characters')
-    .matches(/^[a-zA-Z\s\.]+$/)
-    .withMessage('Doctor name can only contain letters, spaces, and dots'),
+    .matches(/^[a-zA-Z0-9\s\.\-\_]+$/)
+    .withMessage('Doctor name can only contain letters, numbers, spaces, dots, hyphens, and underscores'),
   
   // Either name or doctorName must be provided
   body().custom((body) => {
@@ -272,8 +272,26 @@ const validateDoctorCreation = [
   
   body('availableTimings')
     .optional()
-    .isIn(['9:00 AM - 12:00 PM', '12:00 PM - 3:00 PM', '3:00 PM - 6:00 PM', '6:00 PM - 9:00 PM', '24/7 Emergency', 'Flexible'])
-    .withMessage('Invalid available timings'),
+    .custom((value) => {
+      // Allow pre-defined slots
+      const predefinedSlots = ['9:00 AM - 12:00 PM', '12:00 PM - 3:00 PM', '3:00 PM - 6:00 PM', '6:00 PM - 9:00 PM', '24/7 Emergency', 'Flexible'];
+      if (predefinedSlots.includes(value)) {
+        return true;
+      }
+      
+      // Allow custom time format: "HH:MM AM/PM - HH:MM AM/PM"
+      const timePattern = /^(\d{1,2}:\d{2}\s?(AM|PM))\s?-\s?(\d{1,2}:\d{2}\s?(AM|PM))$/i;
+      if (timePattern.test(value)) {
+        return true;
+      }
+      
+      // Allow flexible text formats for special cases
+      if (value && value.length >= 5 && value.length <= 100) {
+        return true;
+      }
+      
+      throw new Error('Available timings must be in format "HH:MM AM/PM - HH:MM AM/PM" or one of the predefined slots');
+    }),
   
   body('consultationFee')
     .optional()

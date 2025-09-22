@@ -67,7 +67,8 @@ const assistantLogin = async (req, res) => {
         assistant.lockUntil = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
       }
       
-      await assistant.save();
+      // Skip validation for login attempt tracking to prevent schema conflicts
+      await assistant.save({ validateBeforeSave: false });
       
       return res.status(401).json({
         success: false,
@@ -80,7 +81,10 @@ const assistantLogin = async (req, res) => {
     assistant.accountLocked = false;
     assistant.lockUntil = null;
     assistant.lastLoginAt = new Date();
-    await assistant.save();
+    
+    // Skip validation during login updates to prevent schema validation errors
+    // on existing records after model schema changes
+    await assistant.save({ validateBeforeSave: false });
 
     // Get assigned doctor details if available
     let assignedDoctor = null;
