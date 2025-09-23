@@ -18,6 +18,7 @@ import 'screens/hospital_admin_login_screen.dart';
 import 'screens/hospital_admin_dashboard_screen.dart';
 import 'screens/hospital_role_selection_screen.dart';
 import 'screens/hospital_doctor_login_screen.dart';
+import 'screens/hospital_doctor_dashboard_screen.dart';
 import 'screens/hospital_assistant_login_screen.dart';
 import 'utils/environment_config.dart';
 import 'widgets/configuration_switcher.dart';
@@ -85,9 +86,27 @@ class DHRMSApp extends StatelessWidget {
                   as Map<String, dynamic>?;
           print('🛣️ Route userData: $userData');
           print('🛣️ Route userData type: ${userData.runtimeType}');
-          return _wrapWithConfigSwitcher(
-            HospitalStaffDashboard(userData: userData ?? {}),
-          );
+
+          // Check if user is a doctor to show the new dashboard
+          final isDoctorLogin =
+              userData != null &&
+              (userData.containsKey('doctorId') ||
+                  userData.containsKey('doctorName') ||
+                  userData.containsKey('specialization') ||
+                  userData['staffRole'] == 'Doctor' ||
+                  userData['designation'] == 'Doctor');
+
+          if (isDoctorLogin) {
+            print('🏥 Routing to new doctor dashboard');
+            return _wrapWithConfigSwitcher(
+              HospitalDoctorDashboardScreen(doctorData: userData),
+            );
+          } else {
+            print('🏥 Routing to generic staff dashboard');
+            return _wrapWithConfigSwitcher(
+              HospitalStaffDashboard(userData: userData ?? {}),
+            );
+          }
         },
         '/regional-officer-dashboard': (context) {
           final userData =

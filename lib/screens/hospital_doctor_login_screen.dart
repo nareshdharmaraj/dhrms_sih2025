@@ -5,6 +5,7 @@ import '../services/hospital_api_service.dart';
 import '../services/api_client.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
+import 'hospital_doctor_dashboard_screen.dart';
 
 class HospitalDoctorLoginScreen extends StatefulWidget {
   const HospitalDoctorLoginScreen({super.key});
@@ -84,10 +85,12 @@ class _HospitalDoctorLoginScreenState extends State<HospitalDoctorLoginScreen> {
       await prefs.setString('doctor_data', jsonEncode(data['data']['doctor']));
 
       // Navigate to doctor dashboard
-      Navigator.pushReplacementNamed(
+      Navigator.pushReplacement(
         context,
-        '/hospital-staff-dashboard',
-        arguments: data['data']['doctor'],
+        MaterialPageRoute(
+          builder: (context) =>
+              HospitalDoctorDashboardScreen(doctorData: data['data']['doctor']),
+        ),
       );
     } catch (e) {
       _showErrorDialog('Login failed: $e');

@@ -31,16 +31,16 @@ class _VitalsMonitorScreenState extends State<VitalsMonitorScreen> {
       const baseUrl = 'https://dhrms-sih2025.onrender.com/api';
       final response = await http.get(
         Uri.parse('$baseUrl/vitals/records'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
       );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         setState(() {
           _vitalRecords.clear();
-          _vitalRecords.addAll(List<Map<String, dynamic>>.from(data['vitals'] ?? []));
+          _vitalRecords.addAll(
+            List<Map<String, dynamic>>.from(data['vitals'] ?? []),
+          );
         });
       } else {
         print('Failed to load vitals: ${response.statusCode}');
@@ -107,7 +107,9 @@ class _VitalsMonitorScreenState extends State<VitalsMonitorScreen> {
         ),
         child: RefreshIndicator(
           onRefresh: _loadVitalRecords,
-          child: _vitalRecords.isEmpty ? _buildEmptyState() : _buildVitalsList(),
+          child: _vitalRecords.isEmpty
+              ? _buildEmptyState()
+              : _buildVitalsList(),
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(

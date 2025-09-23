@@ -49,7 +49,7 @@ class _HealthGamificationScreenState extends State<HealthGamificationScreen>
 
     try {
       const baseUrl = 'https://dhrms-sih2025.onrender.com/api';
-      
+
       // Load challenges
       final challengesResponse = await http.get(
         Uri.parse('$baseUrl/gamification/challenges'),
@@ -60,7 +60,9 @@ class _HealthGamificationScreenState extends State<HealthGamificationScreen>
         final challengesData = json.decode(challengesResponse.body);
         setState(() {
           _challenges.clear();
-          _challenges.addAll(List<Map<String, dynamic>>.from(challengesData['challenges'] ?? []));
+          _challenges.addAll(
+            List<Map<String, dynamic>>.from(challengesData['challenges'] ?? []),
+          );
         });
       } else {
         print('Failed to load challenges: ${challengesResponse.statusCode}');
@@ -76,10 +78,16 @@ class _HealthGamificationScreenState extends State<HealthGamificationScreen>
         final achievementsData = json.decode(achievementsResponse.body);
         setState(() {
           _achievements.clear();
-          _achievements.addAll(List<Map<String, dynamic>>.from(achievementsData['achievements'] ?? []));
+          _achievements.addAll(
+            List<Map<String, dynamic>>.from(
+              achievementsData['achievements'] ?? [],
+            ),
+          );
         });
       } else {
-        print('Failed to load achievements: ${achievementsResponse.statusCode}');
+        print(
+          'Failed to load achievements: ${achievementsResponse.statusCode}',
+        );
       }
 
       // Load user progress
@@ -98,7 +106,6 @@ class _HealthGamificationScreenState extends State<HealthGamificationScreen>
       } else {
         print('Failed to load progress: ${progressResponse.statusCode}');
       }
-
     } catch (e) {
       print('Error loading game data: $e');
     } finally {
@@ -739,11 +746,7 @@ class _HealthGamificationScreenState extends State<HealthGamificationScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.stars_outlined,
-              size: 64,
-              color: Colors.purple.shade300,
-            ),
+            Icon(Icons.stars_outlined, size: 64, color: Colors.purple.shade300),
             const SizedBox(height: 16),
             Text(
               'No Achievements Yet',

@@ -5,6 +5,31 @@ const HospitalDoctor = require('../models/HospitalDoctor');
 const Hospital = require('../models/Hospital');
 
 /**
+ * @desc    Get all appointments (for testing)
+ * @route   GET /api/appointments
+ * @access  Public (for testing)
+ */
+router.get('/', async (req, res) => {
+  try {
+    console.log('📋 Fetching all appointments...');
+    const appointments = await HospitalAppointment.find({}).sort({ appointmentDate: -1 }).limit(20);
+    console.log(`✅ Found ${appointments.length} appointments`);
+    res.json({
+      success: true,
+      count: appointments.length,
+      data: appointments
+    });
+  } catch (error) {
+    console.error('❌ Error fetching appointments:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching appointments',
+      error: error.message
+    });
+  }
+});
+
+/**
  * @desc    Create a new appointment
  * @route   POST /api/appointments
  * @access  Public (Patient can book)
@@ -15,11 +40,11 @@ router.post('/', async (req, res) => {
 
     const appointmentData = req.body;
 
-    // Validate required fields
+    // Validate required fields (excluding appointmentId - will be auto-generated)
     const requiredFields = [
-      'appointmentId', 'patientId', 'patientName', 'patientUhid',
-      'doctorId', 'doctorName', 'hospitalId', 'hospitalName',
-      'appointmentDate', 'appointmentTime', 'reason', 'consultationFee'
+      'patientId', 'patientName', 'doctorId', 'doctorName', 
+      'hospitalId', 'hospitalName', 'appointmentDate', 'appointmentTime', 
+      'reason', 'consultationFee'
     ];
 
     for (const field of requiredFields) {
@@ -31,20 +56,39 @@ router.post('/', async (req, res) => {
       }
     }
 
-    // Check if appointment ID already exists
-    const existingAppointment = await HospitalAppointment.findOne({
-      appointmentId: appointmentData.appointmentId
-    });
-
-    if (existingAppointment) {
-      return res.status(400).json({
-        success: false,
-        message: 'Appointment ID already exists'
-      });
+    // Auto-generate appointment ID
+    const appointmentId = `APT_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Keep date format as DD/MM/YYYY to match existing appointments
+    let formattedDate = appointmentData.appointmentDate;
+    // Convert YYYY-MM-DD to DD/MM/YYYY if needed
+    if (formattedDate.includes('-') && formattedDate.length === 10) {
+      const [year, month, day] = formattedDate.split('-');
+      formattedDate = `${day}/${month}/${year}`;
     }
 
+    // Prepare appointment data - map doctorId to hospitalStaffId to match existing schema
+    const finalAppointmentData = {
+      appointmentId: appointmentId,
+      patientId: appointmentData.patientId,
+      patientName: appointmentData.patientName,
+      patientUhid: appointmentData.patientUhid || appointmentData.patientId,
+      patientGender: appointmentData.patientGender,
+      patientAge: appointmentData.patientAge,
+      patientState: appointmentData.patientState,
+      hospitalStaffId: appointmentData.doctorId, // Map doctorId to hospitalStaffId
+      doctorName: appointmentData.doctorName,
+      hospitalId: appointmentData.hospitalId,
+      hospitalName: appointmentData.hospitalName,
+      appointmentDate: formattedDate,
+      appointmentTime: appointmentData.appointmentTime,
+      reason: appointmentData.reason,
+      consultationFee: appointmentData.consultationFee,
+      status: 'pending'
+    };
+
     // Create new appointment
-    const appointment = new HospitalAppointment(appointmentData);
+    const appointment = new HospitalAppointment(finalAppointmentData);
     await appointment.save();
 
     console.log('✅ Appointment created successfully:', appointment.appointmentId);
@@ -52,6 +96,7 @@ router.post('/', async (req, res) => {
     res.status(201).json({
       success: true,
       message: 'Appointment booked successfully',
+      appointmentId: appointment.appointmentId,
       data: appointment
     });
 
@@ -104,10 +149,13 @@ router.get('/patient/:patientId', async (req, res) => {
     console.log('📅 Fetching appointments for patient:', patientId);
 
     const appointments = await HospitalAppointment.find({
-      patientId: patientId
+      $or: [
+        { patientId: patientId },
+        { patientUhid: patientId }
+      ]
     }).sort({ appointmentDate: -1, appointmentTime: -1 });
 
-    console.log('✅ Found appointments:', appointments.length);
+    console.log('✅ Found appointments for patient:', appointments.length);
 
     res.json(appointments);
 
@@ -242,5 +290,7 @@ router.get('/:appointmentId', async (req, res) => {
     });
   }
 });
+
+
 
 module.exports = router;

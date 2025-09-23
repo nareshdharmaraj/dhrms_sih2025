@@ -29,9 +29,9 @@ const hospitalAppointmentSchema = new mongoose.Schema({
   patientState: {
     type: String
   },
-  doctorId: {
+  hospitalStaffId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'HospitalDoctor',
+    ref: 'Doctor',
     required: true
   },
   doctorName: {
@@ -39,7 +39,8 @@ const hospitalAppointmentSchema = new mongoose.Schema({
     required: true
   },
   hospitalId: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Hospital',
     required: true
   },
   hospitalName: {
@@ -47,7 +48,7 @@ const hospitalAppointmentSchema = new mongoose.Schema({
     required: true
   },
   appointmentDate: {
-    type: String, // YYYY-MM-DD format
+    type: String, // DD/MM/YYYY format to match your sample
     required: true
   },
   appointmentTime: {

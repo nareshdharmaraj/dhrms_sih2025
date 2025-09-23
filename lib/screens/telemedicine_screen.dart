@@ -33,16 +33,16 @@ class _TelemedicineScreenState extends State<TelemedicineScreen> {
       const baseUrl = 'https://dhrms-sih2025.onrender.com/api';
       final response = await http.get(
         Uri.parse('$baseUrl/telemedicine/doctors'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
       );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         setState(() {
           _doctors.clear();
-          _doctors.addAll(List<Map<String, dynamic>>.from(data['doctors'] ?? []));
+          _doctors.addAll(
+            List<Map<String, dynamic>>.from(data['doctors'] ?? []),
+          );
         });
       } else {
         print('Failed to load doctors: ${response.statusCode}');
@@ -61,16 +61,16 @@ class _TelemedicineScreenState extends State<TelemedicineScreen> {
       const baseUrl = 'https://dhrms-sih2025.onrender.com/api';
       final response = await http.get(
         Uri.parse('$baseUrl/telemedicine/appointments'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
       );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         setState(() {
           _appointments.clear();
-          _appointments.addAll(List<Map<String, dynamic>>.from(data['appointments'] ?? []));
+          _appointments.addAll(
+            List<Map<String, dynamic>>.from(data['appointments'] ?? []),
+          );
         });
       } else {
         print('Failed to load appointments: ${response.statusCode}');

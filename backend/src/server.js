@@ -72,6 +72,143 @@ app.use('/api/hospital-doctor', hospitalDoctorRoutes);
 app.use('/api/hospital-assistant', hospitalAssistantRoutes);
 app.use('/api/appointments', appointmentRoutes);
 
+// Simple hospitals endpoint for patient appointment booking
+app.get('/api/hospitals', async (req, res) => {
+  try {
+    const Hospital = require('./models/Hospital');
+    console.log('🏥 Fetching all hospitals for appointment booking...');
+
+    console.log('🔍 Querying hospitals...');
+    const hospitalsData = await Hospital.find({});
+    console.log('Raw hospital data:', hospitalsData.length, 'records found');
+    
+    if (hospitalsData.length > 0) {
+      console.log('First hospital sample:', {
+        hospitalId: hospitalsData[0].hospitalId,
+        name: hospitalsData[0].name,
+        isActive: hospitalsData[0].isActive
+      });
+    }
+
+    // Map the data to include hospitalName field for frontend compatibility
+    const hospitals = hospitalsData.map(hospital => ({
+      hospitalId: hospital.hospitalId,
+      hospitalName: hospital.name || 'Unknown Hospital',
+      name: hospital.name,
+      location: hospital.location,
+      contactInfo: hospital.contact || hospital.contactInfo,
+      capacity: hospital.capacity,
+      isActive: hospital.isActive
+    }));
+
+    console.log('✅ Found hospitals:', hospitals.length);
+    res.json(hospitals);
+
+  } catch (error) {
+    console.error('❌ Error fetching hospitals:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching hospitals',
+      error: error.message
+    });
+  }
+});
+
+// Simple doctors endpoint for patient appointment booking
+app.get('/api/doctors/hospital/:hospitalId', async (req, res) => {
+  try {
+    const HospitalDoctor = require('./models/HospitalDoctor');
+    const { hospitalId } = req.params;
+    console.log('👨‍⚕️ Fetching doctors for hospital:', hospitalId);
+
+    const doctorsData = await HospitalDoctor.find({
+      hospitalId: hospitalId,
+      isActive: { $ne: false }
+    }).select('doctorId doctorName specialization qualification experience consultationFee availability contactInfo department availableTimings isActive')
+    .sort({ doctorName: 1 });
+
+    // Map doctors to ensure required fields
+    const doctors = doctorsData.map(doctor => ({
+      ...doctor.toObject(),
+      consultationFee: doctor.consultationFee || 500, // Default fee if not set
+      doctorName: doctor.doctorName || doctor.name || 'Unknown Doctor'
+    }));
+
+    console.log('✅ Found doctors:', doctors.length);
+    res.json(doctors);
+
+  } catch (error) {
+    console.error('❌ Error fetching doctors:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching doctors',
+      error: error.message
+    });
+  }
+});
+
+// Test endpoint for doctors debugging
+app.get('/api/test/doctors/:hospitalId', async (req, res) => {
+  try {
+    const HospitalDoctor = require('./models/HospitalDoctor');
+    const { hospitalId } = req.params;
+    
+    // Check all doctors
+    const allDoctors = await HospitalDoctor.find({}).limit(3);
+    
+    // Check doctors for specific hospital
+    const hospitalDoctors = await HospitalDoctor.find({ hospitalId: hospitalId });
+    
+    // Check doctors with isActive
+    const activeDoctors = await HospitalDoctor.find({ 
+      hospitalId: hospitalId, 
+      isActive: { $ne: false } 
+    });
+    
+    res.json({
+      requestedHospitalId: hospitalId,
+      totalDoctorsInDB: allDoctors.length,
+      allDoctorsPreview: allDoctors.map(d => ({
+        doctorId: d.doctorId,
+        doctorName: d.doctorName || d.name,
+        hospitalId: d.hospitalId,
+        isActive: d.isActive
+      })),
+      doctorsForThisHospital: hospitalDoctors.length,
+      activeDoctorsForThisHospital: activeDoctors.length,
+      doctorsData: activeDoctors.map(d => ({
+        doctorId: d.doctorId,
+        doctorName: d.doctorName || d.name,
+        specialization: d.specialization,
+        isActive: d.isActive
+      }))
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message, stack: error.stack });
+  }
+});
+
+// Patient endpoint 
+app.get('/api/patients', async (req, res) => {
+  try {
+    const Patient = require('./models/Patient');
+    console.log('👤 Fetching all patients...');
+
+    const patients = await Patient.find({}).sort({ name: 1 });
+
+    console.log('✅ Found patients:', patients.length);
+    res.json(patients);
+
+  } catch (error) {
+    console.error('❌ Error fetching patients:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching patients',
+      error: error.message
+    });
+  }
+});
+
 // 404 handler
 app.use('*', (req, res) => {
   res.status(404).json({
