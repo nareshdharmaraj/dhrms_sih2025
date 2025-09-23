@@ -74,11 +74,13 @@ const RegionalHealthOfficerSchema = new mongoose.Schema({
   
   // Specific Areas Assignment (for dense districts)
   assignedAreas: [{
-    name: { type: String, required: true }, // e.g., "Ambattur", "Sholinganallur"
-    code: { type: String, required: true }, // e.g., "AMB", "SGL"
+    name: { type: String, required: true }, // e.g., "Kothamangalam", "Thrikkakara"
+    code: { type: String, required: true }, // e.g., "KOTHAMANGALAM_001", "THRIKKAKARA_001"
     type: { type: String, enum: ['area', 'full-district'], default: 'area' },
     population: { type: Number, default: 0 },
-    areaKm2: { type: Number, default: 0 }
+    areaKm2: { type: Number, default: 0 },
+    isDenselyPopulated: { type: Boolean, default: false }, // From zone area data
+    zoneAreaId: { type: String }, // Store original zone area _id for reference
   }],
   
   // Hierarchy - Managed by SHO

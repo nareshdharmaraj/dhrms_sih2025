@@ -20,6 +20,9 @@ const shoRoutes = require('./routes/shoRoutes');
 const shoAuthRoutes = require('./routes/shoAuthRoutes');
 const rhoRoutes = require('./routes/rhoRoutes');
 
+// Zone Management Routes
+const zoneManagementRoutes = require('./routes/zoneManagement');
+
 // Hospital Management Routes
 const hospitalManagementRoutes = require('./routes/hospital_management_routes');
 const hospitalAdminRoutes = require('./routes/hospital_admin_routes');
@@ -64,6 +67,9 @@ app.use('/api/sho', shoRoutes);
 app.use('/api/sho-auth', shoAuthRoutes);
 app.use('/api/rho', rhoRoutes);
 app.use('/api/rho', rhoRoutes);
+
+// Zone Management API Routes
+app.use('/api/zone-management', zoneManagementRoutes);
 
 // Hospital Management API Routes
 app.use('/api/hospital', hospitalManagementRoutes);

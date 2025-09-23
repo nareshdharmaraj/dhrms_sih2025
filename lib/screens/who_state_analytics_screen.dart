@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/who_admin.dart';
 import '../services/who_service.dart';
+import '../data/indian_states_districts_data.dart';
 
 class WhoStateAnalyticsScreen extends StatefulWidget {
   final WhoAdmin whoAdmin;
@@ -19,38 +20,8 @@ class _WhoStateAnalyticsScreenState extends State<WhoStateAnalyticsScreen>
   String? selectedState;
   late TabController _tabController;
 
-  // Indian states list
-  final List<String> indianStates = [
-    'ALL',
-    'Andhra Pradesh',
-    'Arunachal Pradesh',
-    'Assam',
-    'Bihar',
-    'Chhattisgarh',
-    'Goa',
-    'Gujarat',
-    'Haryana',
-    'Himachal Pradesh',
-    'Jharkhand',
-    'Karnataka',
-    'Kerala',
-    'Madhya Pradesh',
-    'Maharashtra',
-    'Manipur',
-    'Meghalaya',
-    'Mizoram',
-    'Nagaland',
-    'Odisha',
-    'Punjab',
-    'Rajasthan',
-    'Sikkim',
-    'Tamil Nadu',
-    'Telangana',
-    'Tripura',
-    'Uttar Pradesh',
-    'Uttarakhand',
-    'West Bengal',
-  ];
+  // Get states from centralized data
+  List<String> get indianStates => ['ALL', ...IndianStatesDistrictsData.stateNames];
 
   @override
   void initState() {

@@ -1,10 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../services/hospital_api_service.dart';
 import '../services/api_client.dart';
+import '../services/location_service.dart';
+import '../services/rho_assignment_service.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
 import 'hospital_admin_dashboard_screen.dart';
 
+/// Hospital Registration Screen
+/// 
+/// This screen handles hospital registration and assignment to existing RHOs
+/// based on hierarchical location selection (State -> District -> Sub-district).
+/// 
+/// IMPORTANT: This screen only ASSIGNS hospitals to existing RHOs.
+/// RHO creation is restricted to State Health Officers (SHOs) only.
 class HospitalRegistrationScreen extends StatefulWidget {
   const HospitalRegistrationScreen({super.key});
 
@@ -23,7 +33,6 @@ class _HospitalRegistrationScreenState
   final _hospitalNameController = TextEditingController();
   final _streetController = TextEditingController();
   final _cityController = TextEditingController();
-  final _districtController = TextEditingController();
   final _pincodeController = TextEditingController();
   final _contactNumberController = TextEditingController();
   final _emailController = TextEditingController();
@@ -40,43 +49,30 @@ class _HospitalRegistrationScreenState
   final _adminEmailController = TextEditingController();
   final _adminPhoneController = TextEditingController();
 
-  String _selectedState = 'Maharashtra';
+  // Location selection variables
+  String? _selectedState;
+  String? _selectedDistrict;
+  String? _selectedSubDistrict;
+  List<String> _availableStates = [];
+  List<String> _availableDistricts = [];
+  List<String> _availableSubDistricts = [];
+  bool _isLoadingDistricts = false;
+  bool _isLoadingSubDistricts = false;
+  bool _requiresSubDistrict = false;
+
+  // RHO assignment variables
+  String? _assignedRHOId;
+  String? _selectedRHOId; // For manual selection in dense districts
+  List<RHOInfo> _availableRHOs = [];
+  RHOAssignmentPreview? _rhoPreview;
+  bool _isLoadingRHOPreview = false;
+  bool _showRHOSelection = false;
+
   String _selectedHospitalType = 'Private';
   final List<String> _selectedSpecialties = [];
   bool _emergencyServices = false;
   bool _ambulanceServices = false;
   bool _isLoading = false;
-
-  final List<String> _states = [
-    'Andhra Pradesh',
-    'Arunachal Pradesh',
-    'Assam',
-    'Bihar',
-    'Chhattisgarh',
-    'Goa',
-    'Gujarat',
-    'Haryana',
-    'Himachal Pradesh',
-    'Jharkhand',
-    'Karnataka',
-    'Kerala',
-    'Madhya Pradesh',
-    'Maharashtra',
-    'Manipur',
-    'Meghalaya',
-    'Mizoram',
-    'Nagaland',
-    'Odisha',
-    'Punjab',
-    'Rajasthan',
-    'Sikkim',
-    'Tamil Nadu',
-    'Telangana',
-    'Tripura',
-    'Uttar Pradesh',
-    'Uttarakhand',
-    'West Bengal',
-  ];
 
   final List<String> _hospitalTypes = [
     'Government',
@@ -115,11 +111,341 @@ class _HospitalRegistrationScreenState
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _loadStates();
+  }
+
+  /// Load available states on initialization
+  Future<void> _loadStates() async {
+    try {
+      final states = await LocationService.getStates();
+      if (mounted) {
+        setState(() {
+          _availableStates = states;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        _showErrorDialog('Failed to load states: $e');
+      }
+    }
+  }
+
+  /// Load districts when state is selected
+  Future<void> _loadDistricts(String stateName) async {
+    // Only avoid duplicate calls if we're already loading districts for the same state
+    if (_isLoadingDistricts && _selectedState == stateName) {
+      print('🔍 Already loading districts for $stateName, skipping duplicate call');
+      return;
+    }
+
+    print('🔍 Loading districts for state: $stateName');
+
+    setState(() {
+      _isLoadingDistricts = true;
+      _selectedDistrict = null;
+      _selectedSubDistrict = null;
+      _availableDistricts = [];
+      _availableSubDistricts = [];
+      _requiresSubDistrict = false;
+      _showRHOSelection = false;
+      _rhoPreview = null;
+    });
+
+    try {
+      final districts = await LocationService.getDistricts(stateName);
+      print('✅ Loaded ${districts.length} districts for $stateName: ${districts.take(5).toList()}');
+      print('🔍 All districts for $stateName: $districts');
+      
+      if (mounted) {
+        setState(() {
+          _availableDistricts = districts;
+          _isLoadingDistricts = false;
+        });
+        print('✅ State updated with ${_availableDistricts.length} districts');
+        print('🔍 Debug state: _selectedState=$_selectedState, _availableDistricts.isEmpty=${_availableDistricts.isEmpty}');
+        print('🔍 Dropdown enabled: ${_selectedState != null && _availableDistricts.isNotEmpty}');
+        print('🔍 Districts after setState: $_availableDistricts');
+        
+        // Force a rebuild to ensure dropdown updates
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          print('🔍 Post-frame callback: Districts should now be visible in dropdown');
+        });
+      }
+    } catch (e) {
+      print('❌ Error loading districts for $stateName: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingDistricts = false;
+        });
+        _showErrorDialog('Failed to load districts: $e');
+      }
+    }
+  }
+
+  /// Load sub-districts when district is selected
+  Future<void> _loadSubDistricts(String stateName, String districtName) async {
+    print('🔍 Loading sub-districts for: $stateName > $districtName');
+    
+    setState(() {
+      _isLoadingSubDistricts = true;
+      _selectedSubDistrict = null;
+      _availableSubDistricts = [];
+      _showRHOSelection = false;
+      _rhoPreview = null;
+    });
+
+    try {
+      final subDistricts = await LocationService.getSubDistricts(stateName, districtName);
+      final requiresSubDistrict = await LocationService.requiresSubDistrictSelection(stateName, districtName);
+      
+      print('✅ Sub-districts loaded: ${subDistricts.length}, requires selection: $requiresSubDistrict');
+      
+      if (mounted) {
+        setState(() {
+          _availableSubDistricts = subDistricts;
+          _requiresSubDistrict = requiresSubDistrict;
+          _isLoadingSubDistricts = false;
+        });
+
+        // If sub-district is not required, automatically preview RHO assignment
+        if (!requiresSubDistrict) {
+          print('🔍 Auto-previewing RHO assignment (no sub-district required)');
+          _previewRHOAssignment();
+        } else {
+          print('⏳ Waiting for sub-district selection...');
+        }
+      }
+    } catch (e) {
+      print('❌ Error loading sub-districts for $stateName > $districtName: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingSubDistricts = false;
+        });
+        _showErrorDialog('Failed to load sub-districts: $e');
+      }
+    }
+  }
+
+  /// Preview RHO assignment for the selected location
+  Future<void> _previewRHOAssignment() async {
+    if (_selectedState == null || _selectedDistrict == null) return;
+    if (_requiresSubDistrict && _selectedSubDistrict == null) return;
+
+    setState(() {
+      _isLoadingRHOPreview = true;
+    });
+
+    try {
+      final preview = await RHOAssignmentService.previewRHOAssignment(
+        stateName: _selectedState!,
+        districtName: _selectedDistrict!,
+        subDistrictName: _selectedSubDistrict,
+      );
+
+      if (mounted) {
+        setState(() {
+          _rhoPreview = preview;
+          _isLoadingRHOPreview = false;
+        });
+
+        // Load RHO information for selection if manual selection is required
+        if (preview.requiresManualSelection && preview.availableRHOs.isNotEmpty) {
+          _loadRHOsForSelection(preview.availableRHOs);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingRHOPreview = false;
+        });
+        _showErrorDialog('Failed to preview RHO assignment: $e');
+      }
+    }
+  }
+
+  /// Load RHO information for manual selection
+  Future<void> _loadRHOsForSelection(List<String> rhoIds) async {
+    try {
+      final rhosInfo = await RHOAssignmentService.getMultipleRHOInfo(rhoIds);
+      if (mounted) {
+        setState(() {
+          _availableRHOs = rhosInfo;
+          _showRHOSelection = true;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        _showErrorDialog('Failed to load RHO information: $e');
+      }
+    }
+  }
+
+  /// Build RHO assignment preview card
+  Widget _buildRHOAssignmentCard() {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.admin_panel_settings, color: Colors.green),
+                SizedBox(width: 8),
+                Text(
+                  'RHO Assignment',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 12),
+            
+            if (_isLoadingRHOPreview) ...[
+              Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+            ] else if (_rhoPreview == null) ...[
+              Text(
+                'Complete location selection to see RHO assignment',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+            ] else if (_rhoPreview!.isUnassigned) ...[
+              Text(
+                'RHO not created or assigned',
+                style: TextStyle(
+                  color: Colors.red[700],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Text(
+                'Please contact your State Health Officer (SHO) to assign an RHO for this location',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+              if (_rhoPreview!.formattedLocation != null)
+                Text(
+                  'Location: ${_rhoPreview!.formattedLocation}',
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+            ] else if (_rhoPreview!.hasAssignment) ...[
+              Text(
+                _rhoPreview!.displayMessage,
+                style: TextStyle(
+                  color: Colors.green[700],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              if (_rhoPreview!.assignedRHO != null) ...[
+                SizedBox(height: 4),
+                Text(
+                  'Email: ${_rhoPreview!.assignedRHO.email}',
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                ),
+                Text(
+                  'Phone: ${_rhoPreview!.assignedRHO.phone}',
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                ),
+              ],
+              if (_rhoPreview!.formattedLocation != null)
+                Text(
+                  'Location: ${_rhoPreview!.formattedLocation}',
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+            ] else if (_rhoPreview!.requiresManualSelection) ...[
+              Text(
+                'Manual RHO selection required',
+                style: TextStyle(
+                  color: Colors.orange[700],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Text(
+                'This is a densely populated district with multiple RHOs',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+            ] else if (_rhoPreview!.requiresSubDistrict) ...[
+              Text(
+                'Sub-district selection required',
+                style: TextStyle(
+                  color: Colors.orange[700],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ] else ...[
+              Text(
+                'No RHO available for this location',
+                style: TextStyle(
+                  color: Colors.red[700],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Build RHO selection card for manual selection
+  Widget _buildRHOSelectionCard() {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Select RHO for Your Hospital',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Multiple RHOs serve this area. Please select the most appropriate one:',
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+            SizedBox(height: 16),
+            
+            ...(_availableRHOs.map((rho) => RadioListTile<String>(
+              title: Text(rho.displayName),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('${rho.assignedDistrict}, ${rho.assignedState}'),
+                  Text('Workload: ${rho.workloadText} • ${rho.statusText}'),
+                ],
+              ),
+              value: rho.rhoId,
+              groupValue: _selectedRHOId,
+              onChanged: (value) {
+                setState(() {
+                  _selectedRHOId = value;
+                  _assignedRHOId = value;
+                });
+              },
+            )).toList()),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
   void dispose() {
     _hospitalNameController.dispose();
     _streetController.dispose();
     _cityController.dispose();
-    _districtController.dispose();
     _pincodeController.dispose();
     _contactNumberController.dispose();
     _emailController.dispose();
@@ -142,6 +468,35 @@ class _HospitalRegistrationScreenState
       return;
     }
 
+    // Validate location selection
+    if (_selectedState == null || _selectedDistrict == null) {
+      _showErrorDialog('Please complete the location selection');
+      return;
+    }
+
+    if (_requiresSubDistrict && _selectedSubDistrict == null) {
+      _showErrorDialog('Please select a sub-district for this location');
+      return;
+    }
+
+    // Validate RHO assignment
+    if (_rhoPreview == null || !_rhoPreview!.canProceed) {
+      if (_rhoPreview?.isUnassigned == true) {
+        _showErrorDialog('No RHO has been assigned for this location. Please contact your State Health Officer (SHO) to assign an RHO before registering hospitals in this area.');
+        return;
+      }
+      if (_rhoPreview?.requiresManualSelection == true && _selectedRHOId == null) {
+        _showErrorDialog('Please select an RHO for your hospital');
+        return;
+      }
+      if (_rhoPreview?.requiresSubDistrict == true) {
+        _showErrorDialog('Please complete the location selection');
+        return;
+      }
+      _showErrorDialog('Unable to assign RHO. Please check your location selection');
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
@@ -153,7 +508,8 @@ class _HospitalRegistrationScreenState
           'street': _streetController.text.trim(),
           'city': _cityController.text.trim(),
           'state': _selectedState,
-          'district': _districtController.text.trim(),
+          'district': _selectedDistrict,
+          'subDistrict': _selectedSubDistrict,
           'pincode': _pincodeController.text.trim(),
         },
         'contactNumber': _contactNumberController.text.trim(),
@@ -176,12 +532,39 @@ class _HospitalRegistrationScreenState
           'adminEmail': _adminEmailController.text.trim(),
           'adminPhone': _adminPhoneController.text.trim(),
         },
+        'rhoAssignment': {
+          'assignedRHOId': _selectedRHOId ?? _assignedRHOId,
+          'assignmentType': _selectedRHOId != null ? 'manual' : 'automatic',
+        },
       };
+
+      print('🔍 Hospital registration data being submitted:');
+      print('📍 Address: ${hospitalData['address']}');
+      print('🏥 Hospital: ${hospitalData['hospitalName']}');
+      print('👨‍⚕️ RHO Assignment: ${hospitalData['rhoAssignment']}');
 
       final data = await HospitalApiService.registerHospital(hospitalData);
 
       // Store token and admin data
       await ApiClient.setAuthToken(data['data']['token']);
+
+      // Assign hospital to RHO
+      final hospitalId = data['data']['hospital']['hospitalId'];
+      if (hospitalId != null) {
+        final rhoAssignmentResult = await RHOAssignmentService.assignHospitalToRHO(
+          hospitalId: hospitalId,
+          stateName: _selectedState!,
+          districtName: _selectedDistrict!,
+          subDistrictName: _selectedSubDistrict,
+          manualRHOId: _selectedRHOId,
+        );
+
+        if (!rhoAssignmentResult.success) {
+          print('Warning: RHO assignment failed: ${rhoAssignmentResult.message}');
+          // Continue with success dialog even if RHO assignment fails
+          // This can be handled later in the admin dashboard
+        }
+      }
 
       // Show success dialog
       _showSuccessDialog(data['data']);
@@ -316,55 +699,138 @@ class _HospitalRegistrationScreenState
 
           SizedBox(height: 16),
 
+          // State Selection
+          DropdownButtonFormField<String>(
+            value: _selectedState,
+            decoration: InputDecoration(
+              labelText: 'State *',
+              border: OutlineInputBorder(),
+              prefixIcon: Icon(Icons.map),
+              suffixIcon: _availableStates.isEmpty 
+                  ? SizedBox(
+                      width: 20, 
+                      height: 20, 
+                      child: CircularProgressIndicator(strokeWidth: 2)
+                    ) 
+                  : null,
+            ),
+            items: _availableStates.map((state) {
+              return DropdownMenuItem(value: state, child: Text(state));
+            }).toList(),
+            onChanged: (value) {
+              if (value != null) {
+                print('🔍 State selected: $value');
+                print('🔍 Previous state: $_selectedState');
+                setState(() {
+                  _selectedState = value;
+                  _selectedDistrict = null; // Reset district when state changes
+                  _selectedSubDistrict = null; // Reset sub-district when state changes
+                  _availableDistricts = []; // Clear districts
+                  _availableSubDistricts = []; // Clear sub-districts
+                  _requiresSubDistrict = false;
+                });
+                print('🔍 State updated in setState, now calling _loadDistricts($value)');
+                _loadDistricts(value);
+              }
+            },
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please select a state';
+              }
+              return null;
+            },
+          ),
+
+          // DEBUG: Show current state information
+          if (kDebugMode) 
+            Container(
+              margin: EdgeInsets.symmetric(vertical: 8),
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                border: Border.all(color: Colors.grey[300]!),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('DEBUG INFO:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                  Text('Selected State: $_selectedState', style: TextStyle(fontSize: 11)),
+                  Text('Available Districts: ${_availableDistricts.length}', style: TextStyle(fontSize: 11)),
+                  Text('Loading Districts: $_isLoadingDistricts', style: TextStyle(fontSize: 11)),
+                  Text('Districts: ${_availableDistricts.take(3).toList()}${_availableDistricts.length > 3 ? '...' : ''}', style: TextStyle(fontSize: 11)),
+                  Text('Dropdown Enabled: ${_selectedState != null && _availableDistricts.isNotEmpty && !_isLoadingDistricts}', style: TextStyle(fontSize: 11)),
+                ],
+              ),
+            ),
+
+          SizedBox(height: 16),
+
+          // District Selection
+          DropdownButtonFormField<String>(
+            value: _selectedDistrict,
+            decoration: InputDecoration(
+              labelText: 'District *',
+              border: OutlineInputBorder(),
+              prefixIcon: Icon(Icons.location_city),
+              suffixIcon: _isLoadingDistricts 
+                  ? SizedBox(
+                      width: 20, 
+                      height: 20, 
+                      child: CircularProgressIndicator(strokeWidth: 2)
+                    ) 
+                  : null,
+              helperText: _availableDistricts.isEmpty && _selectedState != null 
+                  ? 'Loading districts...' 
+                  : _availableDistricts.isEmpty 
+                    ? 'Please select a state first'
+                    : '${_availableDistricts.length} districts available',
+            ),
+            items: () {
+              print('🔍 Building dropdown items. _availableDistricts.length: ${_availableDistricts.length}');
+              print('🔍 Available districts: $_availableDistricts');
+              final items = _availableDistricts.map((district) {
+                print('🔍 Creating dropdown item for: $district');
+                return DropdownMenuItem(value: district, child: Text(district));
+              }).toList();
+              print('🔍 Created ${items.length} dropdown items');
+              return items;
+            }(),
+            onChanged: (_selectedState != null && _availableDistricts.isNotEmpty && !_isLoadingDistricts) ? (value) {
+              if (value != null) {
+                print('🔍 District selected: $value');
+                setState(() {
+                  _selectedDistrict = value;
+                  _selectedSubDistrict = null; // Reset sub-district when district changes
+                  _availableSubDistricts = []; // Clear sub-districts
+                  _requiresSubDistrict = false;
+                });
+                _loadSubDistricts(_selectedState!, value);
+              }
+            } : null,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please select a district';
+              }
+              return null;
+            },
+          ),
+
+          SizedBox(height: 16),
+
+          // City and Pincode (always shown)
           Row(
             children: [
               Expanded(
                 child: CustomTextField(
                   controller: _cityController,
-                  labelText: 'City',
+                  labelText: 'City/Town *',
+                  prefixIcon: Icons.location_city,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter city';
+                      return 'Please enter city/town';
                     }
                     return null;
-                  },
-                ),
-              ),
-              SizedBox(width: 16),
-              Expanded(
-                child: CustomTextField(
-                  controller: _districtController,
-                  labelText: 'District',
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter district';
-                    }
-                    return null;
-                  },
-                ),
-              ),
-            ],
-          ),
-
-          SizedBox(height: 16),
-
-          Row(
-            children: [
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  value: _selectedState,
-                  decoration: InputDecoration(
-                    labelText: 'State',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.map),
-                  ),
-                  items: _states.map((state) {
-                    return DropdownMenuItem(value: state, child: Text(state));
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedState = value!;
-                    });
                   },
                 ),
               ),
@@ -372,7 +838,8 @@ class _HospitalRegistrationScreenState
               Expanded(
                 child: CustomTextField(
                   controller: _pincodeController,
-                  labelText: 'Pincode',
+                  labelText: 'Pincode *',
+                  prefixIcon: Icons.pin_drop,
                   keyboardType: TextInputType.number,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -387,6 +854,91 @@ class _HospitalRegistrationScreenState
               ),
             ],
           ),
+
+          SizedBox(height: 16),
+
+          // Sub-District Selection (conditional - for RHO assignment only)
+          if (_requiresSubDistrict) ...[
+            Container(
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.shade200),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.blue.shade700),
+                      SizedBox(width: 8),
+                      Text(
+                        'Additional Location Details',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'This district has multiple administrative areas. Please select the specific sub-district for RHO assignment:',
+                    style: TextStyle(color: Colors.blue.shade700),
+                  ),
+                  SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    value: _selectedSubDistrict,
+                    decoration: InputDecoration(
+                      labelText: 'Sub-District (Administrative Area) *',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.account_tree),
+                      suffixIcon: _isLoadingSubDistricts 
+                          ? SizedBox(
+                              width: 20, 
+                              height: 20, 
+                              child: CircularProgressIndicator(strokeWidth: 2)
+                            ) 
+                          : null,
+                    ),
+                    items: _availableSubDistricts.map((subDistrict) {
+                      return DropdownMenuItem(value: subDistrict, child: Text(subDistrict));
+                    }).toList(),
+                    onChanged: _selectedDistrict == null ? null : (value) {
+                      setState(() {
+                        _selectedSubDistrict = value;
+                      });
+                      if (value != null) {
+                        _previewRHOAssignment();
+                      }
+                    },
+                    validator: (value) {
+                      if (_requiresSubDistrict && (value == null || value.isEmpty)) {
+                        return 'Please select a sub-district';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 16),
+          ],
+
+          SizedBox(height: 16),
+
+          // RHO Assignment Preview
+          if (_rhoPreview != null) ...[
+            _buildRHOAssignmentCard(),
+            SizedBox(height: 16),
+          ],
+
+          // Manual RHO Selection (for dense districts)
+          if (_showRHOSelection) ...[
+            _buildRHOSelectionCard(),
+            SizedBox(height: 16),
+          ],
 
           SizedBox(height: 16),
 

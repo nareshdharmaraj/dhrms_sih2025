@@ -9,6 +9,7 @@ import '../utils/web_image_picker.dart';
 import '../utils/app_constants.dart';
 import '../utils/network_helper.dart';
 import '../utils/card_download_service.dart';
+import '../data/indian_states_districts_data.dart';
 
 class PatientRegistrationScreen extends StatefulWidget {
   const PatientRegistrationScreen({super.key});
@@ -124,37 +125,8 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen>
     'O+',
     'O-',
   ];
-  final List<String> _indianStates = [
-    'Andhra Pradesh',
-    'Arunachal Pradesh',
-    'Assam',
-    'Bihar',
-    'Chhattisgarh',
-    'Delhi',
-    'Goa',
-    'Gujarat',
-    'Haryana',
-    'Himachal Pradesh',
-    'Jharkhand',
-    'Karnataka',
-    'Kerala',
-    'Madhya Pradesh',
-    'Maharashtra',
-    'Manipur',
-    'Meghalaya',
-    'Mizoram',
-    'Nagaland',
-    'Odisha',
-    'Punjab',
-    'Rajasthan',
-    'Sikkim',
-    'Tamil Nadu',
-    'Telangana',
-    'Tripura',
-    'Uttar Pradesh',
-    'Uttarakhand',
-    'West Bengal',
-  ];
+  // Get states from centralized data
+  List<String> get _indianStates => IndianStatesDistrictsData.stateNames;
 
   @override
   void dispose() {

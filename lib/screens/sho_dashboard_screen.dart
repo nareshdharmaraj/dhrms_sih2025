@@ -6,6 +6,7 @@ import '../utils/colors.dart';
 import '../services/sho_service.dart';
 import '../widgets/sho_buttons.dart';
 import 'sho/regional_health_officer_screen.dart';
+import 'sho/zone_management_screen.dart';
 
 class ShoDashboardScreen extends StatefulWidget {
   final SHO sho;
@@ -458,10 +459,41 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen>
               const SizedBox(width: 12),
               Expanded(
                 child: ShoActionButton(
+                  title: 'Zone Management',
+                  subtitle: 'RHO zones for dense areas',
+                  icon: Icons.location_city,
+                  color: Colors.purple,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ZoneManagementScreen(sho: widget.sho),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: ShoActionButton(
                   title: 'View Analytics',
                   subtitle: 'Performance metrics',
                   icon: Icons.analytics,
                   color: AppColors.info,
+                  onTap: () => setState(() => _currentIndex = 4),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ShoActionButton(
+                  title: 'Staff Management',
+                  subtitle: 'Regional staff overview',
+                  icon: Icons.group,
+                  color: AppColors.warning,
                   onTap: () => setState(() => _currentIndex = 2),
                 ),
               ),

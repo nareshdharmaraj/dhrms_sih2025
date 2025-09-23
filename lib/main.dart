@@ -19,6 +19,9 @@ import 'screens/hospital_admin_dashboard_screen.dart';
 import 'screens/hospital_role_selection_screen.dart';
 import 'screens/hospital_doctor_login_screen.dart';
 import 'screens/hospital_assistant_login_screen.dart';
+import 'screens/regional_login_screen.dart';
+import 'screens/rho_dashboard_screen.dart';
+import 'models/regional_health_officer.dart';
 import 'utils/environment_config.dart';
 import 'widgets/configuration_switcher.dart';
 
@@ -125,6 +128,12 @@ class DHRMSApp extends StatelessWidget {
             _wrapWithConfigSwitcher(HospitalDoctorLoginScreen()),
         '/hospital-assistant-login': (context) =>
             _wrapWithConfigSwitcher(HospitalAssistantLoginScreen()),
+        '/regional-login': (context) =>
+            _wrapWithConfigSwitcher(const RegionalLoginScreen()),
+        '/rho-dashboard': (context) {
+          final rhoData = ModalRoute.of(context)?.settings.arguments as RegionalHealthOfficer?;
+          return _wrapWithConfigSwitcher(RHODashboardScreen(rho: rhoData));
+        },
       },
     );
   }

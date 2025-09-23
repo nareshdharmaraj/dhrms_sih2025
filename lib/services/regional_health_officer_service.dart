@@ -409,11 +409,47 @@ class RegionalHealthOfficerService {
     }
   }
 
-  // Get RHO statistics
+  // Reset RHO password
+  static Future<Map<String, dynamic>> resetRHOPassword(
+      String authToken, String rhoId, String newPassword) async {
+    try {
+      final response = await http.patch(
+        Uri.parse('$_baseUrl/$rhoId/reset-password'),
+        headers: {
+          'Authorization': 'Bearer $authToken',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'newPassword': newPassword,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return {
+          'success': true,
+          'message': data['message'] ?? 'Password reset successfully',
+        };
+      } else {
+        final errorData = json.decode(response.body);
+        return {
+          'success': false,
+          'message': errorData['message'] ?? 'Failed to reset password',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Network error: ${e.toString()}',
+      };
+    }
+  }
+
+  // Get RHO statistics (for RHO self-access)
   static Future<Map<String, dynamic>> getRHOStatistics(String authToken) async {
     try {
       final response = await http.get(
-        Uri.parse('$_baseUrl/statistics'),
+        Uri.parse('$_baseUrl/my/statistics'),  // Changed to self-access endpoint
         headers: {
           'Authorization': 'Bearer $authToken',
         },
@@ -423,7 +459,7 @@ class RegionalHealthOfficerService {
         final data = json.decode(response.body);
         return {
           'success': true,
-          'data': data['data'],
+          'data': data,  // The response structure is different for self-access
         };
       } else {
         final errorData = json.decode(response.body);

@@ -3,7 +3,7 @@ import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
 import '../utils/app_constants.dart';
 import 'hospital_dashboard_screen.dart';
-import 'hospital_register_screen.dart';
+import 'hospital_registration_screen.dart';
 
 class HospitalLoginScreen extends StatefulWidget {
   const HospitalLoginScreen({super.key});
@@ -224,7 +224,7 @@ class _HospitalLoginScreenState extends State<HospitalLoginScreen>
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const HospitalRegisterScreen(),
+                                builder: (context) => const HospitalRegistrationScreen(),
                               ),
                             );
                           },

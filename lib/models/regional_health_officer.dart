@@ -5,6 +5,8 @@ class AssignedArea {
   final String type; // 'area' or 'full-district'
   final int population;
   final double areaKm2;
+  final bool isDenselyPopulated;
+  final String? zoneAreaId; // Reference to zone area _id
 
   AssignedArea({
     required this.name,
@@ -12,6 +14,8 @@ class AssignedArea {
     required this.type,
     required this.population,
     required this.areaKm2,
+    this.isDenselyPopulated = false,
+    this.zoneAreaId,
   });
 
   factory AssignedArea.fromJson(Map<String, dynamic> json) {
@@ -21,6 +25,8 @@ class AssignedArea {
       type: json['type'] ?? 'area',
       population: json['population'] ?? 0,
       areaKm2: (json['areaKm2'] ?? 0).toDouble(),
+      isDenselyPopulated: json['isDenselyPopulated'] ?? false,
+      zoneAreaId: json['zoneAreaId'],
     );
   }
 
@@ -31,15 +37,21 @@ class AssignedArea {
       'type': type,
       'population': population,
       'areaKm2': areaKm2,
+      'isDenselyPopulated': isDenselyPopulated,
+      'zoneAreaId': zoneAreaId,
     };
   }
 
-  // Display formatted area name
+  // Display formatted area name with density indicator
   String get displayName {
     if (type == 'full-district') {
       return 'Full District';
     }
-    return name;
+    String displayText = name;
+    if (isDenselyPopulated) {
+      displayText += ' (Dense)';
+    }
+    return displayText;
   }
 
   // Population text with formatting
@@ -50,6 +62,28 @@ class AssignedArea {
       return '${(population / 1000).toStringAsFixed(0)}K';
     }
     return population.toString();
+  }
+
+  // Area text with formatting
+  String get areaText {
+    if (areaKm2 >= 1000) {
+      return '${(areaKm2 / 1000).toStringAsFixed(1)}K km²';
+    }
+    return '${areaKm2.toStringAsFixed(1)} km²';
+  }
+
+  // Density classification
+  String get densityClass => isDenselyPopulated ? 'Dense' : 'Normal';
+  
+  // Population density
+  double get populationDensity => areaKm2 > 0 ? population / areaKm2 : 0;
+  
+  String get densityText {
+    final density = populationDensity;
+    if (density >= 1000) {
+      return '${density.toStringAsFixed(0)} people/km²';
+    }
+    return '${density.toStringAsFixed(1)} people/km²';
   }
 }
 
@@ -107,19 +141,21 @@ class RegionalHealthOfficer {
   factory RegionalHealthOfficer.fromJson(Map<String, dynamic> json) {
     try {
       return RegionalHealthOfficer(
-        id: json['_id'] ?? '',
-        officerId: json['officerId'] ?? '',
+        id: json['_id'] ?? json['id'] ?? '',
+        officerId: json['officerId'] ?? json['rhoId'] ?? '',  // Backend sends 'rhoId'
         fullName: json['fullName'] ?? '',
         email: json['email'] ?? '',
         phone: json['phone'] ?? '',
-        assignedState: json['assignedState'] ?? '',
-        assignedDistrict: json['assignedDistrict'] ?? '',
-        assignedRegion: json['assignedRegion'] ?? '',
+        assignedState: json['assignedState'] ?? json['state'] ?? '',  // Backend may send 'state'
+        assignedDistrict: json['assignedDistrict'] ?? json['district'] ?? '',  // Backend may send 'district'
+        assignedRegion: json['assignedRegion'] ?? json['zone'] ?? 'Not Assigned',
         regionCode: json['regionCode'] ?? '',
         districtCode: json['districtCode'] ?? '',
-        assignedAreas: (json['assignedAreas'] as List?)
-            ?.map((area) => AssignedArea.fromJson(area))
-            .toList() ?? [],
+        assignedAreas: ((json['assignedAreas'] ?? json['areas']) as List?)
+            ?.map<AssignedArea>((area) => area is Map<String, dynamic> 
+                ? AssignedArea.fromJson(area)
+                : AssignedArea(name: area.toString(), code: '', type: 'area', population: 0, areaKm2: 0))
+            .toList() ?? <AssignedArea>[],
         parentSHO: json['parentSHO'] is String 
             ? json['parentSHO'] 
             : (json['parentSHO'] as Map<String, dynamic>?)?['_id'] ?? '',

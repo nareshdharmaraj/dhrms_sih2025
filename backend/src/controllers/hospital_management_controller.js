@@ -1,5 +1,6 @@
 const Hospital = require('../models/Hospital');
 const HospitalAdmin = require('../models/HospitalAdmin');
+const { AreaAssignmentService } = require('../services/areaAssignmentService');
 
 // ==================== HOSPITAL MANAGEMENT CONTROLLERS ====================
 
@@ -124,7 +125,8 @@ const registerHospital = async (req, res) => {
       ambulanceServices,
       website,
       establishedYear,
-      adminDetails
+      adminDetails,
+      rhoAssignment // Add RHO assignment data
     } = req.body;
 
     // Check if registration number or license ID already exists
@@ -157,8 +159,68 @@ const registerHospital = async (req, res) => {
       });
     }
 
+    // Validate location data against JSON data
+    try {
+      const availableStates = AreaAssignmentService.getAvailableStates();
+      const stateExists = availableStates.find(s => s.name === address.state);
+      
+      if (!stateExists) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid state: ${address.state}. Please check the state name.`
+        });
+      }
+
+      const districtsForState = AreaAssignmentService.getDistrictsForState(address.state);
+      const districtExists = districtsForState.find(d => d.name === (address.district || address.city));
+      
+      if (!districtExists) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid district: ${address.district || address.city} for state ${address.state}. Please check the district name.`
+        });
+      }
+
+      console.log(`✅ Location validation passed: ${address.state}, ${address.district || address.city}`);
+      
+    } catch (locationError) {
+      console.error('Location validation error:', locationError);
+      return res.status(400).json({
+        success: false,
+        message: 'Location validation failed. Please check state and district names.',
+        details: locationError.message
+      });
+    }
+
+    // Generate unique hospital ID
+    const hospitalId = `HOSP_${address.state.substring(0, 2).toUpperCase()}_${Date.now()}`;
+
+    // Map frontend service names to schema enum values
+    const serviceMapping = {
+      'General Medicine': 'Laboratory',
+      'Cardiology': 'Health Checkup',
+      'Neurology': 'Laboratory',
+      'Orthopedics': 'Surgery',
+      'Dermatology': 'Laboratory',
+      'Gynecology': 'Maternity',
+      'Pediatrics': 'Pediatric Care',
+      'Emergency Medicine': '24x7 Emergency',
+      'Surgery': 'Surgery',
+      'Radiology': 'Radiology',
+      'Pathology': 'Laboratory'
+    };
+
+    // Map specialties to valid services
+    const validServices = specialties ? specialties.map(specialty => {
+      return serviceMapping[specialty] || 'Health Checkup';
+    }).filter((service, index, arr) => arr.indexOf(service) === index) : ['Health Checkup'];
+
+    // Calculate total staff (estimate based on bed count)
+    const estimatedTotalStaff = Math.max(Math.round((totalBeds || 50) * 0.6), 10);
+
     // Create hospital
     const hospital = new Hospital({
+      hospitalId: hospitalId,
       name: hospitalName,
       location: {
         address: address.street,
@@ -167,35 +229,58 @@ const registerHospital = async (req, res) => {
         district: address.district || address.city,
         pincode: address.pincode
       },
+      region: {
+        state: address.state,
+        district: address.district || address.city
+      },
       contact: {
         phone: contactNumber,
-        email: email
+        email: email,
+        website,
+        emergencyNumber: contactNumber
       },
       licenses: {
         registrationNumber,
         licenseNumber: licenseId,
-        validUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) // 1 year from now
+        issuingAuthority: 'State Medical Board',
+        issueDate: new Date(),
+        expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
+        renewalRequired: false
       },
       type: hospitalType,
-      services: specialties || [],
+      services: validServices,
       capacity: {
-        totalBeds: totalBeds || 50
+        totalBeds: totalBeds || 50,
+        totalStaff: estimatedTotalStaff
       },
       facilities: {
         emergencyServices: emergencyServices !== false,
         ambulanceService: ambulanceServices !== false
       },
-      website,
-      establishedYear,
-      status: 'Active'
+      establishedDate: establishedYear ? new Date(establishedYear, 0, 1) : new Date(),
+      // Remove status: 'Active' as it defaults to 'Under Review' for new hospitals
+      // status will be set to 'Active' only after RHO approval
     });
+
+    // Process RHO assignment if provided
+    if (rhoAssignment && rhoAssignment.assignedRHOId) {
+      // Find the RHO by officerId (which is what the frontend sends)
+      const RegionalHealthOfficer = require('../models/RegionalHealthOfficer');
+      const assignedRHO = await RegionalHealthOfficer.findOne({ 
+        officerId: rhoAssignment.assignedRHOId 
+      });
+      
+      if (assignedRHO) {
+        hospital.managedBy = assignedRHO._id;
+        console.log(`✅ Hospital assigned to RHO: ${rhoAssignment.assignedRHOId}`);
+      } else {
+        console.log(`⚠️ RHO not found: ${rhoAssignment.assignedRHOId}`);
+      }
+    }
 
     await hospital.save();
 
-    // Generate hospital ID after save (from pre-save hook)
-    const hospitalId = hospital.hospitalId;
-
-    // Create hospital admin
+    // Create hospital admin using the hospitalId we generated
     const admin = new HospitalAdmin({
       adminId: `${hospitalId}_ADMIN`,
       hospitalId: hospitalId,
@@ -210,12 +295,16 @@ const registerHospital = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Hospital and admin created successfully',
+      message: 'Hospital registration submitted successfully. Your registration is now pending approval from your Regional Health Officer. You will be able to login once approved.',
       data: {
         hospital: {
           hospitalId: hospital.hospitalId,
           name: hospital.name,
-          location: hospital.location
+          location: hospital.location,
+          approval: {
+            status: hospital.approval.status,
+            submittedAt: hospital.approval.submittedAt
+          }
         },
         admin: {
           adminId: admin.adminId,

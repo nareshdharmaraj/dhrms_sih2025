@@ -3,6 +3,7 @@ import 'dart:async';
 import '../models/who_admin.dart';
 import '../models/state_health_officer.dart';
 import '../services/sho_service.dart';
+import '../data/indian_states_districts_data.dart';
 
 class ShoManagementScreen extends StatefulWidget {
   final WhoAdmin whoAdmin;
@@ -22,15 +23,8 @@ class _ShoManagementScreenState extends State<ShoManagementScreen> {
   String filterState = 'All States';
   bool filterActive = true;
 
-  // Indian States list
-  final List<String> indianStates = [
-    'All States', 'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
-    'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka',
-    'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya',
-    'Mizoram', 'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim',
-    'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand',
-    'West Bengal', 'Delhi', 'Jammu and Kashmir', 'Ladakh'
-  ];
+  // Get states from centralized data
+  List<String> get indianStates => ['All States', ...IndianStatesDistrictsData.stateNames];
 
   @override
   void initState() {

@@ -113,7 +113,7 @@ class _TestSHOFormState extends State<TestSHOForm> {
               SizedBox(height: 16),
               
               DropdownButtonFormField<String>(
-                value: _selectedState,
+                initialValue: _selectedState,
                 decoration: InputDecoration(
                   labelText: 'Assigned State',
                   border: OutlineInputBorder(),

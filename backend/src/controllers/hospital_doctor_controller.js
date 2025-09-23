@@ -42,17 +42,18 @@ const doctorLogin = async (req, res) => {
       });
     }
 
-    // Check if hospital exists and is active
+    // Check if hospital exists, is active, and is approved
     const hospital = await Hospital.findOne({ 
       hospitalId, 
       isActive: true,
-      status: 'Active' 
+      status: 'Active',
+      'approval.status': 'Approved'
     });
 
     if (!hospital) {
       return res.status(404).json({
         success: false,
-        message: 'Hospital not found or inactive'
+        message: 'Hospital not found, inactive, or not approved for login. Please contact your Regional Health Officer for approval.'
       });
     }
 

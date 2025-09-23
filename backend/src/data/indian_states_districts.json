@@ -1,5 +1,181 @@
 [
   {
+    "state": "Maharashtra",
+    "state_code": "MH",
+    "source": "Government of Maharashtra official records",
+    "last_verified": "2025-09-23",
+    "districts": [
+      {
+        "district": "Mumbai",
+        "subdistricts": [
+          "Mumbai City",
+          "Mumbai Suburban",
+          "Andheri",
+          "Bandra",
+          "Borivali",
+          "Dadar",
+          "Kurla",
+          "Malad",
+          "Mulund",
+          "Powai",
+          "Santacruz",
+          "Vashi",
+          "Goregaon",
+          "Kandivali",
+          "Jogeshwari"
+        ]
+      },
+      {
+        "district": "Pune",
+        "subdistricts": [
+          "Pune City",
+          "Pimpri-Chinchwad",
+          "Maval",
+          "Mulshi",
+          "Velhe",
+          "Bhor",
+          "Purandar",
+          "Baramati",
+          "Indapur",
+          "Khed",
+          "Shirur",
+          "Ambegaon",
+          "Junnar",
+          "Haveli"
+        ]
+      },
+      {
+        "district": "Thane",
+        "subdistricts": [
+          "Thane",
+          "Kalyan",
+          "Dombivli",
+          "Ambarnath",
+          "Ulhasnagar",
+          "Bhiwandi",
+          "Shahapur",
+          "Murbad",
+          "Vikramgad"
+        ]
+      },
+      {
+        "district": "Nashik",
+        "subdistricts": [
+          "Nashik",
+          "Malegaon",
+          "Sinnar",
+          "Niphad",
+          "Dindori",
+          "Peint",
+          "Trimbakeshwar",
+          "Kalwan",
+          "Deola",
+          "Baglan",
+          "Chandwad",
+          "Nandgaon",
+          "Yeola",
+          "Surgana",
+          "Igatpuri"
+        ]
+      },
+      {
+        "district": "Nagpur",
+        "subdistricts": [
+          "Nagpur",
+          "Kamptee",
+          "Hingna",
+          "Katol",
+          "Narkhed",
+          "Savner",
+          "Parseoni",
+          "Ramtek",
+          "Kuhi",
+          "Umred",
+          "Bhiwapur",
+          "Mouda"
+        ]
+      },
+      {
+        "district": "Aurangabad",
+        "subdistricts": [
+          "Aurangabad",
+          "Kannad",
+          "Soegaon",
+          "Sillod",
+          "Phulambri",
+          "Khultabad",
+          "Vaijapur",
+          "Gangapur",
+          "Paithan"
+        ]
+      },
+      {
+        "district": "Solapur",
+        "subdistricts": [
+          "Solapur",
+          "Pandharpur",
+          "Malshiras",
+          "Barshi",
+          "Karmala",
+          "Madha",
+          "Sangole",
+          "Mangalvedhe",
+          "Mohol",
+          "Akkalkot",
+          "South Solapur"
+        ]
+      },
+      {
+        "district": "Kolhapur",
+        "subdistricts": [
+          "Kolhapur",
+          "Panhala",
+          "Shahuwadi",
+          "Shirol",
+          "Karvir",
+          "Bavda",
+          "Radhanagari",
+          "Kagal",
+          "Bhudargad",
+          "Ajra",
+          "Chandgad",
+          "Gadhinglaj"
+        ]
+      },
+      {
+        "district": "Satara",
+        "subdistricts": [
+          "Satara",
+          "Karad",
+          "Koregaon",
+          "Wai",
+          "Mahabaleshwar",
+          "Phaltan",
+          "Man",
+          "Khatav",
+          "Jaoli",
+          "Patan",
+          "Khandala"
+        ]
+      },
+      {
+        "district": "Sangli",
+        "subdistricts": [
+          "Sangli",
+          "Miraj",
+          "Kurundwad",
+          "Palus",
+          "Khanapur",
+          "Atpadi",
+          "Tasgaon",
+          "Kavathemahankal",
+          "Walwa",
+          "Shirala"
+        ]
+      }
+    ]
+  },
+  {
     "state": "Tamil Nadu",
     "state_code": "TN",
     "source": "https://www.cra.tn.gov.in/tn_taluks.pdf, https://tnpsc.gov.in/English/districts.html, https://en.wikipedia.org/wiki/List_of_districts_of_Tamil_Nadu",

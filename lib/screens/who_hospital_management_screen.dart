@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/who_admin.dart';
 import '../services/who_service.dart';
+import '../data/indian_states_districts_data.dart';
 
 class WhoHospitalManagementScreen extends StatefulWidget {
   final WhoAdmin whoAdmin;
@@ -20,37 +21,8 @@ class _WhoHospitalManagementScreenState extends State<WhoHospitalManagementScree
   String? selectedState;
   String? selectedStatus;
 
-  // Indian states list
-  final List<String> indianStates = [
-    'Andhra Pradesh',
-    'Arunachal Pradesh',
-    'Assam',
-    'Bihar',
-    'Chhattisgarh',
-    'Goa',
-    'Gujarat',
-    'Haryana',
-    'Himachal Pradesh',
-    'Jharkhand',
-    'Karnataka',
-    'Kerala',
-    'Madhya Pradesh',
-    'Maharashtra',
-    'Manipur',
-    'Meghalaya',
-    'Mizoram',
-    'Nagaland',
-    'Odisha',
-    'Punjab',
-    'Rajasthan',
-    'Sikkim',
-    'Tamil Nadu',
-    'Telangana',
-    'Tripura',
-    'Uttar Pradesh',
-    'Uttarakhand',
-    'West Bengal',
-  ];
+  // Get states from centralized data
+  List<String> get indianStates => IndianStatesDistrictsData.stateNames;
 
   final List<String> statusOptions = ['Active', 'Inactive', 'Under Review'];
 

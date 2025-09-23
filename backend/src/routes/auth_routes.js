@@ -12,11 +12,11 @@ const {
   verifyEmail,
   registerPatient,
   registerHospitalStaff,
-  registerRegionalOfficer
+  // registerRegionalOfficer - Disabled: RHOs created by SHOs only
 } = require('../controllers/auth_controller');
 
 // Middleware
-const { validateRegister, validateLogin, validatePatientRegister, validateHospitalStaffRegister, validateRegionalOfficerRegister } = require('../middleware/validation');
+const { validateRegister, validateLogin, validatePatientRegister, validateHospitalStaffRegister } = require('../middleware/validation');
 const { rateLimiter } = require('../middleware/rate_limiter');
 
 // @route   POST /api/auth/register
@@ -34,10 +34,11 @@ router.post('/register/patient', rateLimiter, validatePatientRegister, registerP
 // @access  Public
 router.post('/register/hospital-staff', rateLimiter, validateHospitalStaffRegister, registerHospitalStaff);
 
+// NOTE: Regional Officers are created by SHOs, not through self-registration
 // @route   POST /api/auth/register/regional-officer
 // @desc    Register a new regional officer with UHI generation
-// @access  Public
-router.post('/register/regional-officer', rateLimiter, validateRegionalOfficerRegister, registerRegionalOfficer);
+// @access  DISABLED - RHOs are created by SHOs only
+// router.post('/register/regional-officer', rateLimiter, validateRegionalOfficerRegister, registerRegionalOfficer);
 
 // @route   POST /api/auth/login
 // @desc    Login user

@@ -168,7 +168,7 @@ class _HospitalDoctorAppointmentScreenState extends State<HospitalDoctorAppointm
                     // Status Filter
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        value: statusFilter,
+                        initialValue: statusFilter,
                         decoration: InputDecoration(
                           labelText: 'Status',
                           border: OutlineInputBorder(

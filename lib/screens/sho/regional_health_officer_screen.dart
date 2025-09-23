@@ -6,6 +6,7 @@ import '../../utils/colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'create_regional_health_officer_screen.dart';
 import 'regional_health_officer_details_screen.dart';
+import 'zone_management_screen.dart';
 
 class RegionalHealthOfficerScreen extends StatefulWidget {
   final SHO? sho;
@@ -252,6 +253,247 @@ class _RegionalHealthOfficerScreenState extends State<RegionalHealthOfficerScree
     }
   }
 
+  Future<void> resetRHOPassword(RegionalHealthOfficer rho) async {
+    // Show confirmation dialog with new password input
+    final TextEditingController newPasswordController = TextEditingController();
+    final TextEditingController confirmPasswordController = TextEditingController();
+    final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+    bool isPasswordVisible = false;
+    bool isConfirmPasswordVisible = false;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Row(
+            children: [
+              const Icon(Icons.lock_reset, color: Colors.orange),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Reset Password',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[800],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: SizedBox(
+            width: 300,
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Reset password for ${rho.fullName}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: newPasswordController,
+                    obscureText: !isPasswordVisible,
+                    decoration: InputDecoration(
+                      labelText: 'New Password',
+                      hintText: 'Enter new password',
+                      prefixIcon: const Icon(Icons.lock),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                        ),
+                        onPressed: () {
+                          setDialogState(() {
+                            isPasswordVisible = !isPasswordVisible;
+                          });
+                        },
+                      ),
+                      border: const OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a new password';
+                      }
+                      if (value.length < 8) {
+                        return 'Password must be at least 8 characters';
+                      }
+                      // Check for password complexity
+                      final RegExp regex = RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$');
+                      if (!regex.hasMatch(value)) {
+                        return 'Password must contain uppercase, lowercase, number and special character';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: confirmPasswordController,
+                    obscureText: !isConfirmPasswordVisible,
+                    decoration: InputDecoration(
+                      labelText: 'Confirm Password',
+                      hintText: 'Confirm new password',
+                      prefixIcon: const Icon(Icons.lock_outline),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                        ),
+                        onPressed: () {
+                          setDialogState(() {
+                            isConfirmPasswordVisible = !isConfirmPasswordVisible;
+                          });
+                        },
+                      ),
+                      border: const OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please confirm the password';
+                      }
+                      if (value != newPasswordController.text) {
+                        return 'Passwords do not match';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          color: Colors.orange[700],
+                          size: 16,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'The RHO will need to login with this new password.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.orange[700],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                newPasswordController.dispose();
+                confirmPasswordController.dispose();
+                Navigator.of(context).pop(false);
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (formKey.currentState!.validate()) {
+                  Navigator.of(context).pop(true);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Reset Password'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final token = prefs.getString('auth_token');
+
+        if (token == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Authentication token not found'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+
+        // Show loading indicator
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(
+            child: CircularProgressIndicator(),
+          ),
+        );
+
+        final result = await RegionalHealthOfficerService.resetRHOPassword(
+          token, 
+          rho.id, 
+          newPasswordController.text,
+        );
+
+        // Close loading dialog
+        Navigator.of(context).pop();
+
+        if (result['success']) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Password reset successfully for ${rho.fullName}'),
+              backgroundColor: Colors.green,
+              action: SnackBarAction(
+                label: 'OK',
+                textColor: Colors.white,
+                onPressed: () {},
+              ),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message'] ?? 'Failed to reset password'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } catch (e) {
+        // Close loading dialog if it's still open
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      } finally {
+        newPasswordController.dispose();
+        confirmPasswordController.dispose();
+      }
+    } else {
+      newPasswordController.dispose();
+      confirmPasswordController.dispose();
+    }
+  }
+
   Widget _buildStatisticsCards() {
     if (statistics == null) return const SizedBox.shrink();
 
@@ -332,6 +574,104 @@ class _RegionalHealthOfficerScreenState extends State<RegionalHealthOfficerScree
     );
   }
 
+  Widget _buildQuickActionsRow() {
+    return Row(
+      children: [
+        Expanded(
+          child: Card(
+            elevation: 2,
+            child: InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ZoneManagementScreen(sho: widget.sho!),
+                  ),
+                );
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.location_city,
+                      size: 32,
+                      color: Colors.purple[600],
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Zone Management',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Manage RHO zones for dense areas',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Card(
+            elevation: 2,
+            child: InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CreateRegionalHealthOfficerScreen(
+                      preferredState: widget.sho?.assignedState,
+                    ),
+                  ),
+                ).then((_) => loadRHOs());
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.person_add,
+                      size: 32,
+                      color: AppColors.primary,
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Add New RHO',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Create new Regional Health Officer',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildRHOCard(RegionalHealthOfficer rho) {
     try {
       print('🔍 Building card for: ${rho.officerId} - ${rho.fullName}');
@@ -402,6 +742,16 @@ class _RegionalHealthOfficerScreenState extends State<RegionalHealthOfficerScree
                       ),
                     ),
                     const PopupMenuItem(
+                      value: 'reset_password',
+                      child: Row(
+                        children: [
+                          Icon(Icons.lock_reset, color: Colors.orange),
+                          SizedBox(width: 8),
+                          Text('Reset Password'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
                       value: 'delete',
                       child: Row(
                         children: [
@@ -424,6 +774,9 @@ class _RegionalHealthOfficerScreenState extends State<RegionalHealthOfficerScree
                         break;
                       case 'toggle':
                         toggleRHOStatus(rho);
+                        break;
+                      case 'reset_password':
+                        resetRHOPassword(rho);
                         break;
                       case 'delete':
                         deleteRHO(rho);
@@ -592,6 +945,18 @@ class _RegionalHealthOfficerScreenState extends State<RegionalHealthOfficerScree
         elevation: 0,
         actions: [
           IconButton(
+            icon: const Icon(Icons.location_city),
+            tooltip: 'Zone Management',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ZoneManagementScreen(sho: widget.sho!),
+                ),
+              );
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: loadRHOs,
           ),
@@ -626,6 +991,8 @@ class _RegionalHealthOfficerScreenState extends State<RegionalHealthOfficerScree
                     child: Column(
                       children: [
                         _buildStatisticsCards(),
+                        const SizedBox(height: 16),
+                        _buildQuickActionsRow(),
                         const SizedBox(height: 24),
                         Row(
                           children: [

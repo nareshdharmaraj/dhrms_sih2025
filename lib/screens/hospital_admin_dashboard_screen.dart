@@ -1145,15 +1145,6 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
     return '$hospitalId$prefix';
   }
 
-  int _calculateAge(DateTime birthDate) {
-    final now = DateTime.now();
-    int age = now.year - birthDate.year;
-    if (now.month < birthDate.month || (now.month == birthDate.month && now.day < birthDate.day)) {
-      age--;
-    }
-    return age;
-  }
-
   Future<void> _addDoctor() async {
     if (!_formKey.currentState!.validate()) return;
 

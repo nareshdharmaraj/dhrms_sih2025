@@ -4,9 +4,11 @@ const router = express.Router();
 
 // Import middleware
 const { rhoManagementAuth, rhoViewAuth, auditRHOOperation } = require('../middleware/rhoAuth');
+const { rhoAuth, rhoViewAccess, auditRHOSelfOperation } = require('../middleware/rhoSelfAuth');
 
 // Import RHO controller
 const {
+  loginRHO,
   createRHO,
   getRHOsBySHO,
   getRHOById,
@@ -20,8 +22,19 @@ const {
   getMockRHOData,
   createRHOFromMockData,
   getDistrictAssignmentInfo,
-  getAreaCoverageDetails
+  getAreaCoverageDetails,
+  getPublicRHOs
 } = require('../controllers/rhoController');
+
+// Import RHO Hospital Approval controller
+const {
+  getPendingHospitals,
+  getAllHospitalsInRegion,
+  getHospitalDetails,
+  approveHospital,
+  rejectHospital,
+  getHospitalStatistics
+} = require('../controllers/rho_hospital_controller');
 
 // Validation rules for RHO creation
 const createRHOValidation = [
@@ -208,6 +221,172 @@ const passwordResetValidation = [
 
 // Routes
 
+// Public Routes (No authentication required)
+
+// Get active RHOs for hospital registration - NO AUTH REQUIRED
+router.get('/public', getPublicRHOs);
+
+// RHO Login - No authentication required for login
+router.post('/login', [
+  body('rhoId')
+    .trim()
+    .notEmpty()
+    .withMessage('RHO ID is required'),
+  body('password')
+    .notEmpty()
+    .withMessage('Password is required'),
+  body('state')
+    .optional()
+    .trim()
+], loginRHO);
+
+// RHO Self-Service Routes (RHO accessing their own data)
+
+// Get RHO's own statistics/dashboard data
+router.get('/my/statistics', 
+  rhoAuth,
+  auditRHOSelfOperation('VIEW_SELF_STATISTICS'),
+  async (req, res) => {
+    try {
+      const rho = await require('../models/RegionalHealthOfficer').findById(req.rho.rhoId)
+        .populate('parentSHO', 'fullName officerId');
+      
+      if (!rho) {
+        return res.status(404).json({
+          success: false,
+          message: 'RHO profile not found'
+        });
+      }
+
+      // Process assigned areas with detailed information
+      const assignedAreas = rho.assignedAreas.map(area => ({
+        name: area.name,
+        code: area.code,
+        type: area.type,
+        population: area.population || 0,
+        areaKm2: area.areaKm2 || 0,
+        healthFacilities: {
+          primaryHealthCenters: Math.floor(area.population / 20000) || 1, // Estimated based on population
+          communityHealthCenters: Math.floor(area.population / 80000) || 1,
+          hospitals: Math.floor(area.population / 100000) || 1
+        },
+        coveragePercentage: Math.min(100, (area.population / 50000) * 100) || 85 // Default 85%
+      }));
+
+      // Calculate coverage summary
+      const coverageSummary = {
+        totalAreas: rho.assignedAreas.length,
+        totalPopulation: rho.assignedAreas.reduce((sum, area) => sum + (area.population || 0), 0),
+        totalAreaKm2: rho.assignedAreas.reduce((sum, area) => sum + (area.areaKm2 || 0), 0),
+        primaryDistrict: rho.coverage?.primaryDistrict || rho.assignedDistrict,
+        subDistricts: rho.coverage?.subDistricts || [],
+        blocks: rho.coverage?.blocks || [],
+        villages: rho.coverage?.villages || [],
+        primaryHealthCenters: rho.coverage?.primaryHealthCenters || [],
+        communityHealthCenters: rho.coverage?.communityHealthCenters || []
+      };
+
+      // Create dashboard data structure expected by Flutter
+      const dashboardData = {
+        populationCovered: coverageSummary.totalPopulation || rho.coverage?.population || 0,
+        healthcareCenters: rho.statistics?.hospitalsOverseen || assignedAreas.reduce((sum, area) => sum + area.healthFacilities.hospitals, 0),
+        emergencyServices: rho.statistics?.emergencyServices || 5, // Default fallback
+        mobileUnits: rho.statistics?.mobileUnits || 2, // Default fallback
+        totalStaffManaged: rho.statistics?.totalStaffManaged || 0,
+        patientsServed: rho.statistics?.patientsServed || 0,
+        
+        // Enhanced coverage area information
+        assignedAreas: assignedAreas,
+        coverageSummary: coverageSummary,
+        
+        // Area-specific statistics
+        areaStatistics: {
+          averageCoveragePercentage: assignedAreas.length > 0 ? 
+            assignedAreas.reduce((sum, area) => sum + area.coveragePercentage, 0) / assignedAreas.length : 0,
+          totalHealthFacilities: assignedAreas.reduce((sum, area) => 
+            sum + area.healthFacilities.primaryHealthCenters + 
+            area.healthFacilities.communityHealthCenters + 
+            area.healthFacilities.hospitals, 0),
+          largestArea: assignedAreas.length > 0 ? 
+            assignedAreas.reduce((max, area) => area.population > max.population ? area : max, assignedAreas[0]) : null,
+          mostDenseArea: assignedAreas.length > 0 ? 
+            assignedAreas.reduce((max, area) => 
+              (area.population / (area.areaKm2 || 1)) > (max.population / (max.areaKm2 || 1)) ? area : max, assignedAreas[0]) : null
+        },
+
+        recentActivities: rho.activities || [
+          {
+            type: 'Area Inspection',
+            location: assignedAreas.length > 0 ? assignedAreas[0].name : rho.assignedDistrict,
+            timestamp: new Date().toISOString(),
+            status: 'Completed'
+          },
+          {
+            type: 'Health Facility Review',
+            location: rho.assignedDistrict,
+            timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // Yesterday
+            status: 'In Progress'
+          }
+        ],
+        profile: {
+          officerId: rho.officerId,
+          fullName: rho.fullName,
+          assignedState: rho.assignedState,
+          assignedDistrict: rho.assignedDistrict,
+          assignedRegion: rho.assignedRegion,
+          isActive: rho.isActive,
+          lastLogin: rho.lastLogin
+        }
+      };
+
+      res.json({
+        success: true,
+        message: 'Statistics retrieved successfully',
+        data: dashboardData
+      });
+    } catch (error) {
+      console.error('Get RHO self statistics error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Server error fetching statistics'
+      });
+    }
+  }
+);
+
+// Get RHO's own profile
+router.get('/my/profile', 
+  rhoAuth,
+  auditRHOSelfOperation('VIEW_SELF_PROFILE'),
+  async (req, res) => {
+    try {
+      const rho = await require('../models/RegionalHealthOfficer').findById(req.rho.rhoId)
+        .select('-password')
+        .populate('parentSHO', 'fullName officerId assignedState');
+      
+      if (!rho) {
+        return res.status(404).json({
+          success: false,
+          message: 'RHO profile not found'
+        });
+      }
+
+      res.json({
+        success: true,
+        rho
+      });
+    } catch (error) {
+      console.error('Get RHO self profile error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Server error fetching profile'
+      });
+    }
+  }
+);
+
+// SHO Management Routes (SHO managing RHOs)
+
 // Get district assignment strategy and available areas
 router.get('/districts/:district/assignment-info', 
   rhoViewAuth,
@@ -315,6 +494,57 @@ router.patch('/:rhoId/reset-password',
   rhoManagementAuth,
   auditRHOOperation('RESET_RHO_PASSWORD'),
   resetRHOPassword
+);
+
+// ==================== RHO HOSPITAL APPROVAL ROUTES ====================
+
+// Get pending hospitals for approval
+router.get('/hospitals/pending', 
+  rhoAuth,
+  auditRHOSelfOperation('VIEW_PENDING_HOSPITALS'),
+  getPendingHospitals
+);
+
+// Get all hospitals in RHO's region
+router.get('/hospitals/all', 
+  rhoAuth,
+  auditRHOSelfOperation('VIEW_REGION_HOSPITALS'),
+  getAllHospitalsInRegion
+);
+
+// Get hospital approval statistics
+router.get('/hospitals/statistics', 
+  rhoAuth,
+  auditRHOSelfOperation('VIEW_HOSPITAL_STATISTICS'),
+  getHospitalStatistics
+);
+
+// Get specific hospital details for review
+router.get('/hospitals/:hospitalId/details', 
+  rhoAuth,
+  auditRHOSelfOperation('VIEW_HOSPITAL_DETAILS'),
+  getHospitalDetails
+);
+
+// Approve hospital registration
+router.post('/hospitals/:hospitalId/approve', 
+  [
+    body('comments').optional().isLength({ max: 1000 }).withMessage('Comments must not exceed 1000 characters'),
+    body('assignedRO').optional().isMongoId().withMessage('Assigned RO must be a valid ID')
+  ],
+  rhoAuth,
+  auditRHOSelfOperation('APPROVE_HOSPITAL'),
+  approveHospital
+);
+
+// Reject hospital registration
+router.post('/hospitals/:hospitalId/reject', 
+  [
+    body('comments').notEmpty().isLength({ min: 10, max: 1000 }).withMessage('Rejection comments are required (10-1000 characters)')
+  ],
+  rhoAuth,
+  auditRHOSelfOperation('REJECT_HOSPITAL'),
+  rejectHospital
 );
 
 module.exports = router;

@@ -537,6 +537,43 @@ class ShoService {
     }
   }
 
+  // Get current SHO profile information including state
+  static Future<Map<String, dynamic>> getCurrentSHOProfile() async {
+    try {
+      final apiBaseUrl = await getApiBaseUrl();
+      print('🔍 SHO Auth Service - Getting current SHO profile from: $apiBaseUrl/sho-auth/profile');
+      print('🔍 SHO Auth Service - Auth token available: ${_authToken != null}');
+      
+      final response = await http.get(
+        Uri.parse('$apiBaseUrl/sho-auth/profile'),
+        headers: _getAuthHeaders(),
+      );
+
+      print('🔍 SHO Auth Service - Profile response status: ${response.statusCode}');
+      print('🔍 SHO Auth Service - Profile response body: ${response.body}');
+
+      final data = json.decode(response.body);
+      
+      if (response.statusCode == 200 && data['success']) {
+        return {
+          'success': true,
+          'data': data['data'],
+        };
+      } else {
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Failed to load profile data',
+        };
+      }
+    } catch (e) {
+      print('SHO Profile error: $e');
+      return {
+        'success': false,
+        'message': 'Network error: ${e.toString()}',
+      };
+    }
+  }
+
   // Logout
   static Future<Map<String, dynamic>> logout() async {
     try {

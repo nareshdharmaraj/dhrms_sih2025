@@ -115,7 +115,7 @@ class RoleSelectionScreen extends StatelessWidget {
       UserRole(
         title: 'Regional Officer',
         subtitle: 'Health department official',
-        description: 'Monitor health trends and manage regional healthcare',
+        description: 'Login with credentials provided by your State Health Officer',
         icon: Icons.admin_panel_settings,
         color: const Color(0xFF9C27B0),
         route: '/regional',
@@ -251,6 +251,10 @@ class RoleSelectionScreen extends StatelessWidget {
     // Navigate to SHO login for SHO role
     else if (role.route == '/sho') {
       Navigator.pushNamed(context, '/sho-login');
+    }
+    // Navigate to Regional Officer login for Regional Officer role
+    else if (role.route == '/regional') {
+      Navigator.pushNamed(context, '/regional-login');
     }
     // Navigate to hospital role selection for hospital staff
     else if (role.route == '/hospital') {

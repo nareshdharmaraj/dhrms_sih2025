@@ -43,7 +43,6 @@ class AppConstants {
   
   static const String patientRegisterRoute = '/patient-register';
   static const String hospitalRegisterRoute = '/hospital-register';
-  static const String regionalRegisterRoute = '/regional-register';
   
   // Animation Durations
   static const Duration shortAnimation = Duration(milliseconds: 300);

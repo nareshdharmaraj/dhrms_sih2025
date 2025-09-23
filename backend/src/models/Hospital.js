@@ -274,17 +274,94 @@ const hospitalSchema = new mongoose.Schema({
   managedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'RegionalOfficer',
-    required: true
+    required: false // Change to false as it will be assigned upon approval
   },
   supervisedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'WhoAdmin',
     default: null
   },
+  approval: {
+    status: {
+      type: String,
+      enum: ['Pending', 'Approved', 'Rejected', 'Under Review'],
+      default: 'Pending'
+    },
+    submittedAt: {
+      type: Date,
+      default: Date.now
+    },
+    reviewedAt: {
+      type: Date
+    },
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'RegionalHealthOfficer'
+    },
+    reviewComments: {
+      type: String,
+      maxlength: 1000
+    },
+    documents: [{
+      name: String,
+      url: String,
+      uploadedAt: { type: Date, default: Date.now }
+    }]
+  },
+  region: {
+    state: {
+      type: String,
+      required: true,
+      enum: [
+        'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
+        'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand',
+        'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur',
+        'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab',
+        'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura',
+        'Uttar Pradesh', 'Uttarakhand', 'West Bengal'
+      ]
+    },
+    district: {
+      type: String,
+      required: true
+    }
+  },
+  // Zone assignment for dense districts with multiple RHOs
+  zoneAssignment: {
+    area: {
+      type: String,
+      trim: true
+      // e.g., "Kothamangalam", "Thrikkakara", "Paravur", "Aluva" 
+      // This maps to zone.areas.areaName for RHO assignment
+    },
+    zoneId: {
+      type: String,
+      ref: 'Zone'
+      // Reference to the zone this hospital belongs to
+    },
+    zoneName: {
+      type: String,
+      trim: true
+    },
+    assignedRHO: {
+      type: String,
+      ref: 'RegionalHealthOfficer'
+      // Auto-populated based on zone assignment
+    },
+    assignmentMethod: {
+      type: String,
+      enum: ['automatic', 'manual', 'pincode-based'],
+      default: 'automatic'
+    },
+    lastUpdated: {
+      type: Date,
+      default: Date.now
+    }
+  },
   status: {
     type: String,
     enum: ['Active', 'Inactive', 'Under Review', 'Suspended', 'Closed'],
-    default: 'Active'
+    default: 'Under Review' // Changed default to Under Review for new hospitals
   },
   operationalStatus: {
     type: String,
@@ -366,6 +443,30 @@ hospitalSchema.statics.findByType = function(type) {
   return this.find({ type, isActive: true });
 };
 
+hospitalSchema.statics.findPendingApprovals = function(rhoId) {
+  return this.find({ 
+    'approval.status': 'Pending', 
+    isActive: true 
+  }).populate('approval.reviewedBy', 'name email');
+};
+
+hospitalSchema.statics.findByRegion = function(state, district) {
+  return this.find({ 
+    'region.state': state,
+    'region.district': district,
+    isActive: true 
+  });
+};
+
+hospitalSchema.statics.findPendingInRegion = function(state, district) {
+  return this.find({
+    'region.state': state,
+    'region.district': district,
+    'approval.status': 'Pending',
+    isActive: true
+  });
+};
+
 // Method to calculate bed occupancy
 hospitalSchema.methods.calculateOccupancy = function(currentPatients) {
   if (this.capacity.totalBeds === 0) return 0;
@@ -375,6 +476,26 @@ hospitalSchema.methods.calculateOccupancy = function(currentPatients) {
 // Method to update statistics
 hospitalSchema.methods.updateStatistics = function(stats) {
   Object.assign(this.statistics, stats);
+  return this.save();
+};
+
+// Method to approve hospital
+hospitalSchema.methods.approve = function(rhoId, comments) {
+  this.approval.status = 'Approved';
+  this.approval.reviewedAt = new Date();
+  this.approval.reviewedBy = rhoId;
+  this.approval.reviewComments = comments || 'Hospital approved';
+  this.status = 'Active';
+  return this.save();
+};
+
+// Method to reject hospital
+hospitalSchema.methods.reject = function(rhoId, comments) {
+  this.approval.status = 'Rejected';
+  this.approval.reviewedAt = new Date();
+  this.approval.reviewedBy = rhoId;
+  this.approval.reviewComments = comments || 'Hospital registration rejected';
+  this.status = 'Inactive';
   return this.save();
 };
 

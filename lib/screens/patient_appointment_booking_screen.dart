@@ -212,7 +212,7 @@ class _PatientAppointmentBookingScreenState extends State<PatientAppointmentBook
                   // Specialization Filter
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: selectedSpecialization,
+                      initialValue: selectedSpecialization,
                       decoration: InputDecoration(
                         labelText: 'Specialization',
                         border: OutlineInputBorder(
@@ -449,11 +449,11 @@ class _PatientAppointmentBookingScreenState extends State<PatientAppointmentBook
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () => _selectDoctor(doctor),
-                child: Text('Select Doctor'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue.shade600,
                   foregroundColor: Colors.white,
                 ),
+                child: Text('Select Doctor'),
               ),
             ),
           ],
@@ -522,7 +522,7 @@ class _PatientAppointmentBookingScreenState extends State<PatientAppointmentBook
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
         SizedBox(height: 8),
-        Container(
+        SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
             onPressed: _selectDate,
@@ -567,13 +567,13 @@ class _PatientAppointmentBookingScreenState extends State<PatientAppointmentBook
             
             return ElevatedButton(
               onPressed: () => setState(() => selectedTime = time),
-              child: Text(
-                time,
-                style: TextStyle(fontSize: 12),
-              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: isSelected ? Colors.blue.shade600 : Colors.grey.shade200,
                 foregroundColor: isSelected ? Colors.white : Colors.black87,
+              ),
+              child: Text(
+                time,
+                style: TextStyle(fontSize: 12),
               ),
             );
           },

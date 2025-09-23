@@ -11,6 +11,103 @@ const {
   generateRegionCode 
 } = require('../services/districtMockDataService');
 const { AreaAssignmentService } = require('../services/areaAssignmentService');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+
+// RHO Login - Authenticate using RHO ID and state
+const loginRHO = async (req, res) => {
+  try {
+    const { rhoId, password, state } = req.body;
+
+    console.log('🔐 RHO Login attempt:', { rhoId, state });
+
+    if (!rhoId || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'RHO ID and password are required'
+      });
+    }
+
+    // Find RHO by officerId and optionally by state
+    const query = { officerId: rhoId };
+    if (state) {
+      query.assignedState = state;
+    }
+
+    const rho = await RegionalHealthOfficer.findOne(query);
+
+    if (!rho) {
+      console.log('❌ RHO not found:', { rhoId, state });
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid RHO ID or password'
+      });
+    }
+
+    // Check if RHO is active
+    if (!rho.isActive) {
+      console.log('❌ RHO account is deactivated:', rhoId);
+      return res.status(401).json({
+        success: false,
+        message: 'Account is deactivated. Please contact your State Health Officer.'
+      });
+    }
+
+    // Validate password
+    const isValidPassword = await bcrypt.compare(password, rho.password);
+    if (!isValidPassword) {
+      console.log('❌ Invalid password for RHO:', rhoId);
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid RHO ID or password'
+      });
+    }
+
+    // Update last login
+    rho.lastLogin = new Date();
+    await rho.save();
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { 
+        rhoId: rho.officerId,
+        id: rho._id,
+        userType: 'RHO',
+        state: rho.assignedState,
+        district: rho.assignedDistrict
+      },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '24h' }
+    );
+
+    console.log('✅ RHO login successful:', rhoId);
+
+    res.status(200).json({
+      success: true,
+      message: 'Login successful',
+      token,
+      rho: {
+        id: rho._id,
+        rhoId: rho.officerId,
+        fullName: rho.fullName,
+        email: rho.email,
+        state: rho.assignedState,
+        district: rho.assignedDistrict,
+        zone: rho.zone,
+        areas: rho.areas,
+        isActive: rho.isActive,
+        lastLogin: rho.lastLogin
+      }
+    });
+
+  } catch (error) {
+    console.error('RHO login error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
 
 // Generate unique RHO Officer ID with area support
 const generateRHOId = async (state, district, areaName = null) => {
@@ -59,6 +156,9 @@ const createRHO = async (req, res) => {
       coverage
     } = req.body;
 
+    // Initialize variables for zone area extraction
+    let zoneAreas = []; // To store areas from assigned zone
+
     // Verify the SHO can create RHOs in their assigned state only
     const shoData = await StateHealthOfficer.findById(req.sho.shoId);
     if (!shoData) {
@@ -77,6 +177,44 @@ const createRHO = async (req, res) => {
       });
     }
 
+    // Check for existing zones in the district
+    const Zone = require('../models/Zone');
+    const existingZones = await Zone.find({
+      state: shoData.assignedState,
+      district: assignedDistrict,
+      isActive: true
+    });
+
+    // CRITICAL FIX: Extract zone areas BEFORE validation if zone assignment is specified
+    if (req.body.assignToZone && req.body.zoneId) {
+      try {
+        const targetZone = await Zone.findOne({ 
+          zoneId: req.body.zoneId, 
+          state: shoData.assignedState,
+          district: assignedDistrict,
+          isActive: true 
+        });
+        
+        if (targetZone && targetZone.areas && targetZone.areas.length > 0) {
+          zoneAreas = targetZone.areas.map(area => ({
+            name: area.areaName,
+            code: area.areaCode || area.areaName.substring(0, 3).toUpperCase(),
+            type: 'area',
+            population: area.population || 0,
+            areaKm2: area.areaKm2 || 0,
+            isDenselyPopulated: area.isDenselyPopulated || false,
+            zoneAreaId: area._id ? area._id.toString() : (area.id ? area.id.toString() : '')
+          }));
+          console.log(`✅ Pre-extracted ${zoneAreas.length} areas from zone ${targetZone.zoneName} for validation:`, 
+                     zoneAreas.map(a => `${a.name} (${a.code}) - Dense: ${a.isDenselyPopulated}`).join(', '));
+        } else {
+          console.warn(`⚠️ Zone ${req.body.zoneId} not found or has no areas`);
+        }
+      } catch (error) {
+        console.warn('⚠️ Failed to pre-extract zone areas:', error.message);
+      }
+    }
+
     // Validate area assignment using the new service
     const areaValidation = await AreaAssignmentService.validateAreaAssignment(
       shoData.assignedState, 
@@ -90,6 +228,27 @@ const createRHO = async (req, res) => {
         message: 'Area assignment validation failed',
         errors: areaValidation.errors
       });
+    }
+
+    // If this is a dense district and zones exist, suggest zone-based assignment
+    let zoneAssignmentSuggestion = null;
+    if (areaValidation.strategy.isDense && existingZones.length > 0) {
+      const unassignedZones = existingZones.filter(zone => 
+        !zone.assignedRHO || !zone.assignedRHO.rhoId
+      );
+      
+      if (unassignedZones.length > 0) {
+        zoneAssignmentSuggestion = {
+          hasUnassignedZones: true,
+          unassignedZones: unassignedZones.map(zone => ({
+            zoneId: zone.zoneId,
+            zoneName: zone.zoneName,
+            areas: zone.areas.map(area => area.areaName),
+            priority: zone.priority
+          })),
+          message: 'Unassigned zones available for RHO assignment'
+        };
+      }
     }
 
     // Auto-generate region and codes if not provided
@@ -126,7 +285,14 @@ const createRHO = async (req, res) => {
 
     // Build assigned areas data
     let processedAreas = [];
-    if (areaValidation.strategy.isDense && assignedAreas && assignedAreas.length > 0) {
+    
+    // First priority: Use areas extracted from assigned zone
+    if (zoneAreas.length > 0) {
+      processedAreas = zoneAreas;
+      console.log(`📍 Using ${zoneAreas.length} areas from assigned zone for RHO.assignedAreas`);
+    } 
+    // Second priority: Use areas provided in request (for dense districts)
+    else if (areaValidation.strategy.isDense && assignedAreas && assignedAreas.length > 0) {
       // For dense districts with specific areas
       assignedAreas.forEach(areaName => {
         const areaData = AreaAssignmentService.getAreaByName(assignedDistrict, areaName);
@@ -136,28 +302,50 @@ const createRHO = async (req, res) => {
             code: areaData.code,
             type: 'area',
             population: areaData.population,
-            areaKm2: areaData.areaKm2
+            areaKm2: areaData.areaKm2,
+            isDenselyPopulated: true, // Dense districts have dense areas
+            zoneAreaId: '' // Manual assignment, no zone reference
           });
         }
       });
-    } else {
-      // For sparse districts or full district assignment
+    } 
+    // ERROR: Dense districts without zone assignment or specific areas
+    else if (areaValidation.strategy.isDense) {
+      console.error('❌ Dense district RHO creation failed: No zone areas extracted and no specific areas provided');
+      return res.status(400).json({
+        success: false,
+        message: 'Dense districts require zone-based area assignment or specific area selection. Please assign RHO to a zone or specify areas.',
+        details: {
+          district: assignedDistrict,
+          strategy: 'dense',
+          zoneAreasExtracted: zoneAreas.length,
+          specificAreasProvided: assignedAreas ? assignedAreas.length : 0
+        }
+      });
+    }
+    // Default: For sparse districts only - full district assignment
+    else {
       processedAreas.push({
         name: 'Full District',
         code: autoDistrictCode,
         type: 'full-district',
         population: coverage?.population || 0,
-        areaKm2: coverage?.areaKm2 || 0
+        areaKm2: coverage?.areaKm2 || 0,
+        isDenselyPopulated: false,
+        zoneAreaId: ''
       });
     }
 
     // Get coverage data based on assigned areas
     const areaCoverage = AreaAssignmentService.getCoverageForAreas(assignedDistrict, assignedAreas || []);
     
+    // If we have zone areas, include them in subDistricts
+    const zoneSubDistricts = zoneAreas.length > 0 ? zoneAreas.map(area => area.name) : [];
+    
     // Merge with any provided coverage data
     const finalCoverage = {
       primaryDistrict: assignedDistrict.trim(),
-      subDistricts: coverage?.subDistricts || areaCoverage.subDistricts,
+      subDistricts: coverage?.subDistricts || areaCoverage.subDistricts || zoneSubDistricts,
       blocks: coverage?.blocks || areaCoverage.blocks,
       villages: coverage?.villages || areaCoverage.villages,
       primaryHealthCenters: coverage?.primaryHealthCenters || [],
@@ -247,6 +435,47 @@ const createRHO = async (req, res) => {
     console.log('✅ RHO created successfully:', officerId);
     console.log('📍 Assigned areas:', processedAreas.map(a => a.name).join(', '));
 
+    // Auto-assign to zone if specified in request
+    let zoneAssignment = null;
+    if (req.body.assignToZone && req.body.zoneId) {
+      try {
+        const targetZone = await Zone.findOne({ 
+          zoneId: req.body.zoneId, 
+          state: shoData.assignedState,
+          district: assignedDistrict,
+          isActive: true 
+        });
+        
+        if (targetZone && (!targetZone.assignedRHO || !targetZone.assignedRHO.rhoId)) {
+          await targetZone.assignRHO(officerId, fullName.trim(), req.sho.shoId);
+          
+          zoneAssignment = {
+            zoneId: targetZone.zoneId,
+            zoneName: targetZone.zoneName,
+            assignmentStatus: 'success',
+            areasExtracted: zoneAreas.length
+          };
+          console.log('✅ RHO automatically assigned to zone:', targetZone.zoneName);
+        } else if (!targetZone) {
+          zoneAssignment = {
+            assignmentStatus: 'failed',
+            error: 'Zone not found or inactive'
+          };
+        } else {
+          zoneAssignment = {
+            assignmentStatus: 'failed',
+            error: 'Zone already assigned to another RHO'
+          };
+        }
+      } catch (zoneError) {
+        console.warn('⚠️ Zone assignment failed:', zoneError.message);
+        zoneAssignment = {
+          assignmentStatus: 'failed',
+          error: zoneError.message
+        };
+      }
+    }
+
     // Return RHO data without password
     const rhoResponse = await RegionalHealthOfficer.findById(newRHO._id)
       .select('-password')
@@ -260,6 +489,10 @@ const createRHO = async (req, res) => {
         districtType: areaValidation.strategy.isDense ? 'dense' : 'sparse',
         assignmentType: areaValidation.strategy.assignmentType,
         areasAssigned: processedAreas.map(a => a.name)
+      },
+      zoneInfo: {
+        suggestion: zoneAssignmentSuggestion,
+        assignment: zoneAssignment
       },
       loginCredentials: {
         officerId,
@@ -339,6 +572,38 @@ const getRHOsBySHO = async (req, res) => {
     const mappedRHOs = rhos.map(rho => {
       const rhoObj = rho.toObject();
       
+      // Format assignedAreas to match Flutter expectations
+      rhoObj.assignedAreas = (rhoObj.assignedAreas || []).map(area => ({
+        name: String(area.name || ''),
+        code: String(area.code || ''),
+        type: String(area.type || 'area'),
+        population: Number(area.population || 0),
+        areaKm2: Number(area.areaKm2 || 0),
+        healthFacilities: {
+          primaryHealthCenters: Math.floor((Number(area.population) || 0) / 20000) || 1,
+          communityHealthCenters: Math.floor((Number(area.population) || 0) / 80000) || 1,
+          hospitals: Math.floor((Number(area.population) || 0) / 100000) || 1
+        },
+        coveragePercentage: Math.min(100, ((Number(area.population) || 0) / 50000) * 100) || 85
+      }));
+      
+      // If no specific areas assigned, create a default full-district assignment
+      if (rhoObj.assignedAreas.length === 0) {
+        rhoObj.assignedAreas = [{
+          name: `Full District`,
+          code: rhoObj.districtCode || 'FD',
+          type: 'full-district',
+          population: 0,
+          areaKm2: 0,
+          healthFacilities: {
+            primaryHealthCenters: 1,
+            communityHealthCenters: 1,
+            hospitals: 1
+          },
+          coveragePercentage: 85
+        }];
+      }
+      
       // Map statistics fields to match frontend expectations
       rhoObj.statistics = {
         totalStaff: rhoObj.statistics?.totalStaffManaged || 0,
@@ -357,26 +622,44 @@ const getRHOsBySHO = async (req, res) => {
         ...rhoObj.staffLimits // Keep other fields
       };
       
-      // Ensure coverage fields match expectations
+      // Ensure coverage fields match expectations - properly format all arrays and strings
       rhoObj.coverage = {
-        districts: [rhoObj.assignedDistrict],
-        subDistricts: rhoObj.coverage?.subDistricts || [],
+        districts: [rhoObj.assignedDistrict].filter(Boolean),
+        subDistricts: Array.isArray(rhoObj.coverage?.subDistricts) ? rhoObj.coverage.subDistricts : [],
+        blocks: Array.isArray(rhoObj.coverage?.blocks) ? rhoObj.coverage.blocks : [],
+        villages: Array.isArray(rhoObj.coverage?.villages) ? rhoObj.coverage.villages : [],
+        primaryHealthCenters: Array.isArray(rhoObj.coverage?.primaryHealthCenters) ? rhoObj.coverage.primaryHealthCenters : [],
+        communityHealthCenters: Array.isArray(rhoObj.coverage?.communityHealthCenters) ? rhoObj.coverage.communityHealthCenters : [],
+        hospitals: Array.isArray(rhoObj.coverage?.hospitals) ? rhoObj.coverage.hospitals : [],
         populationCovered: rhoObj.coverage?.population || 0,
-        hospitalsCovered: rhoObj.coverage?.hospitals?.length || 0,
-        primaryHealthCenters: rhoObj.coverage?.primaryHealthCenters?.length || 0,
-        ...rhoObj.coverage // Keep other fields
+        hospitalsCovered: Array.isArray(rhoObj.coverage?.hospitals) ? rhoObj.coverage.hospitals.length : 0,
+        primaryDistrict: rhoObj.coverage?.primaryDistrict || rhoObj.assignedDistrict || '',
+        population: rhoObj.coverage?.population || 0,
+        areaKm2: rhoObj.coverage?.areaKm2 || 0,
+        ruralPopulation: rhoObj.coverage?.ruralPopulation || 0,
+        urbanPopulation: rhoObj.coverage?.urbanPopulation || 0
       };
       
       // Map office address to simplified format
       if (rhoObj.officeAddress) {
+        const addressParts = [
+          rhoObj.officeAddress.buildingName,
+          rhoObj.officeAddress.street
+        ].filter(Boolean);
+        
         rhoObj.officeAddress = {
-          address: [
-            rhoObj.officeAddress.buildingName,
-            rhoObj.officeAddress.street
-          ].filter(Boolean).join(', '),
+          address: addressParts.length > 0 ? addressParts.join(', ') : '',
           city: rhoObj.officeAddress.city || '',
           state: rhoObj.officeAddress.state || '',
           pincode: rhoObj.officeAddress.zipCode || ''
+        };
+      } else {
+        // Ensure officeAddress exists even if empty
+        rhoObj.officeAddress = {
+          address: '',
+          city: '',
+          state: '',
+          pincode: ''
         };
       }
       
@@ -443,9 +726,88 @@ const getRHOById = async (req, res) => {
       });
     }
 
+    // Format the RHO data to match frontend expectations
+    const rhoObj = rho.toObject();
+    
+    // Format assignedAreas consistently
+    rhoObj.assignedAreas = (rhoObj.assignedAreas || []).map(area => ({
+      name: String(area.name || ''),
+      code: String(area.code || ''),
+      type: String(area.type || 'area'),
+      population: Number(area.population || 0),
+      areaKm2: Number(area.areaKm2 || 0),
+      isDenselyPopulated: Boolean(area.isDenselyPopulated || false),
+      zoneAreaId: String(area.zoneAreaId || ''),
+      healthFacilities: {
+        primaryHealthCenters: Math.floor((Number(area.population) || 0) / 20000) || 1,
+        communityHealthCenters: Math.floor((Number(area.population) || 0) / 80000) || 1,
+        hospitals: Math.floor((Number(area.population) || 0) / 100000) || 1
+      },
+      coveragePercentage: Math.min(100, ((Number(area.population) || 0) / 50000) * 100) || 85,
+      populationDensity: (Number(area.areaKm2) || 0) > 0 ? 
+        Math.round((Number(area.population) || 0) / (Number(area.areaKm2) || 1)) : 0
+    }));
+    
+    // Only create default full-district assignment for sparse districts
+    // Dense districts should ALWAYS have specific zone-based area assignments
+    if (rhoObj.assignedAreas.length === 0) {
+      // Check if this is a dense district by examining the district
+      const AreaAssignmentService = require('../services/areaAssignmentService');
+      const areaValidation = await AreaAssignmentService.validateAreaAssignment(
+        rhoObj.assignedState, 
+        rhoObj.assignedDistrict, 
+        []
+      );
+      
+      if (areaValidation.strategy.isDense) {
+        console.warn(`⚠️ Dense district RHO ${rhoObj.officerId} has no assigned areas - this may indicate a zone assignment issue`);
+        // For dense districts, return empty areas array instead of creating fake "Full District"
+        rhoObj.assignedAreas = [];
+        rhoObj.assignmentNote = 'Dense district RHO requires zone-based area assignment';
+      } else {
+        // Only sparse districts get full-district assignment
+        rhoObj.assignedAreas = [{
+          name: `Full District`,
+          code: rhoObj.districtCode || 'FD',
+          type: 'full-district',
+          population: 0,
+          areaKm2: 0,
+          isDenselyPopulated: false,
+          zoneAreaId: '',
+          healthFacilities: {
+            primaryHealthCenters: 1,
+            communityHealthCenters: 1,
+            hospitals: 1
+          },
+          coveragePercentage: 85,
+          populationDensity: 0
+        }];
+      }
+    }
+
+    // Format coverage object properly to avoid JSON parsing issues
+    if (rhoObj.coverage) {
+      rhoObj.coverage = {
+        districts: [rhoObj.assignedDistrict].filter(Boolean),
+        subDistricts: Array.isArray(rhoObj.coverage.subDistricts) ? rhoObj.coverage.subDistricts : [],
+        blocks: Array.isArray(rhoObj.coverage.blocks) ? rhoObj.coverage.blocks : [],
+        villages: Array.isArray(rhoObj.coverage.villages) ? rhoObj.coverage.villages : [],
+        primaryHealthCenters: Array.isArray(rhoObj.coverage.primaryHealthCenters) ? rhoObj.coverage.primaryHealthCenters : [],
+        communityHealthCenters: Array.isArray(rhoObj.coverage.communityHealthCenters) ? rhoObj.coverage.communityHealthCenters : [],
+        hospitals: Array.isArray(rhoObj.coverage.hospitals) ? rhoObj.coverage.hospitals : [],
+        populationCovered: rhoObj.coverage.population || 0,
+        hospitalsCovered: Array.isArray(rhoObj.coverage.hospitals) ? rhoObj.coverage.hospitals.length : 0,
+        primaryDistrict: rhoObj.coverage.primaryDistrict || rhoObj.assignedDistrict || '',
+        population: rhoObj.coverage.population || 0,
+        areaKm2: rhoObj.coverage.areaKm2 || 0,
+        ruralPopulation: rhoObj.coverage.ruralPopulation || 0,
+        urbanPopulation: rhoObj.coverage.urbanPopulation || 0
+      };
+    }
+
     res.status(200).json({
       success: true,
-      rho
+      rho: rhoObj
     });
 
   } catch (error) {
@@ -822,27 +1184,81 @@ const getAvailableDistricts = async (req, res) => {
       }));
     }
 
-    // Get districts that already have active RHOs
+    // Filter districts based on zone availability for dense districts
+    // and RHO availability for sparse districts
+    const Zone = require('../models/Zone');
+    const availableDistricts = [];
+    
+    for (const district of districts) {
+      const districtName = district.name;
+      
+      if (district.isDense) {
+        // For dense districts, check if there are unassigned zones
+        const unassignedZones = await Zone.findUnassigned(shoData.assignedState, districtName);
+        
+        if (unassignedZones.length > 0) {
+          // District has unassigned zones, so it's available for RHO creation
+          availableDistricts.push({
+            ...district,
+            availabilityReason: `${unassignedZones.length} unassigned zone(s)`,
+            unassignedZonesCount: unassignedZones.length
+          });
+        }
+        // If no unassigned zones, district won't appear in dropdown
+        
+      } else {
+        // For sparse districts, use the original logic - check if any RHO is assigned
+        const existingRHO = await RegionalHealthOfficer.findOne({
+          assignedState: shoData.assignedState,
+          assignedDistrict: districtName,
+          parentSHO: req.sho.shoId,
+          isActive: true
+        });
+        
+        if (!existingRHO) {
+          // District has no RHO assigned, so it's available
+          availableDistricts.push({
+            ...district,
+            availabilityReason: 'No RHO assigned',
+            unassignedZonesCount: 0
+          });
+        }
+        // If RHO exists, district won't appear in dropdown
+      }
+    }
+
+    // Get all assigned districts for reference (both dense and sparse)
     const assignedDistricts = await RegionalHealthOfficer.find({
       assignedState: shoData.assignedState,
       parentSHO: req.sho.shoId,
       isActive: true
     }).distinct('assignedDistrict');
 
-    const availableDistricts = districts.filter(district => 
-      !assignedDistricts.includes(district.name)
-    );
-
-    console.log(`📊 Found ${districts.length} total districts, ${availableDistricts.length} available for state: ${shoData.assignedState}`);
+    console.log(`📊 Found ${districts.length} total districts:`);
+    console.log(`   - ${availableDistricts.length} available for RHO creation`);
+    console.log(`   - ${assignedDistricts.length} already assigned or fully covered`);
+    
+    // Log detailed availability info
+    availableDistricts.forEach(district => {
+      console.log(`   ✅ ${district.name}: ${district.availabilityReason}`);
+    });
 
     res.status(200).json({
       success: true,
       data: {
         state: shoData.assignedState,
         allDistricts: districts,
-        availableDistricts,
+        availableDistricts: availableDistricts,
         assignedDistricts,
-        districtCount: districts.length
+        districtCount: districts.length,
+        availableCount: availableDistricts.length,
+        summary: {
+          total: districts.length,
+          available: availableDistricts.length,
+          assigned: assignedDistricts.length,
+          denseDistricts: districts.filter(d => d.isDense).length,
+          sparseDistricts: districts.filter(d => !d.isDense).length
+        }
       }
     });
 
@@ -1206,7 +1622,57 @@ const getAreaCoverageDetails = async (req, res) => {
   }
 };
 
+// Public endpoint for hospital registration - Get active RHOs without authentication
+const getPublicRHOs = async (req, res) => {
+  try {
+    console.log('🔍 Fetching public RHO data for hospital registration...');
+    
+    // Get all active RHOs 
+    const rhos = await RegionalHealthOfficer.find({ 
+      isActive: true 
+    }).select('officerId fullName assignedState assignedDistrict assignedAreas assignedRegion regionCode districtCode')
+    .populate('parentSHO', 'fullName assignedState');
+
+    console.log(`✅ Found ${rhos.length} active RHOs for public access`);
+
+    res.json({
+      success: true,
+      rhos: rhos.map(rho => ({
+        officerId: rho.officerId,
+        fullName: rho.fullName,
+        assignedState: rho.assignedState,
+        assignedDistrict: rho.assignedDistrict,
+        assignedAreas: (rho.assignedAreas || []).map(area => ({
+          name: area.name,
+          code: area.code,
+          type: area.type,
+          population: area.population,
+          areaKm2: area.areaKm2,
+          isDenselyPopulated: area.isDenselyPopulated,
+          zoneAreaId: area.zoneAreaId
+        })),
+        assignedRegion: rho.assignedRegion,
+        regionCode: rho.regionCode,
+        districtCode: rho.districtCode,
+        isActive: rho.isActive,
+        parentSHO: rho.parentSHO ? {
+          fullName: rho.parentSHO.fullName,
+          assignedState: rho.parentSHO.assignedState
+        } : null
+      }))
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching public RHO data:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch RHO data for hospital registration'
+    });
+  }
+};
+
 module.exports = {
+  loginRHO,
   createRHO,
   getRHOsBySHO,
   getRHOById,
@@ -1220,5 +1686,6 @@ module.exports = {
   getMockRHOData,
   createRHOFromMockData,
   getDistrictAssignmentInfo,
-  getAreaCoverageDetails
+  getAreaCoverageDetails,
+  getPublicRHOs
 };
