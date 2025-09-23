@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const MedicalRecord = require('../models/MedicalRecord');
-const Appointment = require('../models/Appointment');
+const HospitalAppointment = require('../models/HospitalAppointment');
 const HealthStatistics = require('../models/HealthStatistics');
 
 // Get medical records for a specific patient
@@ -31,8 +31,7 @@ router.get('/medical-records/staff/:staffId', async (req, res) => {
 // Get appointments for a specific patient
 router.get('/appointments/patient/:patientId', async (req, res) => {
   try {
-    const appointments = await Appointment.find({ patientId: req.params.patientId })
-      .populate('hospitalStaffId', 'fullName staffRole department')
+    const appointments = await HospitalAppointment.find({ patientId: req.params.patientId })
       .sort({ appointmentDate: 1 });
     res.json(appointments);
   } catch (error) {
@@ -43,8 +42,7 @@ router.get('/appointments/patient/:patientId', async (req, res) => {
 // Get appointments for a specific staff member
 router.get('/appointments/staff/:staffId', async (req, res) => {
   try {
-    const appointments = await Appointment.find({ hospitalStaffId: req.params.staffId })
-      .populate('patientId', 'fullName bloodGroup phone')
+    const appointments = await HospitalAppointment.find({ hospitalStaffId: req.params.staffId })
       .sort({ appointmentDate: 1 });
     res.json(appointments);
   } catch (error) {

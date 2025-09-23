@@ -3,7 +3,9 @@ import '../services/hospital_api_service.dart';
 import '../widgets/app_branding.dart';
 
 class HospitalAssistantDashboardScreen extends StatefulWidget {
-  const HospitalAssistantDashboardScreen({super.key});
+  final Map<String, dynamic>? assistantData;
+
+  const HospitalAssistantDashboardScreen({super.key, this.assistantData});
 
   @override
   _HospitalAssistantDashboardScreenState createState() =>

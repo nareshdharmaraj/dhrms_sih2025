@@ -48,6 +48,9 @@ class _HospitalDoctorDashboardScreenState
           widget.doctorData['doctorId'] ??
           '';
 
+      print('🔍 Doctor data keys: ${widget.doctorData.keys.toList()}');
+      print('🔍 Extracted doctor ID: $doctorId');
+
       if (doctorId.isNotEmpty) {
         // Load appointments for this doctor
         final appointments = await HospitalApiService.getDoctorAppointments(
@@ -118,6 +121,22 @@ class _HospitalDoctorDashboardScreenState
             '';
         if (patientId.isNotEmpty && !uniquePatients.containsKey(patientId)) {
           uniquePatients[patientId] = Map<String, dynamic>.from(patientData);
+        }
+      } else {
+        // If patient data is not populated, create a basic patient record from appointment data
+        final appointmentPatientId = appointment['patientId']?.toString() ?? '';
+        final patientName = appointment['patientName']?.toString() ?? '';
+
+        if (appointmentPatientId.isNotEmpty && patientName.isNotEmpty) {
+          if (!uniquePatients.containsKey(appointmentPatientId)) {
+            uniquePatients[appointmentPatientId] = {
+              '_id': appointmentPatientId,
+              'fullName': patientName,
+              'name': patientName,
+              'phone': '',
+              'bloodGroup': '',
+            };
+          }
         }
       }
     }
@@ -756,8 +775,12 @@ class _HospitalDoctorDashboardScreenState
         ? appointment['patientId'] as Map<String, dynamic>
         : <String, dynamic>{};
 
+    // Handle patient data - use appointment fields if patient data is not populated
     final patientName =
-        patientData['fullName'] ?? patientData['name'] ?? 'Unknown Patient';
+        patientData['fullName'] ??
+        patientData['name'] ??
+        appointment['patientName'] ??
+        'Unknown Patient';
     final patientPhone = patientData['phone'] ?? '';
     final bloodGroup = patientData['bloodGroup'] ?? '';
 

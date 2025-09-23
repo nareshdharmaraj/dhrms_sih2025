@@ -291,6 +291,32 @@ router.get('/:appointmentId', async (req, res) => {
   }
 });
 
-
+/**
+ * @desc    Get appointments for a specific doctor/staff member
+ * @route   GET /api/appointments/staff/:staffId
+ * @access  Public (for now)
+ */
+router.get('/staff/:staffId', async (req, res) => {
+  try {
+    console.log('👨‍⚕️ Fetching appointments for staff ID:', req.params.staffId);
+    
+    const appointments = await HospitalAppointment.find({ 
+      hospitalStaffId: req.params.staffId 
+    })
+    .populate('patientId', 'fullName bloodGroup phone email age gender')
+    .sort({ appointmentDate: 1, appointmentTime: 1 });
+    
+    console.log(`✅ Found ${appointments.length} appointments for staff`);
+    
+    res.json(appointments);
+  } catch (error) {
+    console.error('❌ Error fetching staff appointments:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching staff appointments',
+      error: error.message
+    });
+  }
+});
 
 module.exports = router;

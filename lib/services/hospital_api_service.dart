@@ -240,14 +240,20 @@ class HospitalApiService {
     String doctorId,
   ) async {
     try {
+      print('🔍 Fetching appointments for doctor ID: $doctorId');
+      print('🔍 Using API endpoint: /appointments/staff/$doctorId');
       final response = await _client.get('/appointments/staff/$doctorId');
 
       // Parse JSON directly since the API returns an array
       if (response.statusCode >= 200 && response.statusCode < 300) {
+        print(
+          '✅ Successfully fetched appointments, status: ${response.statusCode}',
+        );
         final jsonData = jsonDecode(response.body);
 
         // The API returns appointments directly as an array
         if (jsonData is List) {
+          print('📋 Found ${jsonData.length} appointments in response');
           final result = <Map<String, dynamic>>[];
           for (final item in jsonData) {
             if (item is Map) {
@@ -281,12 +287,16 @@ class HospitalApiService {
           }
         }
       } else {
+        print('❌ Request failed with status ${response.statusCode}');
+        print('❌ Response body: ${response.body}');
         throw Exception('Request failed with status ${response.statusCode}');
       }
 
       // If none of the above, return empty list
+      print('⚠️ Unexpected response format, returning empty list');
       return <Map<String, dynamic>>[];
     } catch (e) {
+      print('❌ Exception in getDoctorAppointments: $e');
       throw Exception('Failed to load doctor appointments: $e');
     }
   }

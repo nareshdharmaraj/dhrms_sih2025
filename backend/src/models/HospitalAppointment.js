@@ -7,8 +7,7 @@ const hospitalAppointmentSchema = new mongoose.Schema({
     unique: true
   },
   patientId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Patient',
+    type: String,
     required: true
   },
   patientName: {
@@ -30,8 +29,7 @@ const hospitalAppointmentSchema = new mongoose.Schema({
     type: String
   },
   hospitalStaffId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Doctor',
+    type: String,
     required: true
   },
   doctorName: {
@@ -39,8 +37,7 @@ const hospitalAppointmentSchema = new mongoose.Schema({
     required: true
   },
   hospitalId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Hospital',
+    type: String,
     required: true
   },
   hospitalName: {

@@ -1412,10 +1412,17 @@ class _PatientAppointmentBookingScreenState
         ),
         trailing: const Icon(Icons.arrow_forward_ios),
         onTap: () {
+          final hospitalId = hospital['hospitalId'] ?? hospital['_id'];
+          print(
+            '🏥 Hospital selected: ${hospital['hospitalName'] ?? hospital['name']}',
+          );
+          print('🆔 Hospital ID: $hospitalId');
+          print('📊 Hospital data keys: ${hospital.keys.toList()}');
+
           setState(() {
             selectedHospital = hospital;
           });
-          _loadDoctors(hospital['hospitalId'] ?? hospital['_id']);
+          _loadDoctors(hospitalId);
         },
       ),
     );
@@ -2611,23 +2618,36 @@ class _PatientAppointmentBookingScreenState
     });
 
     try {
+      final url = '${AppConstants.baseUrl}/doctors/hospital/$hospitalId';
+      print('🏥 Loading doctors for hospital: $hospitalId');
+      print('🌐 Full URL: $url');
+
       final response = await http.get(
-        Uri.parse('${AppConstants.baseUrl}/doctors/hospital/$hospitalId'),
+        Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
       );
 
+      print('📡 Response status: ${response.statusCode}');
+      print('📦 Response body: ${response.body}');
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        print('✅ Doctors loaded: ${data.length} doctors found');
+
         setState(() {
           doctors = data;
           filteredDoctors = data;
           isLoadingDoctors = false;
         });
       } else {
-        throw Exception('Failed to load doctors');
+        print('❌ Failed to load doctors - Status: ${response.statusCode}');
+        print('❌ Response body: ${response.body}');
+        throw Exception(
+          'Failed to load doctors - Status: ${response.statusCode}',
+        );
       }
     } catch (e) {
-      print('Error loading doctors: $e');
+      print('💥 Error loading doctors: $e');
       setState(() => isLoadingDoctors = false);
     }
   }
@@ -2665,26 +2685,68 @@ class _PatientAppointmentBookingScreenState
     setState(() => isBooking = true);
 
     try {
+      // Validate required data before creating appointment
+      final patientId = widget.patientData['uhid'] ?? widget.patientData['_id'];
+      final patientName =
+          widget.patientData['name'] ?? widget.patientData['fullName'];
+      final doctorId = selectedDoctor!['doctorId'] ?? selectedDoctor!['_id'];
+      final doctorName =
+          selectedDoctor!['doctorName'] ?? selectedDoctor!['name'];
+      final hospitalId =
+          selectedHospital!['hospitalId'] ?? selectedHospital!['_id'];
+      final hospitalName =
+          selectedHospital!['hospitalName'] ?? selectedHospital!['name'];
+      final consultationFee = selectedDoctor!['consultationFee'] ?? 500;
+
+      // Validation checks
+      if (patientId == null || patientId.toString().isEmpty) {
+        throw Exception('Patient ID is missing');
+      }
+      if (patientName == null || patientName.toString().isEmpty) {
+        throw Exception('Patient name is missing');
+      }
+      if (doctorId == null || doctorId.toString().isEmpty) {
+        throw Exception('Doctor ID is missing');
+      }
+      if (doctorName == null || doctorName.toString().isEmpty) {
+        throw Exception('Doctor name is missing');
+      }
+      if (hospitalId == null || hospitalId.toString().isEmpty) {
+        throw Exception('Hospital ID is missing');
+      }
+      if (hospitalName == null || hospitalName.toString().isEmpty) {
+        throw Exception('Hospital name is missing');
+      }
+      if (selectedTime == null || selectedTime!.isEmpty) {
+        throw Exception('Appointment time is missing');
+      }
+
       final appointmentData = {
-        'patientId': widget.patientData['uhid'] ?? widget.patientData['_id'],
-        'patientName': widget.patientData['name'],
-        'doctorId': selectedDoctor!['doctorId'] ?? selectedDoctor!['_id'],
-        'doctorName': selectedDoctor!['doctorName'],
-        'hospitalId':
-            selectedHospital!['hospitalId'] ?? selectedHospital!['_id'],
-        'hospitalName': selectedHospital!['hospitalName'],
+        'patientId': patientId,
+        'patientName': patientName,
+        'doctorId': doctorId,
+        'doctorName': doctorName,
+        'hospitalId': hospitalId,
+        'hospitalName': hospitalName,
         'appointmentDate':
             '${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}',
         'appointmentTime': selectedTime,
         'reason': appointmentReason.isEmpty
             ? 'General consultation'
             : appointmentReason,
-        'consultationFee': selectedDoctor!['consultationFee'],
-        'status': 'pending',
+        'consultationFee': consultationFee,
       };
 
       print('📅 Booking appointment with data: $appointmentData');
       print('🔗 API URL: ${AppConstants.baseUrl}/appointments');
+
+      // Additional debugging
+      print('🔍 Patient Data Available: ${widget.patientData.keys.toList()}');
+      print('🔍 Selected Doctor Data: ${selectedDoctor?.keys.toList()}');
+      print('🔍 Selected Hospital Data: ${selectedHospital?.keys.toList()}');
+      print(
+        '🔍 Full API URL: ${Uri.parse('${AppConstants.baseUrl}/appointments')}',
+      );
 
       final response = await http.post(
         Uri.parse('${AppConstants.baseUrl}/appointments'),
@@ -2720,18 +2782,43 @@ class _PatientAppointmentBookingScreenState
           '❌ Appointment booking failed with status: ${response.statusCode}',
         );
         print('❌ Error response: ${response.body}');
+
+        // Try to parse error response
+        String errorMessage = 'Failed to book appointment';
+        try {
+          final errorData = json.decode(response.body);
+          errorMessage = errorData['message'] ?? errorMessage;
+        } catch (parseError) {
+          errorMessage = 'Server error: ${response.statusCode}';
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 5),
+          ),
+        );
+
         throw Exception(
-          'Failed to book appointment - Status: ${response.statusCode}',
+          'Failed to book appointment - Status: ${response.statusCode} - $errorMessage',
         );
       }
     } catch (e) {
-      print('Error booking appointment: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to book appointment. Please try again.'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      print('❌ Exception in booking appointment: $e');
+
+      // Only show snackbar if we haven't already shown one for HTTP errors
+      if (!e.toString().contains('Failed to book appointment - Status:')) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Network error: Please check your connection and try again.',
+            ),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 5),
+          ),
+        );
+      }
     } finally {
       setState(() => isBooking = false);
     }

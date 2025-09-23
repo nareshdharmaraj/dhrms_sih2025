@@ -26,6 +26,7 @@ const hospitalAdminRoutes = require('./routes/hospital_admin_routes');
 const hospitalDoctorRoutes = require('./routes/hospital_doctor_routes');
 const hospitalAssistantRoutes = require('./routes/hospital_assistant_routes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
+const patientAppointmentRoutes = require('./routes/patientAppointmentRoutes');
 
 // Import middleware
 const errorHandler = require('./middleware/error_handler');
@@ -71,6 +72,7 @@ app.use('/api/hospital-admin', hospitalAdminRoutes);
 app.use('/api/hospital-doctor', hospitalDoctorRoutes);
 app.use('/api/hospital-assistant', hospitalAssistantRoutes);
 app.use('/api/appointments', appointmentRoutes);
+app.use('/api/patient-appointments', patientAppointmentRoutes);
 
 // Simple hospitals endpoint for patient appointment booking
 app.get('/api/hospitals', async (req, res) => {
