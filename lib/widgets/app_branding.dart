@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class AppBranding extends StatelessWidget {
   final Color? backgroundColor;
@@ -44,18 +45,16 @@ class AppBranding extends StatelessWidget {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(25),
-                child: Image.asset(
-                  'assets/applogo.png',
+                child: SvgPicture.asset(
+                  'assets/applogo.svg',
                   width: 50,
                   height: 50,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Icon(
+                  placeholderBuilder: (context) => Icon(
                       Icons.health_and_safety,
                       color: backgroundColor ?? Colors.blue[700],
                       size: 30,
-                    );
-                  },
+                    ),
                 ),
               ),
             ),

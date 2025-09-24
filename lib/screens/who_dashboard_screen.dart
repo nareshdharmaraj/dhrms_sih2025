@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../models/who_admin.dart';
 import '../services/who_service.dart';
 import '../widgets/who_buttons.dart';
@@ -167,16 +168,14 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen>
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.asset(
-                'assets/applogo.png',
+              child: SvgPicture.asset(
+                'assets/applogo.svg',
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Icon(
+                placeholderBuilder: (context) => Icon(
                     Icons.health_and_safety,
                     color: Colors.blue.shade600,
                     size: 24,
-                  );
-                },
+                  ),
               ),
             ),
           ),
