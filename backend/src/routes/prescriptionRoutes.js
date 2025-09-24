@@ -200,15 +200,24 @@ router.post('/', authenticateToken, async (req, res) => {
       diseaseName: req.body.diseaseName, // Generated from diseases array
       diseases: req.body.diseases, // New array field for multiple diseases
       diseaseType,
-      expectedRecoveryDays: diseaseType === 'communicable' ? expectedRecoveryDays : undefined,
+      expectedRecoveryDays: diseaseType === 'communicable' ? expectedRecoveryDays : null,
       medicines,
-      nextVisitDate: nextVisitDate ? new Date(nextVisitDate) : undefined,
+      nextVisitDate: nextVisitDate || null,
       nextVisitMandatory: nextVisitMandatory || false,
-      isConfirmed,
-      confirmedAt: isConfirmed ? new Date() : undefined
+      isConfirmed
+      // Note: Removed confirmedAt as it's not in the schema validation
     });
 
     console.log('💾 Attempting to save prescription to database...');
+    console.log('📋 Prescription object to save:', JSON.stringify(prescription.toObject(), null, 2));
+    
+    // Additional validation logging
+    console.log('🔍 Field validation check:');
+    console.log(`- appointmentId type: ${typeof prescription.appointmentId} (${prescription.appointmentId})`);
+    console.log(`- nextVisitDate type: ${typeof prescription.nextVisitDate} (${prescription.nextVisitDate})`);
+    console.log(`- expectedRecoveryDays type: ${typeof prescription.expectedRecoveryDays} (${prescription.expectedRecoveryDays})`);
+    console.log(`- medicines count: ${prescription.medicines.length}`);
+    
     await prescription.save();
     console.log('✅ Prescription created successfully:', prescription._id);
 

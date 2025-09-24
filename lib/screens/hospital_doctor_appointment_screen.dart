@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../utils/app_constants.dart';
+import 'hospital_doctor_prescription_screen.dart';
 
 class HospitalDoctorAppointmentScreen extends StatefulWidget {
   final Map<String, dynamic> doctorData;
@@ -16,18 +17,20 @@ class HospitalDoctorAppointmentScreen extends StatefulWidget {
 class _HospitalDoctorAppointmentScreenState
     extends State<HospitalDoctorAppointmentScreen>
     with TickerProviderStateMixin {
-  // Tab controller for the three tabs
+  // Tab controller for the four tabs
   late TabController _tabController;
 
   // Data for each tab
   List<dynamic> requestsAppointments = [];
   List<dynamic> currentAppointments = [];
   List<dynamic> rejectedAppointments = [];
+  List<dynamic> patientsAppointments = []; // New tab for completed appointments
 
   // Loading states
   bool isLoadingRequests = true;
   bool isLoadingCurrent = true;
   bool isLoadingRejected = true;
+  bool isLoadingPatients = true; // New loading state
 
   // Statistics
   Map<String, int> appointmentStats = {
@@ -46,7 +49,7 @@ class _HospitalDoctorAppointmentScreenState
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _tabController.addListener(_onTabChanged);
     _loadAllData();
   }
@@ -65,6 +68,8 @@ class _HospitalDoctorAppointmentScreenState
       _loadCurrentData();
     } else if (_tabController.index == 2 && rejectedAppointments.isEmpty) {
       _loadRejectedData();
+    } else if (_tabController.index == 3 && patientsAppointments.isEmpty) {
+      _loadPatientsData();
     }
   }
 
@@ -74,6 +79,7 @@ class _HospitalDoctorAppointmentScreenState
       _loadRequestsData(),
       _loadCurrentData(),
       _loadRejectedData(),
+      _loadPatientsData(),
     ]);
   }
 
@@ -188,6 +194,35 @@ class _HospitalDoctorAppointmentScreenState
     }
   }
 
+  Future<void> _loadPatientsData() async {
+    try {
+      setState(() => isLoadingPatients = true);
+
+      final doctorId = widget.doctorData['doctorId'] ?? widget.doctorData['id'];
+
+      final response = await http.get(
+        Uri.parse(
+          '${AppConstants.baseUrl}/doctor-appointments/$doctorId/completed',
+        ),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success']) {
+          setState(() {
+            patientsAppointments = data['data'] ?? [];
+          });
+        }
+      }
+    } catch (error) {
+      print('❌ Error loading patients appointments: $error');
+      _showErrorSnackBar('Failed to load patients appointments');
+    } finally {
+      setState(() => isLoadingPatients = false);
+    }
+  }
+
   // Filter methods
   void _filterAppointments() {
     // This method can be used to apply filters if needed
@@ -240,6 +275,7 @@ class _HospitalDoctorAppointmentScreenState
                       _buildRequestsTab(),
                       _buildCurrentTab(),
                       _buildRejectedTab(),
+                      _buildPatientsTab(),
                     ],
                   ),
                 ),
@@ -712,6 +748,46 @@ class _HospitalDoctorAppointmentScreenState
               ],
             ),
           ),
+          Tab(
+            height: 70,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Stack(
+                  children: [
+                    Icon(Icons.people, size: 24),
+                    if (appointmentStats['completed']! > 0)
+                      Positioned(
+                        right: -2,
+                        top: -2,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            color: Colors.blue,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 16,
+                            minHeight: 16,
+                          ),
+                          child: Text(
+                            '${appointmentStats['completed']}',
+                            style: const TextStyle(
+                              fontSize: 8,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                const Text('Patients'),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -834,6 +910,47 @@ class _HospitalDoctorAppointmentScreenState
             duration: Duration(milliseconds: 200 + (index * 50)),
             curve: Curves.easeOutBack,
             child: _buildRejectedAppointmentCard(rejectedAppointments[index]),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildPatientsTab() {
+    if (isLoadingPatients) {
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+        ),
+      );
+    }
+
+    if (patientsAppointments.isEmpty) {
+      return _buildEmptyState(
+        'No Completed Appointments',
+        'No completed appointments with prescriptions available.',
+        Icons.people,
+        Colors.grey,
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadPatientsData,
+      color: Colors.blue,
+      child: ListView.builder(
+        padding: const EdgeInsets.fromLTRB(
+          16,
+          20,
+          16,
+          100,
+        ), // Added bottom padding for tab bar
+        physics: const BouncingScrollPhysics(),
+        itemCount: patientsAppointments.length,
+        itemBuilder: (context, index) {
+          return AnimatedContainer(
+            duration: Duration(milliseconds: 200 + (index * 50)),
+            curve: Curves.easeOutBack,
+            child: _buildPatientCard(patientsAppointments[index]),
           );
         },
       ),
@@ -1594,6 +1711,264 @@ class _HospitalDoctorAppointmentScreenState
     );
   }
 
+  Widget _buildPatientCard(Map<String, dynamic> appointment) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(
+              colors: [Colors.white, Colors.blue.shade50],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Patient Header
+              Row(
+                children: [
+                  // Patient Avatar
+                  Container(
+                    width: 55,
+                    height: 55,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [Colors.blue.shade400, Colors.blue.shade600],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.blue.withOpacity(0.3),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.person,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+
+                  // Patient Info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          appointment['patientName'] ?? 'Unknown Patient',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.phone,
+                              size: 14,
+                              color: Colors.grey.shade600,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              appointment['patientPhone'] ?? 'No phone',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Completed Status Badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.green.shade600, Colors.green.shade500],
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.green.withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.check_circle,
+                          size: 12,
+                          color: Colors.white,
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          'COMPLETED',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 20),
+
+              // Appointment Details
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: _buildAppointmentDetails(appointment),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Prescription Info
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.green.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.medical_services,
+                      size: 20,
+                      color: Colors.green.shade600,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Prescription Available',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.green.shade700,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            appointment['prescriptionId'] != null
+                                ? 'Digital prescription created'
+                                : 'Paper prescription given',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.green.shade800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Action Buttons
+              Row(
+                children: [
+                  // View Details Button
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        _showAppointmentDetailsDialog(appointment);
+                      },
+                      icon: const Icon(Icons.visibility, size: 16),
+                      label: const Text(
+                        'View Details',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue.shade600,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 2,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  // View Prescription Button
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: appointment['prescriptionId'] != null
+                          ? () {
+                              _viewPrescription(appointment);
+                            }
+                          : null,
+                      icon: const Icon(Icons.receipt_long, size: 16),
+                      label: const Text(
+                        'Prescription',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: appointment['prescriptionId'] != null
+                            ? Colors.green.shade600
+                            : Colors.grey.shade400,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 2,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildAppointmentDetails(Map<String, dynamic> appointment) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2145,5 +2520,155 @@ class _HospitalDoctorAppointmentScreenState
         behavior: SnackBarBehavior.floating,
       ),
     );
+  }
+
+  void _showAppointmentDetailsDialog(Map<String, dynamic> appointment) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.9,
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    color: Colors.blue.shade600,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Appointment Details',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // Appointment Details
+              _buildAppointmentDetails(appointment),
+
+              const SizedBox(height: 20),
+
+              // Patient Info
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.blue.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Patient Information',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.blue.shade700,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Name: ${appointment['patientName'] ?? 'Unknown'}',
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Phone: ${appointment['patientPhone'] ?? 'No phone'}',
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                    if (appointment['patientEmail'] != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'Email: ${appointment['patientEmail']}',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Close Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue.shade600,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Close',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _viewPrescription(Map<String, dynamic> appointment) async {
+    try {
+      _showLoadingDialog('Loading prescription...');
+
+      final prescriptionId = appointment['prescriptionId'];
+      final response = await http.get(
+        Uri.parse('${AppConstants.baseUrl}/prescriptions/$prescriptionId'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      Navigator.pop(context); // Close loading dialog
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success']) {
+          // Navigate to prescription view screen
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => HospitalDoctorPrescriptionScreen(
+                consultationData: appointment,
+              ),
+            ),
+          );
+        } else {
+          _showErrorSnackBar('Failed to load prescription');
+        }
+      } else {
+        _showErrorSnackBar('Server error: ${response.statusCode}');
+      }
+    } catch (error) {
+      Navigator.pop(context); // Close loading dialog
+      _showErrorSnackBar('Network error: $error');
+    }
   }
 }
