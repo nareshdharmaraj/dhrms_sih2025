@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'infected_ids_manager.dart';
 import 'ble_notification_service.dart';
 import '../utils/ble_utils.dart';
+
+// Conditional imports for mobile-only packages
+import 'package:flutter_reactive_ble/flutter_reactive_ble.dart' if (dart.library.html) 'ble_contact_tracing_web_stub.dart';
+import 'package:permission_handler/permission_handler.dart' if (dart.library.html) 'ble_contact_tracing_web_stub.dart';
 
 /// Main BLE Contact Tracing Service
 /// Handles BLE scanning, broadcasting, and proximity alerts for disease detection
@@ -59,7 +61,18 @@ class BLEContactTracingService {
       // Initialize notification service
       await _notificationService.initialize();
       
-      // Check and request permissions
+      // On web, BLE is not supported - only show notification
+      if (kIsWeb) {
+        debugPrint('⚠️ BLE not supported on web platform');
+        await _initializeDeviceId();
+        await _infectedIDsManager.initialize();
+        _startInfectedIDsUpdateTimer();
+        _isInitialized = true;
+        _updateStatus(BLEServiceStatus.ready);
+        return true;
+      }
+      
+      // Check and request permissions (mobile only)
       if (!await _checkPermissions()) {
         _updateStatus(BLEServiceStatus.permissionDenied);
         return false;
@@ -97,10 +110,17 @@ class BLEContactTracingService {
     try {
       _updateStatus(BLEServiceStatus.starting);
       
-      // Start scanning for nearby devices
+      // On web, simulate contact tracing without BLE
+      if (kIsWeb) {
+        debugPrint('🌐 Simulating contact tracing on web platform');
+        _updateStatus(BLEServiceStatus.active);
+        return true;
+      }
+      
+      // Start scanning for nearby devices (mobile only)
       await startScanning();
       
-      // Start broadcasting device ID
+      // Start broadcasting device ID (mobile only)
       await startBroadcasting();
       
       _updateStatus(BLEServiceStatus.active);
@@ -125,6 +145,7 @@ class BLEContactTracingService {
   /// Start BLE scanning for nearby devices
   Future<void> startScanning() async {
     if (_isScanning) return;
+    if (kIsWeb) return; // Skip BLE operations on web
 
     try {
       _isScanning = true;
@@ -152,6 +173,7 @@ class BLEContactTracingService {
   /// Start BLE broadcasting
   Future<void> startBroadcasting() async {
     if (_isBroadcasting || _deviceId == null) return;
+    if (kIsWeb) return; // Skip BLE operations on web
 
     try {
       // Note: BLE advertising in Flutter is limited
@@ -175,6 +197,8 @@ class BLEContactTracingService {
 
   /// Perform a single BLE scan
   Future<void> _performScan() async {
+    if (kIsWeb) return; // Skip BLE operations on web
+    
     try {
       final scanStream = _ble.scanForDevices(
         withServices: [Uuid.parse(_serviceUUID)],
@@ -263,6 +287,8 @@ class BLEContactTracingService {
 
   /// Check and request necessary permissions
   Future<bool> _checkPermissions() async {
+    if (kIsWeb) return true; // No BLE permissions needed on web
+    
     final permissions = [
       Permission.bluetooth,
       Permission.bluetoothScan,

@@ -3,12 +3,11 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'ble_contact_tracing_service.dart';
 
 /// BLE notification service for proximity alerts
-/// Handles both local notifications and Firebase Cloud Messaging
+/// Handles both local notifications and Firebase Cloud Messaging (mobile only)
 class BLENotificationService {
   static final BLENotificationService _instance = BLENotificationService._internal();
   factory BLENotificationService() => _instance;
@@ -16,7 +15,6 @@ class BLENotificationService {
 
   // Services
   final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
-  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
 
   // State
   bool _isInitialized = false;
@@ -34,8 +32,10 @@ class BLENotificationService {
       // Initialize local notifications
       await _initializeLocalNotifications();
       
-      // Initialize Firebase messaging
-      await _initializeFirebaseMessaging();
+      // Initialize Firebase messaging only on mobile platforms
+      if (!kIsWeb) {
+        await _initializeFirebaseMessaging();
+      }
       
       // Load notification preferences
       await _loadNotificationPreferences();
@@ -108,31 +108,11 @@ class BLENotificationService {
     }
   }
 
-  /// Initialize Firebase messaging
+  /// Initialize Firebase messaging (mobile only)
   Future<void> _initializeFirebaseMessaging() async {
-    // Request permission for notifications
-    await _firebaseMessaging.requestPermission(
-      alert: true,
-      announcement: false,
-      badge: true,
-      carPlay: false,
-      criticalAlert: false,
-      provisional: false,
-      sound: true,
-    );
-
-    // Get FCM token
-    final token = await _firebaseMessaging.getToken();
-    debugPrint('📱 FCM Token: $token');
-
-    // Handle foreground messages
-    FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
-    
-    // Handle background messages
-    FirebaseMessaging.onBackgroundMessage(_handleBackgroundMessage);
-    
-    // Handle notification taps
-    FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationTap);
+    // Firebase Messaging disabled for web compatibility
+    debugPrint('📱 Firebase Messaging disabled for web compatibility');
+    return;
   }
 
   /// Show proximity alert notification
@@ -150,7 +130,6 @@ class BLENotificationService {
         importance: Importance.high,
         ticker: 'Proximity Alert',
         enableVibration: true,
-        vibrationPattern: Int64List.fromList([0, 1000, 500, 1000]),
         enableLights: true,
         color: const Color(0xFFFF6B6B),
         ledColor: const Color(0xFFFF0000),
@@ -206,7 +185,6 @@ class BLENotificationService {
         'General Alerts',
         channelDescription: 'General health and system notifications',
         importance: Importance.defaultImportance,
-        priority: Priority.defaultPriority,
         ticker: 'Health Alert',
       );
 
@@ -237,18 +215,7 @@ class BLENotificationService {
     }
   }
 
-  /// Handle foreground Firebase messages
-  void _handleForegroundMessage(RemoteMessage message) {
-    debugPrint('📬 Received foreground message: ${message.messageId}');
-    
-    if (message.notification != null) {
-      showGeneralNotification(
-        title: message.notification!.title ?? 'Health Alert',
-        body: message.notification!.body ?? '',
-        data: message.data,
-      );
-    }
-  }
+
 
   /// Handle notification tap
   void _onNotificationTapped(NotificationResponse response) {
@@ -282,11 +249,7 @@ class BLENotificationService {
     }
   }
 
-  /// Handle Firebase notification tap
-  void _handleNotificationTap(RemoteMessage message) {
-    debugPrint('📱 FCM notification tapped: ${message.messageId}');
-    _handleNotificationAction(message.data);
-  }
+
 
   /// Log alert for analytics
   Future<void> _logAlert(ProximityAlert alert) async {
@@ -394,9 +357,11 @@ class BLENotificationService {
   bool get notificationsEnabled => _notificationsEnabled;
 }
 
-/// Background message handler for Firebase
+/// Background message handler for Firebase (mobile only)
 @pragma('vm:entry-point')
-Future<void> _handleBackgroundMessage(RemoteMessage message) async {
+Future<void> _handleBackgroundMessage(dynamic message) async {
+  if (kIsWeb) return;
+  
   debugPrint('📬 Handling background message: ${message.messageId}');
   
   // Handle background notification logic here

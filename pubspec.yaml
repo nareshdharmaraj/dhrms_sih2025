@@ -57,8 +57,8 @@ dependencies:
   flutter_reactive_ble: ^5.3.1
   
   # Notifications and messaging
-  firebase_messaging: ^14.7.10
-  flutter_local_notifications: ^16.3.2
+  # firebase_messaging: ^14.7.10  # Disabled for web compatibility
+  flutter_local_notifications: ^17.2.3
   
   # Authentication and security
   crypto: ^3.0.3
@@ -96,8 +96,7 @@ dependencies:
   geocoding: ^2.1.1
   google_maps_flutter: ^2.5.0
   
-  # Notifications - temporarily disabled due to compilation issues
-  # flutter_local_notifications: ^16.3.0
+  # Notifications - Updated version to fix compilation issues
   # firebase_messaging: ^14.7.6  # Removed for web compatibility
   
   # QR Code and barcode
