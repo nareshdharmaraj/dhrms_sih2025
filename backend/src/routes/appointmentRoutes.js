@@ -319,4 +319,50 @@ router.get('/staff/:staffId', async (req, res) => {
   }
 });
 
+/**
+ * @desc    Mark appointment as completed
+ * @route   PATCH /api/appointments/:appointmentId/complete
+ * @access  Private (Doctor)
+ */
+router.patch('/:appointmentId/complete', async (req, res) => {
+  try {
+    const { appointmentId } = req.params;
+
+    console.log('✅ Marking appointment as completed:', appointmentId);
+
+    const appointment = await HospitalAppointment.findByIdAndUpdate(
+      appointmentId,
+      { 
+        status: 'completed',
+        completedAt: new Date(),
+        updatedAt: new Date()
+      },
+      { new: true }
+    );
+
+    if (!appointment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Appointment not found'
+      });
+    }
+
+    console.log('✅ Appointment marked as completed successfully');
+
+    res.json({
+      success: true,
+      message: 'Appointment completed successfully',
+      data: appointment
+    });
+
+  } catch (error) {
+    console.error('❌ Error completing appointment:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while completing appointment',
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;

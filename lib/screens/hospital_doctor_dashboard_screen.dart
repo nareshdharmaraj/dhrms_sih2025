@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/hospital_api_service.dart';
+import '../widgets/embedded_doctor_appointment_widget.dart';
 
 class HospitalDoctorDashboardScreen extends StatefulWidget {
   final Map<String, dynamic> doctorData;
@@ -689,45 +690,8 @@ class _HospitalDoctorDashboardScreenState
   }
 
   Widget _buildAppointmentsTab() {
-    return Column(
-      children: [
-        // Filter Section
-        Container(
-          padding: EdgeInsets.all(16),
-          color: Colors.white,
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'All Appointments (${_appointments.length})',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
-                  ),
-                ),
-              ),
-              IconButton(
-                onPressed: _loadInitialData,
-                icon: Icon(Icons.refresh, color: Colors.blue[700]),
-              ),
-            ],
-          ),
-        ),
-
-        Expanded(
-          child: _appointments.isEmpty
-              ? _buildEmptyAppointments()
-              : ListView.builder(
-                  padding: EdgeInsets.all(16),
-                  itemCount: _appointments.length,
-                  itemBuilder: (context, index) {
-                    return _buildAppointmentCard(_appointments[index]);
-                  },
-                ),
-        ),
-      ],
-    );
+    // Return the new embedded appointment widget
+    return EmbeddedDoctorAppointmentWidget(doctorData: widget.doctorData);
   }
 
   Widget _buildEmptyAppointments() {

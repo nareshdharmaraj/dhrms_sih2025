@@ -65,6 +65,10 @@ const hospitalAppointmentSchema = new mongoose.Schema({
     enum: ['pending', 'approved', 'rejected', 'completed'],
     default: 'pending'
   },
+  rejectionReason: {
+    type: String,
+    required: false // Only present when status is 'rejected'
+  },
   bookedAt: {
     type: Date,
     default: Date.now

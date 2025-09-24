@@ -48,6 +48,14 @@ class _PatientAppointmentBookingScreenState
   bool isFilterExpanded = false;
   bool isDoctorFilterExpanded = false;
   bool isNotificationPanelOpen = false;
+  bool isStatsPopupOpen = false;
+
+  // Additional Filter States
+  String doctorNameFilter = '';
+  String hospitalNameFilter = '';
+  String appointmentIdFilter = '';
+  String dateFilter = '';
+  String timeFilter = '';
 
   // Controllers
   final TextEditingController _searchController = TextEditingController();
@@ -197,6 +205,19 @@ class _PatientAppointmentBookingScreenState
               child: Container(color: Colors.black.withOpacity(0.3)),
             ),
             _buildNotificationPanel(),
+          ],
+
+          // Stats Popup Overlay
+          if (isStatsPopupOpen) ...[
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  isStatsPopupOpen = false;
+                });
+              },
+              child: Container(color: Colors.black.withOpacity(0.5)),
+            ),
+            _buildStatsPopup(),
           ],
         ],
       ),
@@ -567,60 +588,77 @@ class _PatientAppointmentBookingScreenState
       ),
       child: Column(
         children: [
-          // Compact Stats Header
+          // Compact Stats Button
           Container(
-            margin: const EdgeInsets.fromLTRB(12, 8, 12, 4), // Reduced margins
-            padding: const EdgeInsets.all(12), // Reduced padding
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF4CAF50), Color(0xFF388E3C)],
+            margin: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  isStatsPopupOpen = true;
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF4CAF50), Color(0xFF388E3C)],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.green.withOpacity(0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.analytics_outlined,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'My Appointment Stats',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${myAppointments.length}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              borderRadius: BorderRadius.circular(12), // Reduced border radius
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.green.withOpacity(0.2),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildStatItem(
-                  'Total',
-                  myAppointments.length.toString(),
-                  Icons.calendar_today,
-                ),
-                Container(
-                  width: 1,
-                  height: 24, // Reduced height
-                  color: Colors.white.withOpacity(0.3),
-                ),
-                _buildStatItem(
-                  'Pending',
-                  myAppointments
-                      .where((apt) => apt['status'] == 'pending')
-                      .length
-                      .toString(),
-                  Icons.schedule,
-                ),
-                Container(
-                  width: 1,
-                  height: 24,
-                  color: Colors.white.withOpacity(0.3),
-                ),
-                _buildStatItem(
-                  'Completed',
-                  myAppointments
-                      .where((apt) => apt['status'] == 'completed')
-                      .length
-                      .toString(),
-                  Icons.check_circle,
-                ),
-              ],
             ),
           ),
 
@@ -719,46 +757,128 @@ class _PatientAppointmentBookingScreenState
                   ),
                 ),
 
-                // Collapsible Status Filter
+                // Enhanced Collapsible Filters
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 300),
                   height: isFilterExpanded
-                      ? 60
-                      : 0, // Compact height when expanded
+                      ? 180
+                      : 0, // Increased height for more filters
                   child: isFilterExpanded
                       ? Container(
                           padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: [
-                                _buildCompactStatusChip(
-                                  'All',
-                                  Icons.list_alt,
-                                  const Color(0xFF2196F3),
+                          child: Column(
+                            children: [
+                              // Status Filter Row
+                              SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: Row(
+                                  children: [
+                                    _buildCompactStatusChip(
+                                      'All',
+                                      Icons.list_alt,
+                                      const Color(0xFF2196F3),
+                                    ),
+                                    _buildCompactStatusChip(
+                                      'pending',
+                                      Icons.schedule,
+                                      const Color(0xFFFF9800),
+                                    ),
+                                    _buildCompactStatusChip(
+                                      'approved',
+                                      Icons.check_circle_outline,
+                                      const Color(0xFF4CAF50),
+                                    ),
+                                    _buildCompactStatusChip(
+                                      'rejected',
+                                      Icons.cancel_outlined,
+                                      const Color(0xFFF44336),
+                                    ),
+                                    _buildCompactStatusChip(
+                                      'completed',
+                                      Icons.done_all,
+                                      const Color(0xFF9C27B0),
+                                    ),
+                                  ],
                                 ),
-                                _buildCompactStatusChip(
-                                  'pending',
-                                  Icons.schedule,
-                                  const Color(0xFFFF9800),
+                              ),
+                              const SizedBox(height: 8),
+
+                              // Additional Filters Row 1
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _buildFilterTextField(
+                                      'Doctor Name',
+                                      Icons.person_outline,
+                                      (value) => setState(
+                                        () => doctorNameFilter = value,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: _buildFilterTextField(
+                                      'Hospital Name',
+                                      Icons.local_hospital_outlined,
+                                      (value) => setState(
+                                        () => hospitalNameFilter = value,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+
+                              // Additional Filters Row 2
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _buildFilterTextField(
+                                      'Appointment ID',
+                                      Icons.confirmation_number_outlined,
+                                      (value) => setState(
+                                        () => appointmentIdFilter = value,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: _buildFilterTextField(
+                                      'Date (DD/MM/YYYY)',
+                                      Icons.date_range_outlined,
+                                      (value) =>
+                                          setState(() => dateFilter = value),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+
+                              // Apply Filters Button
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    _applyAdvancedFilters();
+                                    setState(() => isFilterExpanded = false);
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF2196F3),
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 8,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'Apply Filters',
+                                    style: TextStyle(fontSize: 12),
+                                  ),
                                 ),
-                                _buildCompactStatusChip(
-                                  'approved',
-                                  Icons.check_circle_outline,
-                                  const Color(0xFF4CAF50),
-                                ),
-                                _buildCompactStatusChip(
-                                  'rejected',
-                                  Icons.cancel_outlined,
-                                  const Color(0xFFF44336),
-                                ),
-                                _buildCompactStatusChip(
-                                  'completed',
-                                  Icons.done_all,
-                                  const Color(0xFF9C27B0),
-                                ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         )
                       : const SizedBox.shrink(),
@@ -794,41 +914,6 @@ class _PatientAppointmentBookingScreenState
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildStatItem(String label, String value, IconData icon) {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(4), // Reduced padding
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(
-            icon,
-            color: Colors.white,
-            size: 16, // Reduced icon size
-          ),
-        ),
-        const SizedBox(height: 4), // Reduced spacing
-        Text(
-          value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16, // Reduced font size
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.8),
-            fontSize: 10, // Reduced font size
-          ),
-        ),
-      ],
     );
   }
 
@@ -1295,6 +1380,10 @@ class _PatientAppointmentBookingScreenState
                 ),
               ),
             ],
+
+            // Action Buttons Row
+            const SizedBox(height: 8),
+            _buildAppointmentActions(appointment),
           ],
         ),
       ),
@@ -1328,6 +1417,891 @@ class _PatientAppointmentBookingScreenState
         return Icons.done_all;
       default:
         return Icons.help;
+    }
+  }
+
+  // Stats popup widget
+  Widget _buildStatsPopup() {
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.analytics, color: Color(0xFF4CAF50)),
+                const SizedBox(width: 8),
+                const Text(
+                  'Appointment Statistics',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const Spacer(),
+                IconButton(
+                  onPressed: () {
+                    setState(() {
+                      isStatsPopupOpen = false;
+                    });
+                  },
+                  icon: const Icon(Icons.close),
+                ),
+              ],
+            ),
+            const Divider(),
+            const SizedBox(height: 16),
+
+            // Stats Grid
+            GridView.count(
+              shrinkWrap: true,
+              crossAxisCount: 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 1.2,
+              children: [
+                _buildStatCard(
+                  'Total',
+                  myAppointments.length.toString(),
+                  Icons.calendar_today,
+                  const Color(0xFF2196F3),
+                ),
+                _buildStatCard(
+                  'Pending',
+                  myAppointments
+                      .where((apt) => apt['status'] == 'pending')
+                      .length
+                      .toString(),
+                  Icons.schedule,
+                  const Color(0xFFFF9800),
+                ),
+                _buildStatCard(
+                  'Approved',
+                  myAppointments
+                      .where((apt) => apt['status'] == 'approved')
+                      .length
+                      .toString(),
+                  Icons.check_circle,
+                  const Color(0xFF4CAF50),
+                ),
+                _buildStatCard(
+                  'Completed',
+                  myAppointments
+                      .where((apt) => apt['status'] == 'completed')
+                      .length
+                      .toString(),
+                  Icons.done_all,
+                  const Color(0xFF9C27B0),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatCard(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [color, color.withOpacity(0.8)],
+        ),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: Colors.white, size: 24),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.9),
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Filter helper methods
+  Widget _buildFilterTextField(
+    String hint,
+    IconData icon,
+    Function(String) onChanged,
+  ) {
+    return Container(
+      height: 32,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: TextField(
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 10),
+          prefixIcon: Icon(icon, color: Colors.grey.shade500, size: 16),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 8,
+            vertical: 4,
+          ),
+        ),
+        style: const TextStyle(fontSize: 11),
+        onChanged: onChanged,
+      ),
+    );
+  }
+
+  void _applyAdvancedFilters() {
+    setState(() {
+      filteredMyAppointments = myAppointments.where((appointment) {
+        // Status filter
+        if (appointmentStatusFilter != 'All' &&
+            appointment['status']?.toString().toLowerCase() !=
+                appointmentStatusFilter.toLowerCase()) {
+          return false;
+        }
+
+        // Search query filter
+        if (myAppointmentsSearchQuery.isNotEmpty) {
+          final query = myAppointmentsSearchQuery.toLowerCase();
+          final searchableText =
+              '${appointment['doctorName']} ${appointment['hospitalName']} ${appointment['appointmentId']} ${appointment['reason']}'
+                  .toLowerCase();
+          if (!searchableText.contains(query)) {
+            return false;
+          }
+        }
+
+        // Doctor name filter
+        if (doctorNameFilter.isNotEmpty &&
+            !(appointment['doctorName']?.toString().toLowerCase().contains(
+                  doctorNameFilter.toLowerCase(),
+                ) ??
+                false)) {
+          return false;
+        }
+
+        // Hospital name filter
+        if (hospitalNameFilter.isNotEmpty &&
+            !(appointment['hospitalName']?.toString().toLowerCase().contains(
+                  hospitalNameFilter.toLowerCase(),
+                ) ??
+                false)) {
+          return false;
+        }
+
+        // Appointment ID filter
+        if (appointmentIdFilter.isNotEmpty &&
+            !(appointment['appointmentId']?.toString().toLowerCase().contains(
+                  appointmentIdFilter.toLowerCase(),
+                ) ??
+                false)) {
+          return false;
+        }
+
+        // Date filter
+        if (dateFilter.isNotEmpty &&
+            appointment['appointmentDate']?.toString() != dateFilter) {
+          return false;
+        }
+
+        return true;
+      }).toList();
+    });
+  }
+
+  // Action buttons for appointment cards
+  Widget _buildAppointmentActions(Map<String, dynamic> appointment) {
+    return Row(
+      children: [
+        // View Button
+        Expanded(
+          child: _buildActionButton(
+            'View',
+            Icons.visibility_outlined,
+            const Color(0xFF2196F3),
+            () => _viewAppointmentDetails(appointment),
+          ),
+        ),
+        const SizedBox(width: 8),
+
+        // Edit Button (only if within 2 hours and not approved/completed)
+        if (_canEditAppointment(appointment)) ...[
+          Expanded(
+            child: _buildActionButton(
+              'Edit',
+              Icons.edit_outlined,
+              const Color(0xFFFF9800),
+              () => _editAppointment(appointment),
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
+
+        // Delete Button (only if not completed)
+        if (_canDeleteAppointment(appointment)) ...[
+          Expanded(
+            child: _buildActionButton(
+              'Delete',
+              Icons.delete_outlined,
+              const Color(0xFFF44336),
+              () => _deleteAppointment(appointment),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildActionButton(
+    String label,
+    IconData icon,
+    Color color,
+    VoidCallback onPressed,
+  ) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withOpacity(0.3)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16, color: color),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Check if appointment can be edited (within 2 hours and before approval)
+  bool _canEditAppointment(Map<String, dynamic> appointment) {
+    final status = appointment['status']?.toString().toLowerCase();
+    if (status == 'approved' || status == 'completed') {
+      return false;
+    }
+
+    // Check if within 2 hours of booking
+    if (appointment['bookedAt'] != null) {
+      final bookedAt = DateTime.parse(appointment['bookedAt']);
+      final now = DateTime.now();
+      final timeDifference = now.difference(bookedAt).inHours;
+      return timeDifference <= 2;
+    }
+
+    return true; // Allow editing if no booking time is available
+  }
+
+  // Check if appointment can be deleted (not completed)
+  bool _canDeleteAppointment(Map<String, dynamic> appointment) {
+    final status = appointment['status']?.toString().toLowerCase();
+    return status != 'completed';
+  }
+
+  // Action handlers
+  void _viewAppointmentDetails(Map<String, dynamic> appointment) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.info_outline, color: Color(0xFF2196F3)),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Appointment Details',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close),
+                    ),
+                  ],
+                ),
+                const Divider(),
+                _buildDetailRow(
+                  'Appointment ID',
+                  appointment['appointmentId'] ?? 'N/A',
+                ),
+                _buildDetailRow('Doctor', appointment['doctorName'] ?? 'N/A'),
+                _buildDetailRow(
+                  'Hospital',
+                  appointment['hospitalName'] ?? 'N/A',
+                ),
+                _buildDetailRow(
+                  'Date',
+                  appointment['appointmentDate'] ?? 'N/A',
+                ),
+                _buildDetailRow(
+                  'Time',
+                  appointment['appointmentTime'] ?? 'N/A',
+                ),
+                _buildDetailRow('Status', appointment['status'] ?? 'N/A'),
+                _buildDetailRow(
+                  'Fee',
+                  '₹${appointment['consultationFee'] ?? '0'}',
+                ),
+                if (appointment['reason'] != null &&
+                    appointment['reason'].isNotEmpty)
+                  _buildDetailRow('Reason', appointment['reason']),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(
+              '$label:',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade700,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _editAppointment(Map<String, dynamic> appointment) {
+    _showEditAppointmentDialog(appointment);
+  }
+
+  void _showEditAppointmentDialog(Map<String, dynamic> appointment) {
+    // Create separate controllers for edit dialog
+    final TextEditingController editReasonController = TextEditingController();
+    DateTime? editSelectedDate;
+    String? editSelectedTime;
+    bool isLoading = false;
+
+    // Parse current appointment data
+    String currentDate = appointment['appointmentDate'] ?? '';
+    String currentTime = appointment['appointmentTime'] ?? '';
+    String currentReason = appointment['reason'] ?? '';
+
+    // Initialize edit values with current appointment data
+    editReasonController.text = currentReason;
+    editSelectedTime = currentTime;
+
+    // Parse current date (DD/MM/YYYY format)
+    try {
+      List<String> dateParts = currentDate.split('/');
+      if (dateParts.length == 3) {
+        int day = int.parse(dateParts[0]);
+        int month = int.parse(dateParts[1]);
+        int year = int.parse(dateParts[2]);
+        editSelectedDate = DateTime(year, month, day);
+      }
+    } catch (e) {
+      print('Error parsing appointment date: $e');
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Row(
+                children: [
+                  Icon(Icons.edit, color: Colors.orange.shade600, size: 24),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'Edit Appointment',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              content: Container(
+                width: double.maxFinite,
+                constraints: const BoxConstraints(maxHeight: 500),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Appointment Info
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.blue.shade200),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Appointment ID: ${appointment['appointmentId']}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.blue.shade700,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Doctor: ${appointment['doctorName']}',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              'Hospital: ${appointment['hospitalName']}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Date Selection
+                      const Text(
+                        'Select New Date',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      InkWell(
+                        onTap: () async {
+                          final DateTime? picked = await showDatePicker(
+                            context: context,
+                            initialDate:
+                                editSelectedDate ??
+                                DateTime.now().add(const Duration(days: 1)),
+                            firstDate: DateTime.now(),
+                            lastDate: DateTime.now().add(
+                              const Duration(days: 30),
+                            ),
+                            builder: (context, child) {
+                              return Theme(
+                                data: Theme.of(context).copyWith(
+                                  colorScheme: ColorScheme.light(
+                                    primary: Colors.orange.shade600,
+                                  ),
+                                ),
+                                child: child!,
+                              );
+                            },
+                          );
+                          if (picked != null) {
+                            setDialogState(() {
+                              editSelectedDate = picked;
+                            });
+                          }
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 12,
+                            horizontal: 16,
+                          ),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: editSelectedDate != null
+                                  ? Colors.orange.shade600
+                                  : Colors.grey.shade300,
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                            color: editSelectedDate != null
+                                ? Colors.orange.shade50
+                                : Colors.grey.shade50,
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.calendar_today,
+                                color: editSelectedDate != null
+                                    ? Colors.orange.shade600
+                                    : Colors.grey.shade500,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                editSelectedDate != null
+                                    ? '${editSelectedDate!.day}/${editSelectedDate!.month}/${editSelectedDate!.year}'
+                                    : 'Select Date',
+                                style: TextStyle(
+                                  color: editSelectedDate != null
+                                      ? Colors.orange.shade600
+                                      : Colors.grey.shade500,
+                                  fontWeight: editSelectedDate != null
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Time Selection
+                      const Text(
+                        'Select New Time',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: availableTimes.map((time) {
+                          bool isSelected = editSelectedTime == time;
+                          return GestureDetector(
+                            onTap: () {
+                              setDialogState(() {
+                                editSelectedTime = time;
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? Colors.orange.shade600
+                                    : Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? Colors.orange.shade600
+                                      : Colors.grey.shade300,
+                                ),
+                              ),
+                              child: Text(
+                                time,
+                                style: TextStyle(
+                                  color: isSelected
+                                      ? Colors.white
+                                      : Colors.grey.shade700,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Reason Field
+                      const Text(
+                        'Update Reason',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: editReasonController,
+                        maxLines: 3,
+                        decoration: InputDecoration(
+                          hintText: 'Enter reason for appointment...',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(
+                              color: Colors.orange.shade600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isLoading
+                      ? null
+                      : () {
+                          editReasonController.dispose();
+                          Navigator.of(context).pop();
+                        },
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          // Validate inputs
+                          if (editSelectedDate == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Please select a date'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
+                          if (editSelectedTime == null ||
+                              editSelectedTime!.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Please select a time'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
+                          if (editReasonController.text.trim().isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Please enter a reason'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
+
+                          setDialogState(() {
+                            isLoading = true;
+                          });
+
+                          await _updateAppointment(
+                            appointment['appointmentId'],
+                            editSelectedDate!,
+                            editSelectedTime!,
+                            editReasonController.text.trim(),
+                          );
+
+                          editReasonController.dispose();
+                          Navigator.of(context).pop();
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange.shade600,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: isLoading
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        )
+                      : const Text('Update'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _deleteAppointment(Map<String, dynamic> appointment) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Delete Appointment'),
+          content: Text(
+            'Are you sure you want to delete the appointment with ${appointment['doctorName']} on ${appointment['appointmentDate']}?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _performDeleteAppointment(appointment);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFF44336),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _performDeleteAppointment(
+    Map<String, dynamic> appointment,
+  ) async {
+    try {
+      print('🗑️ Deleting appointment: ${appointment['appointmentId']}');
+
+      final response = await http.delete(
+        Uri.parse(
+          '${AppConstants.baseUrl}/patient-appointments/delete/${appointment['appointmentId']}',
+        ),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      print('📡 Delete response status: ${response.statusCode}');
+      print('📡 Delete response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+
+        if (responseData['success'] == true) {
+          print('✅ Appointment deleted successfully from database!');
+
+          // Remove from local UI only after successful API call
+          setState(() {
+            myAppointments.removeWhere(
+              (apt) => apt['appointmentId'] == appointment['appointmentId'],
+            );
+            _filterMyAppointments();
+          });
+
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.check_circle, color: Colors.white),
+                  const SizedBox(width: 8),
+                  const Text('Appointment deleted successfully'),
+                ],
+              ),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        } else {
+          print('❌ Delete failed: ${responseData['message']}');
+          _showErrorMessage(
+            responseData['message'] ?? 'Failed to delete appointment',
+          );
+        }
+      } else {
+        print('❌ Delete request failed with status: ${response.statusCode}');
+
+        // Try to parse error response
+        String errorMessage = 'Failed to delete appointment';
+        try {
+          final errorData = json.decode(response.body);
+          errorMessage = errorData['message'] ?? errorMessage;
+        } catch (parseError) {
+          if (response.statusCode == 403) {
+            errorMessage =
+                'Cannot delete appointment - it may already be completed';
+          } else if (response.statusCode == 404) {
+            errorMessage = 'Appointment not found';
+          } else {
+            errorMessage = 'Server error: ${response.statusCode}';
+          }
+        }
+
+        _showErrorMessage(errorMessage);
+      }
+    } catch (error) {
+      print('❌ Network error during appointment deletion: $error');
+      _showErrorMessage(
+        'Network error. Please check your connection and try again.',
+      );
     }
   }
 
@@ -2888,21 +3862,116 @@ class _PatientAppointmentBookingScreenState
 
   // Filter my appointments by status and search query
   void _filterMyAppointments() {
-    setState(() {
-      filteredMyAppointments = myAppointments.where((appointment) {
-        bool matchesStatus =
-            appointmentStatusFilter == 'All' ||
-            appointment['status'] == appointmentStatusFilter;
-        bool matchesSearch =
-            myAppointmentsSearchQuery.isEmpty ||
-            appointment['doctorName'].toLowerCase().contains(
-              myAppointmentsSearchQuery.toLowerCase(),
-            ) ||
-            appointment['hospitalName'].toLowerCase().contains(
-              myAppointmentsSearchQuery.toLowerCase(),
-            );
-        return matchesStatus && matchesSearch;
-      }).toList();
-    });
+    _applyAdvancedFilters();
+  }
+
+  Future<void> _updateAppointment(
+    String appointmentId,
+    DateTime date,
+    String time,
+    String reason,
+  ) async {
+    try {
+      print('🔄 Updating appointment: $appointmentId');
+
+      // Format date as DD/MM/YYYY
+      String formattedDate = '${date.day}/${date.month}/${date.year}';
+
+      final requestBody = {
+        'appointmentDate': formattedDate,
+        'appointmentTime': time,
+        'reason': reason,
+      };
+
+      print('📡 Update request body: ${json.encode(requestBody)}');
+
+      final response = await http.put(
+        Uri.parse(
+          '${AppConstants.baseUrl}/patient-appointments/edit/$appointmentId',
+        ),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(requestBody),
+      );
+
+      print('📡 Update response status: ${response.statusCode}');
+      print('📡 Update response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+
+        if (responseData['success'] == true) {
+          print('✅ Appointment updated successfully!');
+
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.check_circle, color: Colors.white),
+                  const SizedBox(width: 8),
+                  const Text('Appointment updated successfully!'),
+                ],
+              ),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+
+          // Refresh the appointments list to show updated data
+          _loadMyAppointments();
+        } else {
+          print('❌ Update failed: ${responseData['message']}');
+          _showErrorMessage(
+            responseData['message'] ?? 'Failed to update appointment',
+          );
+        }
+      } else {
+        print('❌ Update request failed with status: ${response.statusCode}');
+
+        // Try to parse error response
+        String errorMessage = 'Failed to update appointment';
+        try {
+          final errorData = json.decode(response.body);
+          errorMessage = errorData['message'] ?? errorMessage;
+        } catch (parseError) {
+          if (response.statusCode == 403) {
+            errorMessage =
+                'Cannot edit appointment - time limit exceeded or appointment already processed';
+          } else {
+            errorMessage = 'Server error: ${response.statusCode}';
+          }
+        }
+
+        _showErrorMessage(errorMessage);
+      }
+    } catch (error) {
+      print('❌ Network error during appointment update: $error');
+      _showErrorMessage(
+        'Network error. Please check your connection and try again.',
+      );
+    }
+  }
+
+  void _showErrorMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 5),
+        action: SnackBarAction(
+          label: 'Dismiss',
+          textColor: Colors.white,
+          onPressed: () {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          },
+        ),
+      ),
+    );
   }
 }
