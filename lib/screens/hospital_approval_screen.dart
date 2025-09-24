@@ -23,7 +23,7 @@ class _HospitalApprovalScreenState extends State<HospitalApprovalScreen>
   List<dynamic> allHospitals = [];
   
   String selectedFilter = 'All';
-  List<String> filterOptions = ['All', 'Pending', 'Approved', 'Rejected'];
+  List<String> filterOptions = ['All', 'Pending', 'Under Review', 'Approved', 'Rejected'];
 
   @override
   void initState() {
@@ -63,33 +63,155 @@ class _HospitalApprovalScreenState extends State<HospitalApprovalScreen>
 
   Future<void> _loadStatistics() async {
     try {
-      final response = await RHOAuthService.makeAuthenticatedRequest(
+      print('🔍 Loading statistics...');
+      
+      // Try the RHO my/statistics endpoint first
+      final myStatsResponse = await RHOAuthService.makeAuthenticatedRequest(
         'GET',
-        '/rho/hospitals/statistics',
+        '/rho/my/statistics',
       );
+      print('🔍 My statistics response: $myStatsResponse');
 
-      if (response['success']) {
+      if (myStatsResponse['success'] == true) {
         setState(() {
-          statistics = response['data'];
+          statistics = myStatsResponse['data'] ?? {};
         });
+        print('📊 Loaded statistics from /rho/my/statistics: $statistics');
+      } else {
+        print('❌ Failed to load statistics from /rho/my/statistics, calculating from hospital data...');
+        // If statistics endpoint fails, calculate from available data
+        await _calculateStatisticsFromData();
       }
     } catch (e) {
       print('Error loading statistics: $e');
+      await _calculateStatisticsFromData();
+    }
+  }
+  
+  Future<void> _calculateStatisticsFromData() async {
+    try {
+      // If we can't get statistics from API, calculate from hospital data
+      int pendingCount = 0;
+      int underReviewCount = 0;
+      int approvedCount = 0;
+      int rejectedCount = 0;
+      
+      // Count from pending hospitals list
+      for (final hospital in pendingHospitals) {
+        final status = hospital['approval']?['status'];
+        if (status == 'Pending') {
+          pendingCount++;
+        } else if (status == 'Under Review') underReviewCount++;
+      }
+      
+      // Count from all hospitals list
+      for (final hospital in allHospitals) {
+        final status = hospital['approval']?['status'];
+        if (status == 'Approved') {
+          approvedCount++;
+        } else if (status == 'Rejected') rejectedCount++;
+      }
+      
+      setState(() {
+        statistics = {
+          'pending': pendingCount + underReviewCount,
+          'approved': approvedCount,
+          'rejected': rejectedCount,
+          'total': pendingCount + underReviewCount + approvedCount + rejectedCount,
+        };
+      });
+      
+      print('📊 Calculated statistics: $statistics');
+    } catch (e) {
+      print('❌ Error calculating statistics: $e');
     }
   }
 
   Future<void> _loadPendingHospitals() async {
     try {
-      final response = await RHOAuthService.makeAuthenticatedRequest(
-        'GET',
-        '/rho/hospitals/pending',
-      );
-
-      if (response['success']) {
+      print('🔍 Starting to load pending hospitals...');
+      
+      // Check if we have proper authentication
+      final token = await RHOAuthService.getAuthToken();
+      final rhoData = await RHOAuthService.getStoredRHOData();
+      print('🔍 Auth token exists: ${token != null}');
+      print('🔍 RHO data: ${rhoData?.officerId} - ${rhoData?.assignedDistrict}, ${rhoData?.assignedState}');
+      
+      if (rhoData == null) {
+        print('❌ No RHO data found, cannot load hospitals');
         setState(() {
-          pendingHospitals = response['data'] ?? [];
+          pendingHospitals = [];
         });
+        return;
       }
+      
+      // Try the direct hospital endpoint since RHO endpoints are failing
+      print('🔍 Calling /api/hospitals to get all hospitals...');
+      final allHospitalsResponse = await RHOAuthService.makeAuthenticatedRequest(
+        'GET',
+        '/hospitals',
+      );
+      print('🔍 All hospitals response: $allHospitalsResponse');
+
+      List<dynamic> combinedHospitals = [];
+      
+      if (allHospitalsResponse['success'] == true) {
+        final hospitals = allHospitalsResponse['data'] ?? [];
+        print('📋 Fetched ${hospitals.length} total hospitals, filtering for RHO assignment and status...');
+        
+        // Filter hospitals that are managed by this RHO and have pending/under review status
+        for (final hospital in hospitals) {
+          try {
+            // Check RHO assignment and approval status
+            final rhoAssignment = hospital['rhoAssignment'];
+            final approval = hospital['approval'];
+            
+            print('🔍 Checking hospital: ${hospital['hospitalName'] ?? hospital['name']}');
+            
+            // Check if hospital is managed by this RHO
+            bool isManagedByThisRHO = false;
+            if (rhoAssignment != null && rhoAssignment['rhoId'] != null) {
+              final assignedRHOId = rhoAssignment['rhoId'].toString();
+              print('   Assigned RHO ID: $assignedRHOId');
+              print('   Current RHO ID: ${rhoData.officerId}');
+              isManagedByThisRHO = (assignedRHOId == rhoData.officerId);
+            }
+            
+            // Check approval status
+            String status = '';
+            if (approval != null && approval['status'] != null) {
+              status = approval['status'].toString();
+            }
+            print('   Status: $status');
+            print('   Is managed by this RHO: $isManagedByThisRHO');
+            
+            // Add hospital if it's managed by this RHO and has pending/under review status
+            if (isManagedByThisRHO && (status == 'Pending' || status == 'Under Review')) {
+              combinedHospitals.add(hospital);
+              print('✅ Found hospital managed by this RHO: ${hospital['hospitalName'] ?? hospital['name']} with status: $status');
+            }
+          } catch (e) {
+            print('⚠️ Error processing hospital: $e');
+          }
+        }
+      } else {
+        print('❌ Failed to load hospitals: ${allHospitalsResponse['message'] ?? allHospitalsResponse['error']}');
+      }
+
+      // Remove duplicates (in case a hospital appears in both lists)
+      final Map<String, dynamic> uniqueHospitals = {};
+      for (final hospital in combinedHospitals) {
+        final hospitalId = hospital['hospitalId'] ?? hospital['_id'];
+        if (hospitalId != null) {
+          uniqueHospitals[hospitalId] = hospital;
+        }
+      }
+
+      setState(() {
+        pendingHospitals = uniqueHospitals.values.toList();
+      });
+      
+      print('📊 Total pending/under review hospitals: ${pendingHospitals.length}');
     } catch (e) {
       print('Error loading pending hospitals: $e');
     }
@@ -97,23 +219,73 @@ class _HospitalApprovalScreenState extends State<HospitalApprovalScreen>
 
   Future<void> _loadAllHospitals() async {
     try {
-      String endpoint = '/rho/hospitals/all';
-      if (selectedFilter != 'All') {
-        endpoint += '?status=$selectedFilter';
+      print('🔍 Loading all hospitals with filter: $selectedFilter');
+      
+      final rhoData = await RHOAuthService.getStoredRHOData();
+      if (rhoData == null) {
+        print('❌ No RHO data found');
+        setState(() {
+          allHospitals = [];
+        });
+        return;
       }
 
       final response = await RHOAuthService.makeAuthenticatedRequest(
         'GET',
-        endpoint,
+        '/hospitals',
       );
 
-      if (response['success']) {
+      if (response['success'] == true) {
+        final hospitals = response['data'] ?? [];
+        print('📋 Fetched ${hospitals.length} total hospitals for filtering...');
+        
+        List<dynamic> filteredHospitals = [];
+        
+        // Filter hospitals managed by this RHO
+        for (final hospital in hospitals) {
+          try {
+            final rhoAssignment = hospital['rhoAssignment'];
+            final approval = hospital['approval'];
+            
+            // Check if hospital is managed by this RHO
+            bool isManagedByThisRHO = false;
+            if (rhoAssignment != null && rhoAssignment['rhoId'] != null) {
+              final assignedRHOId = rhoAssignment['rhoId'].toString();
+              isManagedByThisRHO = (assignedRHOId == rhoData.officerId);
+            }
+            
+            if (isManagedByThisRHO) {
+              // Apply status filter
+              if (selectedFilter == 'All') {
+                filteredHospitals.add(hospital);
+              } else if (approval != null) {
+                final status = approval['status']?.toString() ?? '';
+                if (status == selectedFilter) {
+                  filteredHospitals.add(hospital);
+                }
+              }
+            }
+          } catch (e) {
+            print('⚠️ Error filtering hospital: $e');
+          }
+        }
+        
         setState(() {
-          allHospitals = response['data'] ?? [];
+          allHospitals = filteredHospitals;
+        });
+        
+        print('📊 Filtered ${filteredHospitals.length} hospitals for RHO jurisdiction with filter: $selectedFilter');
+      } else {
+        print('❌ Failed to load all hospitals: ${response['message'] ?? response['error']}');
+        setState(() {
+          allHospitals = [];
         });
       }
     } catch (e) {
       print('Error loading all hospitals: $e');
+      setState(() {
+        allHospitals = [];
+      });
     }
   }
 
@@ -192,7 +364,7 @@ class _HospitalApprovalScreenState extends State<HospitalApprovalScreen>
           unselectedLabelColor: Colors.white70,
           indicatorColor: Colors.white,
           tabs: [
-            Tab(text: 'Pending Approvals (${pendingHospitals.length})'),
+            Tab(text: 'Pending Review (${pendingHospitals.length})'),
             Tab(text: 'All Hospitals (${allHospitals.length})'),
           ],
         ),
@@ -217,8 +389,8 @@ class _HospitalApprovalScreenState extends State<HospitalApprovalScreen>
                 ),
       floatingActionButton: FloatingActionButton(
         onPressed: _loadData,
-        child: Icon(Icons.refresh),
         backgroundColor: Color(0xFF2196F3),
+        child: Icon(Icons.refresh),
       ),
     );
   }
@@ -364,12 +536,12 @@ class _HospitalApprovalScreenState extends State<HospitalApprovalScreen>
             Icon(Icons.check_circle_outline, size: 64, color: Colors.green),
             SizedBox(height: 16),
             Text(
-              'No Pending Approvals',
+              'No Pending Reviews',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 8),
             Text(
-              'All hospital registrations in your region are processed.',
+              'No hospitals are currently pending review or under review in your region.',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.grey[600]),
             ),
@@ -502,13 +674,26 @@ class _HospitalApprovalScreenState extends State<HospitalApprovalScreen>
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: statusColor.withOpacity(0.3)),
                   ),
-                  child: Text(
-                    approval['status'] ?? 'Unknown',
-                    style: TextStyle(
-                      color: statusColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isPending) ...[
+                        Icon(
+                          approval['status'] == 'Under Review' ? Icons.rate_review : Icons.pending,
+                          size: 12,
+                          color: statusColor,
+                        ),
+                        SizedBox(width: 4),
+                      ],
+                      Text(
+                        approval['status'] ?? 'Unknown',
+                        style: TextStyle(
+                          color: statusColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -557,7 +742,7 @@ class _HospitalApprovalScreenState extends State<HospitalApprovalScreen>
                 ],
               ),
             ],
-            if (isPending && approval['status'] == 'Pending') ...[
+            if (isPending && (approval['status'] == 'Pending' || approval['status'] == 'Under Review')) ...[
               SizedBox(height: 16),
               Row(
                 children: [

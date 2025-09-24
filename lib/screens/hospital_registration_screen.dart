@@ -62,11 +62,8 @@ class _HospitalRegistrationScreenState
 
   // RHO assignment variables
   String? _assignedRHOId;
-  String? _selectedRHOId; // For manual selection in dense districts
-  List<RHOInfo> _availableRHOs = [];
   RHOAssignmentPreview? _rhoPreview;
   bool _isLoadingRHOPreview = false;
-  bool _showRHOSelection = false;
 
   String _selectedHospitalType = 'Private';
   final List<String> _selectedSpecialties = [];
@@ -149,7 +146,6 @@ class _HospitalRegistrationScreenState
       _availableDistricts = [];
       _availableSubDistricts = [];
       _requiresSubDistrict = false;
-      _showRHOSelection = false;
       _rhoPreview = null;
     });
 
@@ -192,7 +188,6 @@ class _HospitalRegistrationScreenState
       _isLoadingSubDistricts = true;
       _selectedSubDistrict = null;
       _availableSubDistricts = [];
-      _showRHOSelection = false;
       _rhoPreview = null;
     });
 
@@ -248,12 +243,37 @@ class _HospitalRegistrationScreenState
         setState(() {
           _rhoPreview = preview;
           _isLoadingRHOPreview = false;
+          
+          // Set assigned RHO ID for automatic assignment
+          print('🔍 RHO Preview Processing:');
+          print('   hasAssignment: ${preview.hasAssignment}');
+          print('   assignedRHOId: ${preview.assignedRHOId}');
+          print('   availableRHOs: ${preview.availableRHOs}');
+          print('   requiresManualSelection: ${preview.requiresManualSelection}');
+          
+          if (preview.hasAssignment) {
+            // Use the assignedRHOId from preview (works for both pre-assigned and automatic assignment)
+            _assignedRHOId = preview.assignedRHOId;
+            print('✅ Set _assignedRHOId from preview: $_assignedRHOId');
+            
+            // If we also have the RHO object, we can get additional details
+            if (preview.assignedRHO != null) {
+              print('✅ RHO object available: ${preview.assignedRHO!.fullName}');
+            }
+          } else if (preview.requiresManualSelection && preview.availableRHOs.isNotEmpty) {
+            // For districts with multiple RHOs, use the first available one for automatic assignment
+            _assignedRHOId = preview.availableRHOs.first;
+            print('✅ Set _assignedRHOId from multiple options: $_assignedRHOId');
+          } else if (preview.availableRHOs.isNotEmpty) {
+            // Fallback: if there are available RHOs but no assignment, use the first one
+            _assignedRHOId = preview.availableRHOs.first;
+            print('✅ Using fallback RHO assignment: $_assignedRHOId');
+          } else {
+            // Clear the assignment if no RHOs are available
+            _assignedRHOId = null;
+            print('❌ No RHOs available, cleared _assignedRHOId');
+          }
         });
-
-        // Load RHO information for selection if manual selection is required
-        if (preview.requiresManualSelection && preview.availableRHOs.isNotEmpty) {
-          _loadRHOsForSelection(preview.availableRHOs);
-        }
       }
     } catch (e) {
       if (mounted) {
@@ -265,22 +285,9 @@ class _HospitalRegistrationScreenState
     }
   }
 
-  /// Load RHO information for manual selection
-  Future<void> _loadRHOsForSelection(List<String> rhoIds) async {
-    try {
-      final rhosInfo = await RHOAssignmentService.getMultipleRHOInfo(rhoIds);
-      if (mounted) {
-        setState(() {
-          _availableRHOs = rhosInfo;
-          _showRHOSelection = true;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        _showErrorDialog('Failed to load RHO information: $e');
-      }
-    }
-  }
+
+
+
 
   /// Build RHO assignment preview card
   Widget _buildRHOAssignmentCard() {
@@ -361,16 +368,23 @@ class _HospitalRegistrationScreenState
                 ),
             ] else if (_rhoPreview!.requiresManualSelection) ...[
               Text(
-                'Manual RHO selection required',
+                'RHO Assignment Available',
                 style: TextStyle(
-                  color: Colors.orange[700],
+                  color: Colors.green[700],
                   fontWeight: FontWeight.w500,
                 ),
               ),
               Text(
-                'This is a densely populated district with multiple RHOs',
+                'Multiple RHOs serve this district. System will assign the most suitable RHO automatically.',
                 style: TextStyle(color: Colors.grey[600]),
               ),
+              if (_rhoPreview!.formattedLocation != null) ...[
+                SizedBox(height: 4),
+                Text(
+                  'Location: ${_rhoPreview!.formattedLocation}',
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+              ],
             ] else if (_rhoPreview!.requiresSubDistrict) ...[
               Text(
                 'Sub-district selection required',
@@ -394,52 +408,7 @@ class _HospitalRegistrationScreenState
     );
   }
 
-  /// Build RHO selection card for manual selection
-  Widget _buildRHOSelectionCard() {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Select RHO for Your Hospital',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Multiple RHOs serve this area. Please select the most appropriate one:',
-              style: TextStyle(color: Colors.grey[600]),
-            ),
-            SizedBox(height: 16),
-            
-            ...(_availableRHOs.map((rho) => RadioListTile<String>(
-              title: Text(rho.displayName),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('${rho.assignedDistrict}, ${rho.assignedState}'),
-                  Text('Workload: ${rho.workloadText} • ${rho.statusText}'),
-                ],
-              ),
-              value: rho.rhoId,
-              groupValue: _selectedRHOId,
-              onChanged: (value) {
-                setState(() {
-                  _selectedRHOId = value;
-                  _assignedRHOId = value;
-                });
-              },
-            )).toList()),
-          ],
-        ),
-      ),
-    );
-  }
+
 
   @override
   void dispose() {
@@ -479,21 +448,32 @@ class _HospitalRegistrationScreenState
       return;
     }
 
-    // Validate RHO assignment
-    if (_rhoPreview == null || !_rhoPreview!.canProceed) {
-      if (_rhoPreview?.isUnassigned == true) {
-        _showErrorDialog('No RHO has been assigned for this location. Please contact your State Health Officer (SHO) to assign an RHO before registering hospitals in this area.');
-        return;
-      }
-      if (_rhoPreview?.requiresManualSelection == true && _selectedRHOId == null) {
-        _showErrorDialog('Please select an RHO for your hospital');
-        return;
-      }
-      if (_rhoPreview?.requiresSubDistrict == true) {
-        _showErrorDialog('Please complete the location selection');
-        return;
-      }
-      _showErrorDialog('Unable to assign RHO. Please check your location selection');
+    // Validate RHO assignment - simplified without manual selection
+    if (_rhoPreview == null) {
+      _showErrorDialog('RHO assignment information not available. Please complete location selection.');
+      return;
+    }
+    
+    print('🔍 Registration validation - RHO Preview state:');
+    print('   isUnassigned: ${_rhoPreview!.isUnassigned}');
+    print('   requiresSubDistrict: ${_rhoPreview!.requiresSubDistrict}');
+    print('   hasAssignment: ${_rhoPreview!.hasAssignment}');
+    print('   assignedRHOId: ${_rhoPreview!.assignedRHOId}');
+    print('   _assignedRHOId variable: $_assignedRHOId');
+    
+    if (_rhoPreview!.isUnassigned) {
+      _showErrorDialog('No RHO has been assigned for this location. Please contact your State Health Officer (SHO) to assign an RHO before registering hospitals in this area.');
+      return;
+    }
+    
+    if (_rhoPreview!.requiresSubDistrict) {
+      _showErrorDialog('Please complete the location selection by selecting a sub-district.');
+      return;
+    }
+    
+    // Ensure we have a valid RHO assignment ID
+    if (_assignedRHOId == null || _assignedRHOId!.isEmpty) {
+      _showErrorDialog('RHO assignment ID is missing. Please re-select your location to refresh RHO assignment.');
       return;
     }
 
@@ -533,8 +513,8 @@ class _HospitalRegistrationScreenState
           'adminPhone': _adminPhoneController.text.trim(),
         },
         'rhoAssignment': {
-          'assignedRHOId': _selectedRHOId ?? _assignedRHOId,
-          'assignmentType': _selectedRHOId != null ? 'manual' : 'automatic',
+          'assignedRHOId': _assignedRHOId,
+          'assignmentType': 'automatic',
         },
       };
 
@@ -556,7 +536,6 @@ class _HospitalRegistrationScreenState
           stateName: _selectedState!,
           districtName: _selectedDistrict!,
           subDistrictName: _selectedSubDistrict,
-          manualRHOId: _selectedRHOId,
         );
 
         if (!rhoAssignmentResult.success) {
@@ -701,7 +680,7 @@ class _HospitalRegistrationScreenState
 
           // State Selection
           DropdownButtonFormField<String>(
-            value: _selectedState,
+            initialValue: _selectedState,
             decoration: InputDecoration(
               labelText: 'State *',
               border: OutlineInputBorder(),
@@ -768,7 +747,7 @@ class _HospitalRegistrationScreenState
 
           // District Selection
           DropdownButtonFormField<String>(
-            value: _selectedDistrict,
+            initialValue: _selectedDistrict,
             decoration: InputDecoration(
               labelText: 'District *',
               border: OutlineInputBorder(),
@@ -806,6 +785,10 @@ class _HospitalRegistrationScreenState
                   _requiresSubDistrict = false;
                 });
                 _loadSubDistricts(_selectedState!, value);
+                
+                // Trigger RHO assignment preview immediately for the selected district
+                print('🔍 Triggering RHO assignment preview for district: $value');
+                _previewRHOAssignment();
               }
             } : null,
             validator: (value) {
@@ -848,6 +831,9 @@ class _HospitalRegistrationScreenState
                     if (value.length != 6) {
                       return 'Pincode must be 6 digits';
                     }
+                    if (!RegExp(r'^\d+$').hasMatch(value)) {
+                      return 'Pincode must contain only numbers';
+                    }
                     return null;
                   },
                 ),
@@ -889,7 +875,7 @@ class _HospitalRegistrationScreenState
                   ),
                   SizedBox(height: 12),
                   DropdownButtonFormField<String>(
-                    value: _selectedSubDistrict,
+                    initialValue: _selectedSubDistrict,
                     decoration: InputDecoration(
                       labelText: 'Sub-District (Administrative Area) *',
                       border: OutlineInputBorder(),
@@ -928,17 +914,8 @@ class _HospitalRegistrationScreenState
 
           SizedBox(height: 16),
 
-          // RHO Assignment Preview
-          if (_rhoPreview != null) ...[
-            _buildRHOAssignmentCard(),
-            SizedBox(height: 16),
-          ],
-
-          // Manual RHO Selection (for dense districts)
-          if (_showRHOSelection) ...[
-            _buildRHOSelectionCard(),
-            SizedBox(height: 16),
-          ],
+          // RHO Assignment Information
+          _buildRHOAssignmentCard(),
 
           SizedBox(height: 16),
 
@@ -950,6 +927,9 @@ class _HospitalRegistrationScreenState
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please enter contact number';
+              }
+              if (!RegExp(r'^\d+$').hasMatch(value)) {
+                return 'Contact number must contain only numbers';
               }
               if (value.length != 10) {
                 return 'Contact number must be 10 digits';
@@ -1021,7 +1001,7 @@ class _HospitalRegistrationScreenState
           SizedBox(height: 16),
 
           DropdownButtonFormField<String>(
-            value: _selectedHospitalType,
+            initialValue: _selectedHospitalType,
             decoration: InputDecoration(
               labelText: 'Hospital Type',
               border: OutlineInputBorder(),
@@ -1177,7 +1157,7 @@ class _HospitalRegistrationScreenState
 
           CustomTextField(
             controller: _adminNameController,
-            labelText: 'Admin Full Name',
+            labelText: 'Admin Full Name (letters and spaces only)',
             prefixIcon: Icons.person,
             validator: (value) {
               if (value == null || value.isEmpty) {
@@ -1185,6 +1165,9 @@ class _HospitalRegistrationScreenState
               }
               if (value.length < 2) {
                 return 'Name must be at least 2 characters';
+              }
+              if (!RegExp(r'^[a-zA-Z\s]+$').hasMatch(value)) {
+                return 'Admin name can only contain letters and spaces';
               }
               return null;
             },
@@ -1256,6 +1239,9 @@ class _HospitalRegistrationScreenState
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please enter admin phone number';
+              }
+              if (!RegExp(r'^\d+$').hasMatch(value)) {
+                return 'Phone number must contain only numbers';
               }
               if (value.length != 10) {
                 return 'Phone number must be 10 digits';

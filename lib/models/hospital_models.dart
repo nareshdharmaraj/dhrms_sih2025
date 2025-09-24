@@ -1,5 +1,6 @@
 /// Hospital data models with enhanced location and RHO assignment information
 /// for the DHRMS (Digital Health Record Management System)
+library;
 
 class HospitalAddress {
   final String street;

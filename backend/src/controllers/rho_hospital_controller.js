@@ -318,63 +318,80 @@ const getHospitalDetails = async (req, res) => {
  */
 const approveHospital = async (req, res) => {
   try {
-    const { rhoId } = req.rho;
     const { hospitalId } = req.params;
     const { comments, assignedRO } = req.body;
 
-    // Get RHO details
-    const rho = await RegionalHealthOfficer.findOne({ rhoId })
-      .populate('assignedAreas.district', 'name state');
+    console.log(`🏥 Approving hospital: ${hospitalId}`);
+    console.log(`👨‍⚕️ RHO data:`, req.rho);
+
+    // Get RHO details - use officerId instead of rhoId
+    const rho = await RegionalHealthOfficer.findOne({ 
+      officerId: req.rho.officerId 
+    });
 
     if (!rho) {
+      console.log(`❌ RHO not found: ${req.rho.officerId}`);
       return res.status(404).json({
         success: false,
         message: 'RHO not found'
       });
     }
 
-    // Get hospital
+    console.log(`✅ Found RHO: ${rho.fullName} for ${rho.assignedDistrict}, ${rho.assignedState}`);
+
+    // Get hospital by hospitalId
     const hospital = await Hospital.findOne({ 
       hospitalId,
       isActive: true 
     });
 
     if (!hospital) {
+      console.log(`❌ Hospital not found: ${hospitalId}`);
       return res.status(404).json({
         success: false,
         message: 'Hospital not found'
       });
     }
 
-    // Verify RHO has access to this hospital's region
-    const hasAccess = rho.assignedAreas.some(area => 
-      area.district.state === hospital.region.state &&
-      area.district.name === hospital.region.district
-    );
+    console.log(`✅ Found hospital: ${hospital.name}`);
+    console.log(`🔍 Hospital location: ${hospital.location?.district}, ${hospital.location?.state}`);
+    console.log(`🔍 Hospital managedBy: ${hospital.managedBy}`);
+    console.log(`🔍 Current approval status: ${hospital.approval?.status}`);
 
-    if (!hasAccess) {
+    // Verify this hospital is managed by this RHO
+    if (!hospital.managedBy || hospital.managedBy.toString() !== rho._id.toString()) {
+      console.log(`❌ Hospital not managed by this RHO. Hospital managedBy: ${hospital.managedBy}, RHO ID: ${rho._id}`);
       return res.status(403).json({
         success: false,
-        message: 'You do not have access to approve hospitals in this region'
+        message: 'You do not have access to approve this hospital'
       });
     }
 
     // Check if already approved or rejected
-    if (hospital.approval.status !== 'Pending') {
+    if (hospital.approval?.status !== 'Pending') {
+      console.log(`❌ Hospital already processed: ${hospital.approval?.status}`);
       return res.status(400).json({
         success: false,
-        message: `Hospital is already ${hospital.approval.status.toLowerCase()}`
+        message: `Hospital is already ${hospital.approval?.status?.toLowerCase() || 'processed'}`
       });
     }
 
-    // Approve hospital
-    await hospital.approve(rho._id, comments);
+    // Update approval status to Approved
+    hospital.approval = {
+      status: 'Approved',
+      submittedAt: hospital.approval?.submittedAt || new Date(),
+      reviewedAt: new Date(),
+      reviewedBy: rho._id,
+      comments: comments || '',
+      documents: hospital.approval?.documents || []
+    };
 
-    // If assignedRO is provided, set managedBy
-    if (assignedRO) {
-      hospital.managedBy = assignedRO;
-      await hospital.save();
-    }
+    // Update hospital status to Active
+    hospital.status = 'Active';
+    
+    await hospital.save();
+    
+    console.log(`✅ Hospital approved successfully: ${hospital.name}`);
 
     res.json({
       success: true,
@@ -383,12 +400,13 @@ const approveHospital = async (req, res) => {
         hospitalId: hospital.hospitalId,
         name: hospital.name,
         approvedAt: hospital.approval.reviewedAt,
-        approvedBy: rho.name
+        approvedBy: rho.fullName,
+        status: hospital.approval.status
       }
     });
 
   } catch (error) {
-    console.error('Approve hospital error:', error);
+    console.error('❌ Approve hospital error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error while approving hospital'
@@ -403,79 +421,104 @@ const approveHospital = async (req, res) => {
  */
 const rejectHospital = async (req, res) => {
   try {
-    const { rhoId } = req.rho;
+    console.log('🔄 Starting hospital rejection process...');
+    console.log('Request RHO:', req.rho);
+    console.log('Request params:', req.params);
+    console.log('Request body:', req.body);
+
+    const { officerId } = req.rho; // Changed from rhoId to officerId
     const { hospitalId } = req.params;
     const { comments } = req.body;
 
     if (!comments || comments.trim().length === 0) {
+      console.log('❌ Rejection comments are required');
       return res.status(400).json({
         success: false,
         message: 'Rejection comments are required'
       });
     }
 
-    // Get RHO details
-    const rho = await RegionalHealthOfficer.findOne({ rhoId })
+    // Get RHO details using officerId
+    console.log('🔍 Looking up RHO with officerId:', officerId);
+    const rho = await RegionalHealthOfficer.findOne({ officerId })
       .populate('assignedAreas.district', 'name state');
 
     if (!rho) {
+      console.log('❌ RHO not found with officerId:', officerId);
       return res.status(404).json({
         success: false,
         message: 'RHO not found'
       });
     }
 
-    // Get hospital
+    console.log('✅ RHO found:', {
+      id: rho._id,
+      officerId: rho.officerId,
+      name: rho.name,
+      assignedAreas: rho.assignedAreas
+    });
+
+    // Get hospital and verify RHO access
+    console.log('🔍 Looking up hospital with hospitalId:', hospitalId);
     const hospital = await Hospital.findOne({ 
       hospitalId,
-      isActive: true 
+      managedBy: rho._id // Verify this hospital is managed by this RHO
     });
 
     if (!hospital) {
+      console.log('❌ Hospital not found or not managed by this RHO:', hospitalId);
       return res.status(404).json({
         success: false,
-        message: 'Hospital not found'
+        message: 'Hospital not found or not accessible'
       });
     }
 
-    // Verify RHO has access to this hospital's region
-    const hasAccess = rho.assignedAreas.some(area => 
-      area.district.state === hospital.region.state &&
-      area.district.name === hospital.region.district
-    );
+    console.log('✅ Hospital found:', {
+      id: hospital._id,
+      hospitalId: hospital.hospitalId,
+      name: hospital.name,
+      managedBy: hospital.managedBy,
+      approvalStatus: hospital.approval?.status
+    });
 
-    if (!hasAccess) {
-      return res.status(403).json({
-        success: false,
-        message: 'You do not have access to reject hospitals in this region'
-      });
-    }
-
-    // Check if already approved or rejected
-    if (hospital.approval.status !== 'Pending') {
+    // Check if hospital is in pending status
+    if (hospital.approval?.status !== 'Pending') {
+      console.log('❌ Hospital not in pending status:', hospital.approval?.status);
       return res.status(400).json({
         success: false,
-        message: `Hospital is already ${hospital.approval.status.toLowerCase()}`
+        message: `Hospital is already ${hospital.approval?.status || 'processed'}`
       });
     }
 
-    // Reject hospital
-    await hospital.reject(rho._id, comments);
+    // Update hospital approval status
+    console.log('🔄 Rejecting hospital...');
+    hospital.approval = {
+      status: 'Rejected',
+      reviewedBy: rho._id,
+      reviewedAt: new Date(),
+      comments: comments.trim()
+    };
+
+    const savedHospital = await hospital.save();
+    console.log('✅ Hospital rejected successfully:', {
+      hospitalId: savedHospital.hospitalId,
+      approval: savedHospital.approval
+    });
 
     res.json({
       success: true,
       message: 'Hospital registration rejected',
       data: {
-        hospitalId: hospital.hospitalId,
-        name: hospital.name,
-        rejectedAt: hospital.approval.reviewedAt,
+        hospitalId: savedHospital.hospitalId,
+        name: savedHospital.name,
+        rejectedAt: savedHospital.approval.reviewedAt,
         rejectedBy: rho.name,
         reason: comments
       }
     });
 
   } catch (error) {
-    console.error('Reject hospital error:', error);
+    console.error('❌ Reject hospital error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error while rejecting hospital'

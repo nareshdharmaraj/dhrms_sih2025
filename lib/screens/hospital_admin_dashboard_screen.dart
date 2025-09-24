@@ -1567,8 +1567,7 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
                         }
                         // Check if experience is reasonable compared to age
                         if (_selectedDateOfBirth != null) {
-                          final age =
-                              DateTime.now().year - _selectedDateOfBirth!.year;
+                          final age = _calculateAge(_selectedDateOfBirth!);
                           if (years > (age - 22)) {
                             // Assuming minimum 22 years to complete medical education
                             return 'Experience cannot exceed ${age - 22} years';
@@ -1810,15 +1809,11 @@ class _AddAssistantDialogState extends State<AddAssistantDialog> {
                 controller: _usernameController,
                 labelText: 'Username',
                 validator: (value) {
-                controller: _usernameController,
-                labelText: 'Username',
-                validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter username';
                   }
                   return null;
-                }
-return null;,
+                },
               ),
               SizedBox(height: 16),
               CustomTextField(

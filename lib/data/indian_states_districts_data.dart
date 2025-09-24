@@ -1,5 +1,6 @@
 /// Comprehensive Indian States, Districts, and Sub-districts data
 /// with RHO assignment mapping for DHRMS hospital registration system
+library;
 
 class DistrictData {
   final String name;

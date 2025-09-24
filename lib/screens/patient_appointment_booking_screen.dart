@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../utils/app_constants.dart';
+import '../widgets/custom_button.dart' as custom_widgets;
 
 class PatientAppointmentBookingScreen extends StatefulWidget {
   final Map<String, dynamic> patientData;
@@ -681,7 +682,7 @@ class _PatientAppointmentBookingScreenState
           SizedBox(height: 30),
           
           // Book Button
-          CustomButton(
+          custom_widgets.CustomButton(
             text: isBooking ? 'Booking...' : 'Book Appointment',
             onPressed: isBooking ? null : _bookAppointment,
             isLoading: isBooking,
@@ -728,6 +729,9 @@ class _PatientAppointmentBookingScreenState
               hospital['contactInfo']?['phone'] ?? 'Phone not available',
               style: TextStyle(color: Colors.grey.shade600),
             ),
+            const SizedBox(height: 6),
+            // RHO Assignment Info
+            _buildRHOAssignmentInfo(hospital['rhoAssignment']),
           ],
         ),
         trailing: const Icon(Icons.arrow_forward_ios),
@@ -744,6 +748,80 @@ class _PatientAppointmentBookingScreenState
           });
           _loadDoctors(hospitalId);
         },
+      ),
+    );
+  }
+
+  // RHO Assignment Info Widget
+  Widget _buildRHOAssignmentInfo(Map<String, dynamic>? rhoAssignment) {
+    if (rhoAssignment == null) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.orange.shade50,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: Colors.orange.shade200),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.warning_amber, size: 14, color: Colors.orange.shade600),
+            const SizedBox(width: 4),
+            Text(
+              'RHO not assigned',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.orange.shade700,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final rhoName = rhoAssignment['rhoName'] ?? 'Unknown RHO';
+    final zoneName = rhoAssignment['zoneName'];
+    final areaName = rhoAssignment['areaName'];
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.green.shade50,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: Colors.green.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.admin_panel_settings, size: 14, color: Colors.green.shade600),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  'RHO: $rhoName',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.green.shade700,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          if (zoneName != null || areaName != null)
+            Text(
+              '${zoneName != null ? "Zone: $zoneName" : ""}${areaName != null ? " • Area: $areaName" : ""}',
+              style: TextStyle(
+                fontSize: 10,
+                color: Colors.green.shade600,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+        ],
       ),
     );
   }
@@ -990,22 +1068,22 @@ class _PatientAppointmentBookingScreenState
                       )
                     : const SizedBox.shrink(),
               ),
-            
-            SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => _selectDoctor(doctor),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue.shade600,
-                  foregroundColor: Colors.white,
-                ),
-                child: Text('Select Doctor'),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
+        
+        // Doctor List
+        Expanded(
+          child: ListView.builder(
+            padding: EdgeInsets.all(16),
+            itemCount: filteredDoctors.length,
+            itemBuilder: (context, index) {
+              final doctor = filteredDoctors[index];
+              return _buildDoctorCard(doctor);
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -1060,8 +1138,8 @@ class _PatientAppointmentBookingScreenState
     );
   }
 
-  // Appointment Booking Widget
-  Widget _buildAppointmentBooking() {
+  // Date Selection Widget
+  Widget _buildDateSelection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1708,7 +1786,7 @@ class _PatientAppointmentBookingScreenState
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: appointmentStatusFilter,
+                  initialValue: appointmentStatusFilter,
                   decoration: InputDecoration(
                     labelText: 'Filter by Status',
                     border: OutlineInputBorder(

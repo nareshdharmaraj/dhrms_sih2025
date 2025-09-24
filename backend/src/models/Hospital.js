@@ -273,7 +273,7 @@ const hospitalSchema = new mongoose.Schema({
   },
   managedBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'RegionalOfficer',
+    ref: 'RegionalHealthOfficer',
     required: false // Change to false as it will be assigned upon approval
   },
   supervisedBy: {

@@ -124,7 +124,7 @@ class _WhoStateAnalyticsScreenState extends State<WhoStateAnalyticsScreen>
       padding: EdgeInsets.all(16),
       color: Colors.white,
       child: DropdownButtonFormField<String>(
-        value: selectedState,
+        initialValue: selectedState,
         decoration: InputDecoration(
           labelText: 'Select State for Detailed View',
           border: OutlineInputBorder(

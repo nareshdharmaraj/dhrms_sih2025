@@ -1625,15 +1625,32 @@ const getAreaCoverageDetails = async (req, res) => {
 // Public endpoint for hospital registration - Get active RHOs without authentication
 const getPublicRHOs = async (req, res) => {
   try {
+    const { state, district } = req.query;
     console.log('🔍 Fetching public RHO data for hospital registration...');
     
-    // Get all active RHOs 
-    const rhos = await RegionalHealthOfficer.find({ 
-      isActive: true 
-    }).select('officerId fullName assignedState assignedDistrict assignedAreas assignedRegion regionCode districtCode')
+    if (state && district) {
+      console.log(`🎯 Filtering RHOs for specific location: ${state}, ${district}`);
+    }
+    
+    // Build query filter
+    let queryFilter = { isActive: true };
+    
+    // Add state filter if provided
+    if (state) {
+      queryFilter.assignedState = new RegExp(`^${state}$`, 'i'); // Case-insensitive exact match
+    }
+    
+    // Add district filter if provided
+    if (district) {
+      queryFilter.assignedDistrict = new RegExp(`^${district}$`, 'i'); // Case-insensitive exact match
+    }
+    
+    // Get filtered active RHOs 
+    const rhos = await RegionalHealthOfficer.find(queryFilter)
+    .select('officerId fullName assignedState assignedDistrict assignedAreas assignedRegion regionCode districtCode')
     .populate('parentSHO', 'fullName assignedState');
 
-    console.log(`✅ Found ${rhos.length} active RHOs for public access`);
+    console.log(`✅ Found ${rhos.length} active RHOs for public access${state && district ? ` in ${district}, ${state}` : ''}`);
 
     res.json({
       success: true,

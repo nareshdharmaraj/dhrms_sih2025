@@ -398,7 +398,7 @@ class _ZoneManagementScreenState extends State<ZoneManagementScreen> {
             final districts = snapshot.data ?? [];
             
             return DropdownButtonFormField<String>(
-              value: selectedDistrict,
+              initialValue: selectedDistrict,
               decoration: InputDecoration(
                 hintText: 'Choose a densely populated district',
                 border: OutlineInputBorder(

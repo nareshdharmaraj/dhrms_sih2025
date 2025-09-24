@@ -98,20 +98,51 @@ class LocationService {
         districtName: districtName,
       );
       
+      print('🔍 LocationService.getDynamicRHOAssignment results:');
+      print('   assignedRHO: ${assignedRHO?.id} (${assignedRHO?.fullName})');
+      print('   availableRHOs count: ${availableRHOs.length}');
+      
+      // Debug each RHO object
+      for (int i = 0; i < availableRHOs.length; i++) {
+        final rho = availableRHOs[i];
+        print('   RHO [$i]: id="${rho.id}", name="${rho.fullName}", officerId="${rho.officerId}"');
+      }
+      
+      final rhoIds = availableRHOs
+          .map((rho) => rho.id.isNotEmpty ? rho.id : rho.officerId)  // Use officerId as fallback if id is empty
+          .where((id) => id.isNotEmpty)  // Filter out completely empty identifiers
+          .toList();
+      print('   Final RHO IDs list: $rhoIds');
+      
+      if (rhoIds.isEmpty && availableRHOs.isNotEmpty) {
+        print('⚠️ Critical: Found ${availableRHOs.length} RHOs but no valid identifiers available');
+      }
+      
+      // Use the same fallback logic for assignedRHOId
+      final assignedRHOIdValue = assignedRHO != null 
+          ? (assignedRHO.id.isNotEmpty ? assignedRHO.id : assignedRHO.officerId)
+          : null;
+          
       return RHOAssignmentResult(
-        assignedRHOId: assignedRHO?.id,
-        availableRHOs: availableRHOs.map((rho) => rho.id).toList(),
+        assignedRHOId: assignedRHOIdValue,
+        availableRHOs: rhoIds,
         isDenselyPopulated: isDenseDistrict,
         requiresSubDistrict: isDenseDistrict && subDistrictName == null,
         assignedRHO: assignedRHO,
       );
     } catch (e) {
+      print('❌ Error in getDynamicRHOAssignment, falling back to static data: $e');
+      print('❌ Stack trace: ${StackTrace.current}');
+      
       // Fallback to static data if dynamic service fails
-      return getRHOAssignment(
+      final fallbackResult = await getRHOAssignment(
         stateName: stateName,
         districtName: districtName,
         subDistrictName: subDistrictName,
       );
+      
+      print('🔄 Fallback result: assignedRHOId=${fallbackResult.assignedRHOId}, availableRHOs=${fallbackResult.availableRHOs}');
+      return fallbackResult;
     }
   }
 

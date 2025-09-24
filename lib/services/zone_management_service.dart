@@ -352,8 +352,10 @@ class ZoneManagementService {
     required String areaName,
   }) async {
     try {
+      // URL encode the area name to handle special characters like "/"
+      final encodedAreaName = Uri.encodeComponent(areaName);
       final response = await http.get(
-        Uri.parse('$_baseUrl/rho-assignment/$stateName/$districtName/$areaName'),
+        Uri.parse('$_baseUrl/rho-assignment/$stateName/$districtName/$encodedAreaName'),
         headers: {
           'Content-Type': 'application/json',
         },

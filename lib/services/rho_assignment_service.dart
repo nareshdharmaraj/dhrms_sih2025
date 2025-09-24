@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'location_service.dart';
 import 'api_service.dart';
+import '../utils/app_constants.dart';
 
 /// Service for handling RHO assignment operations
 /// Manages the assignment of hospitals to Regional Health Officers based on location
@@ -165,20 +166,56 @@ class RHOAssignmentService {
         subDistrictName: subDistrictName,
       );
 
-      // Check if any RHO is assigned
-      if (rhoAssignment.assignedRHOId == null || rhoAssignment.assignedRHOId!.isEmpty) {
-        print('⚠️ No RHO assigned for $districtName, $stateName');
+      print('🔍 RHO Assignment Result received in previewRHOAssignment:');
+      print('   assignedRHOId: ${rhoAssignment.assignedRHOId}');
+      print('   availableRHOs: ${rhoAssignment.availableRHOs}');
+      print('   assignedRHO: ${rhoAssignment.assignedRHO?.fullName}');
+
+      // Check if there are available RHOs for this location
+      if (rhoAssignment.availableRHOs.isEmpty) {
+        print('⚠️ No RHOs available for $districtName, $stateName');
         return RHOAssignmentPreview(
           isValid: true,
           errorMessage: 'RHO not created or assigned for this location',
           assignedRHOId: null,
-          availableRHOs: rhoAssignment.availableRHOs,
+          availableRHOs: [],
           isDenselyPopulated: rhoAssignment.isDenselyPopulated,
           requiresSubDistrict: rhoAssignment.requiresSubDistrict,
-          requiresManualSelection: rhoAssignment.requiresManualSelection,
+          requiresManualSelection: false,
           formattedLocation: locationValidation.formattedLocation,
           isUnassigned: true,
         );
+      }
+
+      // If there's no specific pre-assignment but RHOs are available, use automatic assignment
+      if (rhoAssignment.assignedRHOId == null || rhoAssignment.assignedRHOId!.isEmpty) {
+        print('🔍 No pre-assigned RHO, but ${rhoAssignment.availableRHOs.length} RHOs available for automatic assignment');
+        
+        // If multiple RHOs available, show as requiring manual selection (but we'll handle automatically)
+        if (rhoAssignment.availableRHOs.length > 1) {
+          return RHOAssignmentPreview(
+            isValid: true,
+            assignedRHOId: null,
+            availableRHOs: rhoAssignment.availableRHOs,
+            isDenselyPopulated: rhoAssignment.isDenselyPopulated,
+            requiresSubDistrict: rhoAssignment.requiresSubDistrict,
+            requiresManualSelection: true,
+            formattedLocation: locationValidation.formattedLocation,
+            assignedRHO: rhoAssignment.assignedRHO,
+          );
+        } else {
+          // Single RHO available - automatic assignment
+          return RHOAssignmentPreview(
+            isValid: true,
+            assignedRHOId: rhoAssignment.availableRHOs.first,
+            availableRHOs: rhoAssignment.availableRHOs,
+            isDenselyPopulated: rhoAssignment.isDenselyPopulated,
+            requiresSubDistrict: rhoAssignment.requiresSubDistrict,
+            requiresManualSelection: false,
+            formattedLocation: locationValidation.formattedLocation,
+            assignedRHO: rhoAssignment.assignedRHO,
+          );
+        }
       }
 
       print('✅ Found RHO assignment: ${rhoAssignment.assignedRHOId}');
@@ -242,6 +279,50 @@ class RHOAssignmentService {
       return [];
     } catch (e) {
       print('Error fetching multiple RHO info: $e');
+      return [];
+    }
+  }
+
+  /// Get RHO information for a specific location (for hospital registration)
+  static Future<List<RHOInfo>> getRHOsForLocation({
+    required String stateName,
+    required String districtName,
+  }) async {
+    try {
+      print('🔍 Fetching RHOs for hospital registration: $stateName, $districtName');
+      
+      final response = await http.get(
+        Uri.parse('${AppConstants.baseUrl}/rho/public?state=${Uri.encodeComponent(stateName)}&district=${Uri.encodeComponent(districtName)}'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        
+        if (data['success'] == true && data['rhos'] != null) {
+          final List<RHOInfo> rhos = (data['rhos'] as List)
+              .map((rho) => RHOInfo(
+                rhoId: rho['officerId'] ?? '',
+                fullName: rho['fullName'] ?? 'Unknown RHO',
+                email: '', // Not available in public endpoint
+                phone: '', // Not available in public endpoint
+                assignedDistrict: rho['assignedDistrict'] ?? districtName,
+                assignedState: rho['assignedState'] ?? stateName,
+                regionName: rho['assignedRegion'] ?? '',
+                workload: 0, // Not available in public endpoint
+                isActive: true,
+              ))
+              .toList();
+
+          print('✅ Found ${rhos.length} RHOs for $districtName, $stateName');
+          return rhos;
+        }
+      }
+      
+      print('❌ Failed to fetch RHOs for location: ${response.statusCode}');
+      return [];
+    } catch (e) {
+      print('❌ Error fetching RHOs for location: $e');
       return [];
     }
   }

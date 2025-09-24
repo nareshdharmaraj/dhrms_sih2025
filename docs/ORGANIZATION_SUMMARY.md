@@ -23,8 +23,11 @@ docs/
 ├── fixes/                            # Bug fixes and resolutions
 │   ├── CONNECTION_TIMEOUT_FIX.md     # Physical device connection fixes
 │   ├── LOGIN_REGISTRATION_FIX.md     # Authentication system fixes
-│   ├── TEST_REGISTRATION_FIX.md      # Test registration fixes
 │   └── URGENT_CONNECTION_FIX.md      # Urgent connection issue fixes
+├── testfiles/                        # Test files and check scripts
+│   ├── TEST_REGISTRATION_FIX.md      # Test registration fixes (moved here)
+│   ├── backend/                      # Backend test files
+│   └── flutter/                      # Flutter test files
 ├── guides/                           # Development and user guides
 │   └── LOCAL_DEBUG_GUIDE.md          # Local development setup
 └── setup/                            # Setup and configuration

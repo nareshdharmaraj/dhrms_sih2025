@@ -42,6 +42,11 @@ const {
 // @access  Public
 router.get('/list', getAllHospitals);
 
+// @route   GET /api/hospitals
+// @desc    Get all hospitals with RHO assignment info (for patient appointment booking)
+// @access  Public
+router.get('/', getAllHospitals); // Use the same enhanced controller method
+
 // @route   GET /api/hospital/search
 // @desc    Search hospitals by name or location
 // @access  Public

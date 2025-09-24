@@ -14,12 +14,67 @@ const getAllHospitals = async (req, res) => {
     const hospitals = await Hospital.find({ 
       isActive: true,
       status: 'Active' 
-    }).select('hospitalId name location.city location.state');
+    }).select('hospitalId name location zoneAssignment managedBy')
+      .populate('managedBy', 'officerId fullName email phoneNumber'); // Populate RHO details
+    
+    // Enrich hospital data with RHO information
+    const enrichedHospitals = await Promise.all(
+      hospitals.map(async (hospital) => {
+        const hospitalObj = hospital.toObject();
+        
+        // Add RHO assignment info if available
+        let rhoInfo = null;
+        if (hospital.managedBy) {
+          rhoInfo = {
+            rhoId: hospital.managedBy.officerId,
+            rhoName: hospital.managedBy.fullName,
+            rhoEmail: hospital.managedBy.email,
+            rhoPhone: hospital.managedBy.phoneNumber
+          };
+        } else if (hospital.zoneAssignment && hospital.zoneAssignment.area) {
+          // Try to get RHO from zone assignment
+          try {
+            const ZoneManagementController = require('./zoneManagementController');
+            const mockReq = {
+              params: {
+                state: hospital.location.state,
+                district: hospital.location.district,
+                areaName: hospital.zoneAssignment.area
+              }
+            };
+            const mockRes = {
+              statusCode: null,
+              data: null,
+              status: function(code) { this.statusCode = code; return this; },
+              json: function(data) { this.data = data; return this; }
+            };
+            
+            await ZoneManagementController.getRHOForArea(mockReq, mockRes);
+            
+            if (mockRes.statusCode === 200 && mockRes.data && mockRes.data.success) {
+              rhoInfo = {
+                rhoId: mockRes.data.data.assignedRHO?.rhoId,
+                rhoName: mockRes.data.data.assignedRHO?.rhoName,
+                zoneName: mockRes.data.data.zone?.zoneName,
+                areaName: hospital.zoneAssignment.area
+              };
+            }
+          } catch (error) {
+            console.log(`Failed to get RHO for hospital ${hospital.hospitalId}:`, error.message);
+          }
+        }
+        
+        return {
+          ...hospitalObj,
+          rhoAssignment: rhoInfo
+        };
+      })
+    );
     
     res.json({
       success: true,
-      count: hospitals.length,
-      data: hospitals
+      count: enrichedHospitals.length,
+      data: enrichedHospitals
     });
   } catch (error) {
     console.error('Get all hospitals error:', error);

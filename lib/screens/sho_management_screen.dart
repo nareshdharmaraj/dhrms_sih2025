@@ -260,7 +260,7 @@ class _ShoManagementScreenState extends State<ShoManagementScreen> {
             children: [
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: filterState,
+                  initialValue: filterState,
                   decoration: InputDecoration(
                     labelText: 'State',
                     border: OutlineInputBorder(
@@ -285,7 +285,7 @@ class _ShoManagementScreenState extends State<ShoManagementScreen> {
               SizedBox(width: 12),
               Expanded(
                 child: DropdownButtonFormField<bool>(
-                  value: filterActive,
+                  initialValue: filterActive,
                   decoration: InputDecoration(
                     labelText: 'Status',
                     border: OutlineInputBorder(
@@ -592,7 +592,7 @@ class _ShoManagementScreenState extends State<ShoManagementScreen> {
                   valueListenable: assignedStateNotifier,
                   builder: (context, assignedState, child) {
                     return DropdownButtonFormField<String>(
-                      value: assignedState,
+                      initialValue: assignedState,
                       decoration: InputDecoration(labelText: 'Assigned State'),
                       items: indianStates.skip(1).map((state) {
                         return DropdownMenuItem(value: state, child: Text(state));

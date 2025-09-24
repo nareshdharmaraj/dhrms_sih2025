@@ -1,10 +1,11 @@
 /// Test file for the District-based RHO Assignment System
 /// This file tests the complete flow from location selection to RHO assignment
+library;
 
 import 'package:flutter_test/flutter_test.dart';
-import '../lib/data/indian_states_districts_data.dart';
-import '../lib/services/location_service.dart';
-import '../lib/services/rho_assignment_service.dart';
+import 'package:dhrms/data/indian_states_districts_data.dart';
+import 'package:dhrms/services/location_service.dart';
+import 'package:dhrms/services/rho_assignment_service.dart';
 
 void main() {
   group('District-based RHO Assignment Tests', () {
@@ -19,7 +20,9 @@ void main() {
       expect(states, contains('Gujarat'));
       
       print('✅ States loaded: ${states.length} states');
-      states.forEach((state) => print('  - $state'));
+      for (var state in states) {
+        print('  - $state');
+      }
     });
 
     test('Should load districts for Maharashtra', () async {
@@ -32,7 +35,9 @@ void main() {
       expect(districts, contains('Nashik'));
       
       print('✅ Maharashtra districts loaded: ${districts.length} districts');
-      districts.forEach((district) => print('  - $district'));
+      for (var district in districts) {
+        print('  - $district');
+      }
     });
 
     test('Should identify dense districts correctly', () async {
@@ -392,7 +397,7 @@ void runIntegrationTests() async {
     });
   });
   
-  print('\n' + '=' * 60);
+  print('\n${'=' * 60}');
   print('🎯 All tests completed successfully!');
   print('📊 System is ready for hospital registration with RHO assignment');
 }

@@ -303,7 +303,7 @@ class _HospitalDoctorAppointmentScreenState
               Expanded(
                 flex: 2,
                 child: DropdownButtonFormField<String>(
-                  value: statusFilter,
+                  initialValue: statusFilter,
                   decoration: InputDecoration(
                     labelText: 'Status',
                     border: OutlineInputBorder(

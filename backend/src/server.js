@@ -80,14 +80,17 @@ app.use('/api/hospital-assistant', hospitalAssistantRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/patient-appointments', patientAppointmentRoutes);
 
-// Simple hospitals endpoint for patient appointment booking
+// Enhanced hospitals endpoint for patient appointment booking with RHO information
 app.get('/api/hospitals', async (req, res) => {
   try {
     const Hospital = require('./models/Hospital');
-    console.log('🏥 Fetching all hospitals for appointment booking...');
+    const ZoneManagementController = require('./controllers/zoneManagementController');
+    console.log('🏥 Fetching all hospitals for appointment booking with RHO info...');
 
     console.log('🔍 Querying hospitals...');
-    const hospitalsData = await Hospital.find({});
+    const hospitalsData = await Hospital.find({})
+      .populate('managedBy', 'officerId fullName email phoneNumber'); // Populate RHO details
+    
     console.log('Raw hospital data:', hospitalsData.length, 'records found');
     
     if (hospitalsData.length > 0) {
@@ -98,19 +101,102 @@ app.get('/api/hospitals', async (req, res) => {
       });
     }
 
-    // Map the data to include hospitalName field for frontend compatibility
-    const hospitals = hospitalsData.map(hospital => ({
-      hospitalId: hospital.hospitalId,
-      hospitalName: hospital.name || 'Unknown Hospital',
-      name: hospital.name,
-      location: hospital.location,
-      contactInfo: hospital.contact || hospital.contactInfo,
-      capacity: hospital.capacity,
-      isActive: hospital.isActive
-    }));
+    // Enrich hospital data with RHO information
+    const enrichedHospitals = await Promise.all(
+      hospitalsData.map(async (hospital) => {
+        let rhoInfo = null;
+        
+        // Try to get RHO info from direct assignment first
+        if (hospital.managedBy) {
+          rhoInfo = {
+            rhoId: hospital.managedBy.officerId,
+            rhoName: hospital.managedBy.fullName,
+            rhoEmail: hospital.managedBy.email,
+            rhoPhone: hospital.managedBy.phoneNumber,
+            assignmentType: 'direct'
+          };
+          console.log(`✅ Direct RHO assignment found for ${hospital.name}: ${rhoInfo.rhoName}`);
+        } else if (hospital.zoneAssignment && hospital.zoneAssignment.area && 
+                   hospital.location && hospital.location.state && hospital.location.district) {
+          // Try zone-based assignment
+          try {
+            console.log(`🔍 Looking up zone RHO for ${hospital.name}: ${hospital.location.state}/${hospital.location.district}/${hospital.zoneAssignment.area}`);
+            
+            const mockReq = {
+              params: {
+                state: hospital.location.state,
+                district: hospital.location.district,
+                areaName: hospital.zoneAssignment.area
+              }
+            };
+            const mockRes = {
+              statusCode: null,
+              data: null,
+              status: function(code) { this.statusCode = code; return this; },
+              json: function(data) { this.data = data; return this; }
+            };
+            
+            await ZoneManagementController.getRHOForArea(mockReq, mockRes);
+            
+            if (mockRes.statusCode === 200 && mockRes.data && mockRes.data.success && mockRes.data.data.assignedRHO) {
+              rhoInfo = {
+                rhoId: mockRes.data.data.assignedRHO.rhoId,
+                rhoName: mockRes.data.data.assignedRHO.rhoName,
+                zoneName: mockRes.data.data.zone?.zoneName,
+                areaName: hospital.zoneAssignment.area,
+                assignmentType: 'zone-based'
+              };
+              console.log(`✅ Zone-based RHO found for ${hospital.name}: ${rhoInfo.rhoName}`);
+            } else {
+              console.log(`⚠️ No zone RHO found for ${hospital.name}`);
+            }
+          } catch (error) {
+            console.log(`❌ Failed to get zone RHO for hospital ${hospital.hospitalId}:`, error.message);
+          }
+        } else {
+          console.log(`⚠️ No RHO assignment method available for ${hospital.name}`);
+        }
+        
+        // Debug: Log approval status for each hospital
+        console.log(`🔍 Hospital "${hospital.name}" approval status: "${hospital.approval?.status || 'UNDEFINED'}"`);
+        
+        return {
+          hospitalId: hospital.hospitalId,
+          hospitalName: hospital.name || 'Unknown Hospital',
+          name: hospital.name,
+          location: hospital.location,
+          region: hospital.region,
+          contactInfo: hospital.contact || hospital.contactInfo,
+          capacity: hospital.capacity,
+          isActive: hospital.isActive,
+          status: hospital.status,
+          approval: hospital.approval, // Include approval object with status
+          type: hospital.type,
+          services: hospital.services,
+          rhoAssignment: rhoInfo
+        };
+      })
+    );
 
-    console.log('✅ Found hospitals:', hospitals.length);
-    res.json(hospitals);
+    console.log('✅ Found hospitals with RHO info:', enrichedHospitals.length);
+    
+    // Log RHO assignment statistics
+    const withRHO = enrichedHospitals.filter(h => h.rhoAssignment).length;
+    const withoutRHO = enrichedHospitals.length - withRHO;
+    console.log(`📊 RHO Assignment Stats: ${withRHO} hospitals with RHO, ${withoutRHO} without RHO`);
+    
+    // Return structured response that frontend expects
+    res.json({
+      success: true,
+      message: 'Hospitals retrieved successfully',
+      data: enrichedHospitals,
+      count: enrichedHospitals.length,
+      statistics: {
+        withRHO,
+        withoutRHO,
+        total: enrichedHospitals.length
+      }
+    });
 
   } catch (error) {
     console.error('❌ Error fetching hospitals:', error);

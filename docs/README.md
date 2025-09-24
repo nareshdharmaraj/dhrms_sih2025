@@ -24,7 +24,7 @@ This directory contains all documentation for the Digital Health Record Manageme
 ### 🔧 Bug Fixes (`fixes/`)
 - **[CONNECTION_TIMEOUT_FIX.md](fixes/CONNECTION_TIMEOUT_FIX.md)** - Physical device connection timeout resolution
 - **[LOGIN_REGISTRATION_FIX.md](fixes/LOGIN_REGISTRATION_FIX.md)** - Login and registration system fixes
-- **[TEST_REGISTRATION_FIX.md](fixes/TEST_REGISTRATION_FIX.md)** - Test registration system fixes
+- **[TEST_REGISTRATION_FIX.md](../testfiles/TEST_REGISTRATION_FIX.md)** - Test registration system fixes
 - **[URGENT_CONNECTION_FIX.md](fixes/URGENT_CONNECTION_FIX.md)** - Urgent connection issue resolution
 
 ### 📚 Guides (`guides/`)

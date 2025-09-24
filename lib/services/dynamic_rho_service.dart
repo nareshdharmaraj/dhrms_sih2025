@@ -10,7 +10,7 @@ class DynamicRHOService {
   static String get _baseUrl => '${AppConstants.baseUrl}/rho';
 
   /// Cache for RHO data to avoid frequent API calls
-  static Map<String, List<RegionalHealthOfficer>> _rhoCache = {};
+  static final Map<String, List<RegionalHealthOfficer>> _rhoCache = {};
   static DateTime? _lastCacheUpdate;
   static const Duration _cacheTimeout = Duration(minutes: 5);
 
@@ -58,12 +58,40 @@ class DynamicRHOService {
     required String stateName,
     required String districtName,
   }) async {
-    final allRHOs = await getAllRHOs();
-    
-    return allRHOs.where((rho) => 
-      rho.assignedState.toLowerCase() == stateName.toLowerCase() &&
-      rho.assignedDistrict.toLowerCase() == districtName.toLowerCase()
-    ).toList();
+    // Use direct API call with filters for better performance
+    try {
+      print('🔍 Fetching RHOs for specific location: $stateName, $districtName');
+      final response = await http.get(
+        Uri.parse('$_baseUrl/public?state=${Uri.encodeComponent(stateName)}&district=${Uri.encodeComponent(districtName)}'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        
+        if (data['success'] == true && data['rhos'] != null) {
+          final List<RegionalHealthOfficer> rhos = (data['rhos'] as List)
+              .map((rho) => RegionalHealthOfficer.fromJson(rho))
+              .where((rho) => rho.isActive) // Only active RHOs
+              .toList();
+
+          print('✅ Found ${rhos.length} RHOs for $districtName, $stateName');
+          return rhos;
+        }
+      }
+      
+      print('❌ Failed to fetch RHOs for location: ${response.statusCode}');
+      return [];
+    } catch (e) {
+      print('❌ Error fetching RHOs for location: $e');
+      // Fallback to cached/all RHOs with client-side filtering
+      final allRHOs = await getAllRHOs();
+      
+      return allRHOs.where((rho) => 
+        rho.assignedState.toLowerCase() == stateName.toLowerCase() &&
+        rho.assignedDistrict.toLowerCase() == districtName.toLowerCase()
+      ).toList();
+    }
   }
 
   /// Get the best RHO assignment for a specific location
