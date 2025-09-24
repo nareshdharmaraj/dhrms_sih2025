@@ -12,7 +12,8 @@ class InfectedIDsManager {
   InfectedIDsManager._internal();
 
   // Configuration
-  static const String _baseUrl = 'https://your-api-endpoint.com'; // Replace with actual API
+  static const String _baseUrl =
+      'https://your-api-endpoint.com'; // Replace with actual API
   static const String _infectedIdsEndpoint = '/api/infected-ids';
   static const String _reportInfectionEndpoint = '/api/report-infection';
   static const String _prefsKey = 'cached_infected_ids';
@@ -26,9 +27,9 @@ class InfectedIDsManager {
   bool _isFetching = false;
 
   // Stream for infected IDs updates
-  final StreamController<Set<String>> _infectedIdsController = 
+  final StreamController<Set<String>> _infectedIdsController =
       StreamController<Set<String>>.broadcast();
-  
+
   Stream<Set<String>> get infectedIdsStream => _infectedIdsController.stream;
 
   /// Initialize the manager
@@ -37,15 +38,16 @@ class InfectedIDsManager {
 
     try {
       await _loadCachedInfectedIds();
-      
+
       // Fetch fresh data if cache is expired
       if (_isCacheExpired()) {
         await fetchInfectedIDs();
       }
-      
+
       _isInitialized = true;
-      debugPrint('✅ InfectedIDsManager initialized with ${_infectedIds.length} cached IDs');
-      
+      debugPrint(
+        '✅ InfectedIDsManager initialized with ${_infectedIds.length} cached IDs',
+      );
     } catch (e) {
       debugPrint('❌ Failed to initialize InfectedIDsManager: $e');
       _isInitialized = true; // Continue with empty cache
@@ -55,33 +57,37 @@ class InfectedIDsManager {
   /// Fetch infected IDs from backend server
   Future<bool> fetchInfectedIDs() async {
     if (_isFetching) return false;
-    
+
     _isFetching = true;
-    
+
     try {
       debugPrint('📡 Fetching infected IDs from server...');
-      
-      final response = await http.get(
-        Uri.parse('$_baseUrl$_infectedIdsEndpoint'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-      ).timeout(const Duration(seconds: 15));
+
+      final response = await http
+          .get(
+            Uri.parse('$_baseUrl$_infectedIdsEndpoint'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+          )
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        final List<String> newInfectedIds = List<String>.from(data['infected_ids'] ?? []);
-        
+        final List<String> newInfectedIds = List<String>.from(
+          data['infected_ids'] ?? [],
+        );
+
         await _updateInfectedIds(newInfectedIds);
-        debugPrint('✅ Successfully fetched ${newInfectedIds.length} infected IDs');
+        debugPrint(
+          '✅ Successfully fetched ${newInfectedIds.length} infected IDs',
+        );
         return true;
-        
       } else {
         debugPrint('❌ Failed to fetch infected IDs: ${response.statusCode}');
         return false;
       }
-      
     } catch (e) {
       debugPrint('❌ Error fetching infected IDs: $e');
       return false;
@@ -95,12 +101,12 @@ class InfectedIDsManager {
     final oldCount = _infectedIds.length;
     _infectedIds.clear();
     _infectedIds.addAll(newIds);
-    
+
     _lastUpdate = DateTime.now();
     await _cacheInfectedIds();
-    
+
     _infectedIdsController.add(Set.from(_infectedIds));
-    
+
     debugPrint('📊 Infected IDs updated: $oldCount → ${_infectedIds.length}');
   }
 
@@ -120,13 +126,14 @@ class InfectedIDsManager {
   }
 
   /// Report a positive case (device ID becomes infected)
-  Future<bool> reportInfection(String deviceId, {
+  Future<bool> reportInfection(
+    String deviceId, {
     String? healthAuthorityCode,
     Map<String, dynamic>? metadata,
   }) async {
     try {
       debugPrint('📤 Reporting infection for device ID: $deviceId');
-      
+
       final requestBody = {
         'device_id': deviceId,
         'timestamp': DateTime.now().toIso8601String(),
@@ -134,29 +141,29 @@ class InfectedIDsManager {
         'metadata': metadata ?? {},
       };
 
-      final response = await http.post(
-        Uri.parse('$_baseUrl$_reportInfectionEndpoint'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: json.encode(requestBody),
-      ).timeout(const Duration(seconds: 15));
+      final response = await http
+          .post(
+            Uri.parse('$_baseUrl$_reportInfectionEndpoint'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: json.encode(requestBody),
+          )
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         // Add to local cache immediately
         _infectedIds.add(deviceId);
         await _cacheInfectedIds();
         _infectedIdsController.add(Set.from(_infectedIds));
-        
+
         debugPrint('✅ Successfully reported infection');
         return true;
-        
       } else {
         debugPrint('❌ Failed to report infection: ${response.statusCode}');
         return false;
       }
-      
     } catch (e) {
       debugPrint('❌ Error reporting infection: $e');
       return false;
@@ -167,19 +174,18 @@ class InfectedIDsManager {
   Future<void> _loadCachedInfectedIds() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       // Load cached IDs
       final cachedIds = prefs.getStringList(_prefsKey) ?? [];
       _infectedIds.addAll(cachedIds);
-      
+
       // Load last update time
       final lastUpdateStr = prefs.getString(_lastUpdateKey);
       if (lastUpdateStr != null) {
         _lastUpdate = DateTime.parse(lastUpdateStr);
       }
-      
+
       debugPrint('📂 Loaded ${_infectedIds.length} cached infected IDs');
-      
     } catch (e) {
       debugPrint('❌ Error loading cached infected IDs: $e');
     }
@@ -189,13 +195,12 @@ class InfectedIDsManager {
   Future<void> _cacheInfectedIds() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       await prefs.setStringList(_prefsKey, _infectedIds.toList());
-      
+
       if (_lastUpdate != null) {
         await prefs.setString(_lastUpdateKey, _lastUpdate!.toIso8601String());
       }
-      
     } catch (e) {
       debugPrint('❌ Error caching infected IDs: $e');
     }
@@ -213,13 +218,12 @@ class InfectedIDsManager {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_prefsKey);
       await prefs.remove(_lastUpdateKey);
-      
+
       _infectedIds.clear();
       _lastUpdate = null;
-      
+
       _infectedIdsController.add(Set.from(_infectedIds));
       debugPrint('🗑️ Cleared infected IDs cache');
-      
     } catch (e) {
       debugPrint('❌ Error clearing cache: $e');
     }
@@ -244,13 +248,14 @@ class InfectedIDsManager {
   /// Test connection to backend server
   Future<bool> testConnection() async {
     try {
-      final response = await http.get(
-        Uri.parse('$_baseUrl/health'),
-        headers: {'Accept': 'application/json'},
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .get(
+            Uri.parse('$_baseUrl/health'),
+            headers: {'Accept': 'application/json'},
+          )
+          .timeout(const Duration(seconds: 10));
 
       return response.statusCode == 200;
-      
     } catch (e) {
       debugPrint('❌ Connection test failed: $e');
       return false;

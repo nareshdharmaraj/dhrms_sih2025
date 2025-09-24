@@ -9,10 +9,10 @@ class BLEUtils {
   /// Where Tx Power = -59 dBm (typical), N = 2 (path loss exponent)
   static double calculateDistance(int rssi) {
     if (rssi == 0) return -1.0;
-    
+
     const double txPower = -59; // Typical Tx power at 1 meter
     const double pathLoss = 2.0; // Path loss exponent for free space
-    
+
     if (rssi < txPower) {
       return pow(10, (txPower - rssi) / (10 * pathLoss)).toDouble();
     } else {
@@ -26,12 +26,12 @@ class BLEUtils {
     final now = DateTime.now();
     final dateString = '${now.year}-${now.month}-${now.day}';
     final deviceInfo = '${DateTime.now().millisecondsSinceEpoch}';
-    
+
     // Create a seed that changes daily
     final seed = '$dateString-$deviceInfo';
     final bytes = utf8.encode(seed);
     final digest = sha256.convert(bytes);
-    
+
     // Return first 16 characters of the hash
     return digest.toString().substring(0, 16);
   }
@@ -40,11 +40,11 @@ class BLEUtils {
   static String generateDailyRotatingId(String baseId) {
     final now = DateTime.now();
     final dateString = '${now.year}-${now.month}-${now.day}';
-    
+
     final combined = '$baseId-$dateString';
     final bytes = utf8.encode(combined);
     final digest = sha256.convert(bytes);
-    
+
     return digest.toString().substring(0, 16);
   }
 
@@ -62,17 +62,17 @@ class BLEUtils {
     // RSSI typically ranges from -30 (excellent) to -90 (poor)
     const int minRSSI = -90;
     const int maxRSSI = -30;
-    
+
     if (rssi >= maxRSSI) return 100;
     if (rssi <= minRSSI) return 0;
-    
+
     return ((rssi - minRSSI) * 100 / (maxRSSI - minRSSI)).round();
   }
 
   /// Validate UUID format
   static bool isValidUUID(String uuid) {
     final uuidRegex = RegExp(
-      r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+      r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
     );
     return uuidRegex.hasMatch(uuid);
   }
@@ -92,7 +92,10 @@ class BLEUtils {
   }
 
   /// Get exposure risk based on distance and duration
-  static ExposureRisk calculateExposureRisk(double distance, int durationMinutes) {
+  static ExposureRisk calculateExposureRisk(
+    double distance,
+    int durationMinutes,
+  ) {
     // CDC guidelines: Close contact = within 6 feet (1.8m) for 15+ minutes
     if (distance <= 1.8 && durationMinutes >= 15) {
       return ExposureRisk.high;
@@ -134,17 +137,7 @@ class BLEUtils {
 }
 
 /// Proximity categories based on RSSI
-enum ProximityCategory {
-  immediate,
-  near,
-  far,
-  unknown,
-}
+enum ProximityCategory { immediate, near, far, unknown }
 
 /// Exposure risk levels
-enum ExposureRisk {
-  minimal,
-  low,
-  medium,
-  high,
-}
+enum ExposureRisk { minimal, low, medium, high }

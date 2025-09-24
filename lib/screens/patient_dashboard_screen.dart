@@ -1561,7 +1561,8 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const ProximityAlertScreen(),
+                              builder: (context) =>
+                                  const ProximityAlertScreen(),
                             ),
                           );
                         },

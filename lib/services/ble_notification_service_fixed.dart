@@ -6,6 +6,11 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'ble_contact_tracing_service.dart';
 
+// Conditional import for Firebase Messaging - only on mobile platforms
+import 'package:firebase_messaging/firebase_messaging.dart'
+    if (dart.library.html) 'ble_notification_service_web_stub.dart'
+    as firebase_messaging;
+
 /// BLE notification service for proximity alerts
 /// Handles both local notifications and Firebase Cloud Messaging (mobile only)
 class BLENotificationService {
@@ -17,6 +22,9 @@ class BLENotificationService {
   // Services
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
+
+  // Firebase messaging - only available on mobile platforms
+  dynamic _firebaseMessaging;
 
   // State
   bool _isInitialized = false;
@@ -115,9 +123,43 @@ class BLENotificationService {
 
   /// Initialize Firebase messaging (mobile only)
   Future<void> _initializeFirebaseMessaging() async {
-    // Firebase Messaging disabled for web compatibility
-    debugPrint('📱 Firebase Messaging disabled for web compatibility');
-    return;
+    if (kIsWeb) return; // Skip on web
+
+    try {
+      _firebaseMessaging = firebase_messaging.FirebaseMessaging.instance;
+
+      // Request permission for notifications
+      await _firebaseMessaging.requestPermission(
+        alert: true,
+        announcement: false,
+        badge: true,
+        carPlay: false,
+        criticalAlert: false,
+        provisional: false,
+        sound: true,
+      );
+
+      // Get FCM token
+      final token = await _firebaseMessaging.getToken();
+      debugPrint('📱 FCM Token: $token');
+
+      // Handle foreground messages
+      firebase_messaging.FirebaseMessaging.onMessage.listen(
+        _handleForegroundMessage,
+      );
+
+      // Handle background messages
+      firebase_messaging.FirebaseMessaging.onBackgroundMessage(
+        _handleBackgroundMessage,
+      );
+
+      // Handle notification taps
+      firebase_messaging.FirebaseMessaging.onMessageOpenedApp.listen(
+        _handleNotificationTap,
+      );
+    } catch (e) {
+      debugPrint('⚠️ Firebase Messaging not available: $e');
+    }
   }
 
   /// Show proximity alert notification
@@ -216,6 +258,21 @@ class BLENotificationService {
     }
   }
 
+  /// Handle foreground Firebase messages (mobile only)
+  void _handleForegroundMessage(dynamic message) {
+    if (kIsWeb) return;
+
+    debugPrint('📬 Received foreground message: ${message.messageId}');
+
+    if (message.notification != null) {
+      showGeneralNotification(
+        title: message.notification!.title ?? 'Health Alert',
+        body: message.notification!.body ?? '',
+        data: message.data,
+      );
+    }
+  }
+
   /// Handle notification tap
   void _onNotificationTapped(NotificationResponse response) {
     debugPrint('📱 Notification tapped: ${response.payload}');
@@ -246,6 +303,14 @@ class BLENotificationService {
       default:
         debugPrint('❓ Unknown notification type: $type');
     }
+  }
+
+  /// Handle Firebase notification tap (mobile only)
+  void _handleNotificationTap(dynamic message) {
+    if (kIsWeb) return;
+
+    debugPrint('📱 FCM notification tapped: ${message.messageId}');
+    _handleNotificationAction(message.data);
   }
 
   /// Log alert for analytics

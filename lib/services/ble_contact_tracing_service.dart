@@ -7,25 +7,29 @@ import 'ble_notification_service.dart';
 import '../utils/ble_utils.dart';
 
 // Conditional imports for mobile-only packages
-import 'package:flutter_reactive_ble/flutter_reactive_ble.dart' if (dart.library.html) 'ble_contact_tracing_web_stub.dart';
-import 'package:permission_handler/permission_handler.dart' if (dart.library.html) 'ble_contact_tracing_web_stub.dart';
+import 'package:flutter_reactive_ble/flutter_reactive_ble.dart'
+    if (dart.library.html) 'ble_contact_tracing_web_stub.dart';
+import 'package:permission_handler/permission_handler.dart'
+    if (dart.library.html) 'ble_contact_tracing_web_stub.dart';
 
 /// Main BLE Contact Tracing Service
 /// Handles BLE scanning, broadcasting, and proximity alerts for disease detection
 class BLEContactTracingService {
-  static final BLEContactTracingService _instance = BLEContactTracingService._internal();
+  static final BLEContactTracingService _instance =
+      BLEContactTracingService._internal();
   factory BLEContactTracingService() => _instance;
   BLEContactTracingService._internal();
 
   final FlutterReactiveBle _ble = FlutterReactiveBle();
   final InfectedIDsManager _infectedIDsManager = InfectedIDsManager();
   final BLENotificationService _notificationService = BLENotificationService();
-  
+
   // Service configuration
   static const String _serviceUUID = '0000180F-0000-1000-8000-00805F9B34FB';
   static const int _proximityThreshold = -60; // RSSI threshold for ~2 meters
-  static const int _alertCooldownMinutes = 15; // Cooldown between alerts for same ID
-  
+  static const int _alertCooldownMinutes =
+      15; // Cooldown between alerts for same ID
+
   // State management
   bool _isInitialized = false;
   bool _isScanning = false;
@@ -33,21 +37,22 @@ class BLEContactTracingService {
   String? _deviceId;
   Timer? _scanTimer;
   Timer? _infectedIDsUpdateTimer;
-  
+
   // Caching for detected devices and alerts
   final Map<String, DateTime> _recentAlerts = {};
   final Map<String, DetectedDevice> _detectedDevices = {};
-  
+
   // Stream controllers
-  final StreamController<DetectedDevice> _deviceDetectedController = 
+  final StreamController<DetectedDevice> _deviceDetectedController =
       StreamController<DetectedDevice>.broadcast();
-  final StreamController<ProximityAlert> _alertController = 
+  final StreamController<ProximityAlert> _alertController =
       StreamController<ProximityAlert>.broadcast();
-  final StreamController<BLEServiceStatus> _statusController = 
+  final StreamController<BLEServiceStatus> _statusController =
       StreamController<BLEServiceStatus>.broadcast();
 
   // Public streams
-  Stream<DetectedDevice> get deviceDetectedStream => _deviceDetectedController.stream;
+  Stream<DetectedDevice> get deviceDetectedStream =>
+      _deviceDetectedController.stream;
   Stream<ProximityAlert> get alertStream => _alertController.stream;
   Stream<BLEServiceStatus> get statusStream => _statusController.stream;
 
@@ -57,10 +62,10 @@ class BLEContactTracingService {
 
     try {
       _updateStatus(BLEServiceStatus.initializing);
-      
+
       // Initialize notification service
       await _notificationService.initialize();
-      
+
       // On web, BLE is not supported - only show notification
       if (kIsWeb) {
         debugPrint('⚠️ BLE not supported on web platform');
@@ -71,28 +76,27 @@ class BLEContactTracingService {
         _updateStatus(BLEServiceStatus.ready);
         return true;
       }
-      
+
       // Check and request permissions (mobile only)
       if (!await _checkPermissions()) {
         _updateStatus(BLEServiceStatus.permissionDenied);
         return false;
       }
-      
+
       // Generate or retrieve device ID
       await _initializeDeviceId();
-      
+
       // Initialize infected IDs manager
       await _infectedIDsManager.initialize();
-      
+
       // Start periodic infected IDs update
       _startInfectedIDsUpdateTimer();
-      
+
       _isInitialized = true;
       _updateStatus(BLEServiceStatus.ready);
-      
+
       debugPrint('✅ BLE Contact Tracing Service initialized successfully');
       return true;
-      
     } catch (e) {
       debugPrint('❌ BLE Contact Tracing Service initialization failed: $e');
       _updateStatus(BLEServiceStatus.error);
@@ -109,24 +113,23 @@ class BLEContactTracingService {
 
     try {
       _updateStatus(BLEServiceStatus.starting);
-      
+
       // On web, simulate contact tracing without BLE
       if (kIsWeb) {
         debugPrint('🌐 Simulating contact tracing on web platform');
         _updateStatus(BLEServiceStatus.active);
         return true;
       }
-      
+
       // Start scanning for nearby devices (mobile only)
       await startScanning();
-      
+
       // Start broadcasting device ID (mobile only)
       await startBroadcasting();
-      
+
       _updateStatus(BLEServiceStatus.active);
       debugPrint('✅ Contact tracing started successfully');
       return true;
-      
     } catch (e) {
       debugPrint('❌ Failed to start contact tracing: $e');
       _updateStatus(BLEServiceStatus.error);
@@ -149,13 +152,12 @@ class BLEContactTracingService {
 
     try {
       _isScanning = true;
-      
+
       _scanTimer = Timer.periodic(const Duration(seconds: 5), (timer) async {
         await _performScan();
       });
-      
+
       debugPrint('📡 BLE scanning started');
-      
     } catch (e) {
       debugPrint('❌ Failed to start scanning: $e');
       _isScanning = false;
@@ -179,10 +181,9 @@ class BLEContactTracingService {
       // Note: BLE advertising in Flutter is limited
       // This is a placeholder for actual BLE advertising implementation
       // In practice, you might need to use platform-specific code
-      
+
       _isBroadcasting = true;
       debugPrint('📢 BLE broadcasting started with ID: $_deviceId');
-      
     } catch (e) {
       debugPrint('❌ Failed to start broadcasting: $e');
       _isBroadcasting = false;
@@ -198,7 +199,7 @@ class BLEContactTracingService {
   /// Perform a single BLE scan
   Future<void> _performScan() async {
     if (kIsWeb) return; // Skip BLE operations on web
-    
+
     try {
       final scanStream = _ble.scanForDevices(
         withServices: [Uuid.parse(_serviceUUID)],
@@ -213,7 +214,6 @@ class BLEContactTracingService {
       // Scan for 3 seconds
       await Future.delayed(const Duration(seconds: 3));
       await subscription.cancel();
-      
     } catch (e) {
       debugPrint('❌ Scan failed: $e');
     }
@@ -230,7 +230,7 @@ class BLEContactTracingService {
 
       final deviceId = utf8.decode(serviceData);
       final rssi = device.rssi;
-      
+
       // Check if device is close enough (within ~2 meters)
       if (rssi < _proximityThreshold) return;
 
@@ -246,7 +246,6 @@ class BLEContactTracingService {
 
       // Check if this device ID is infected
       _checkForInfectedDevice(detectedDevice);
-      
     } catch (e) {
       debugPrint('❌ Error handling detected device: $e');
     }
@@ -274,8 +273,10 @@ class BLEContactTracingService {
     _recentAlerts[device.deviceId] = DateTime.now();
     _alertController.add(alert);
     _notificationService.showProximityAlert(alert);
-    
-    debugPrint('🚨 PROXIMITY ALERT: Infected device detected - ID: ${device.deviceId}, Distance: ${device.estimatedDistance.toStringAsFixed(1)}m');
+
+    debugPrint(
+      '🚨 PROXIMITY ALERT: Infected device detected - ID: ${device.deviceId}, Distance: ${device.estimatedDistance.toStringAsFixed(1)}m',
+    );
   }
 
   /// Calculate risk level based on proximity and duration
@@ -288,7 +289,7 @@ class BLEContactTracingService {
   /// Check and request necessary permissions
   Future<bool> _checkPermissions() async {
     if (kIsWeb) return true; // No BLE permissions needed on web
-    
+
     final permissions = [
       Permission.bluetooth,
       Permission.bluetoothScan,
@@ -307,7 +308,7 @@ class BLEContactTracingService {
         }
       }
     }
-    
+
     return true;
   }
 
@@ -315,13 +316,13 @@ class BLEContactTracingService {
   Future<void> _initializeDeviceId() async {
     final prefs = await SharedPreferences.getInstance();
     _deviceId = prefs.getString('ble_device_id');
-    
+
     if (_deviceId == null) {
       // Generate anonymized device ID
       _deviceId = BLEUtils.generateAnonymizedId();
       await prefs.setString('ble_device_id', _deviceId!);
     }
-    
+
     debugPrint('📱 Device ID: $_deviceId');
   }
 
@@ -346,7 +347,7 @@ class BLEContactTracingService {
 
   /// Get detected devices
   List<DetectedDevice> get detectedDevices => _detectedDevices.values.toList();
-  
+
   /// Get recent alerts
   List<String> get recentAlertDeviceIds => _recentAlerts.keys.toList();
 

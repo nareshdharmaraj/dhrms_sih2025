@@ -15,7 +15,7 @@ class DiscoveredDevice {
   final String name;
   final int rssi;
   final Map<Uuid, List<int>> serviceData;
-  
+
   DiscoveredDevice({
     required this.id,
     required this.name,
@@ -27,18 +27,14 @@ class DiscoveredDevice {
 class Uuid {
   final String value;
   Uuid(this.value);
-  
+
   static Uuid parse(String uuid) => Uuid(uuid);
-  
+
   @override
   String toString() => value;
 }
 
-enum ScanMode {
-  lowLatency,
-  balanced,
-  lowPowerMode,
-}
+enum ScanMode { lowLatency, balanced, lowPowerMode }
 
 // Permission Handler stubs
 class Permission {
@@ -47,9 +43,9 @@ class Permission {
   static Permission get bluetoothAdvertise => Permission._();
   static Permission get locationWhenInUse => Permission._();
   static Permission get notification => Permission._();
-  
+
   Permission._();
-  
+
   Future<PermissionStatus> get status async => PermissionStatus.granted;
   Future<PermissionStatus> request() async => PermissionStatus.granted;
 }
@@ -59,6 +55,6 @@ enum PermissionStatus {
   denied,
   restricted,
   permanentlyDenied;
-  
+
   bool get isGranted => this == PermissionStatus.granted;
 }

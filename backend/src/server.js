@@ -19,6 +19,7 @@ const whoRoutes = require('./routes/whoRoutes');
 const shoRoutes = require('./routes/shoRoutes');
 const shoAuthRoutes = require('./routes/shoAuthRoutes');
 const rhoRoutes = require('./routes/rhoRoutes');
+const contactTracingRoutes = require('./routes/contactTracing');
 
 // Hospital Management Routes
 const hospitalManagementRoutes = require('./routes/hospital_management_routes');
@@ -68,6 +69,7 @@ app.use('/api/sho', shoRoutes);
 app.use('/api/sho-auth', shoAuthRoutes);
 app.use('/api/rho', rhoRoutes);
 app.use('/api/rho', rhoRoutes);
+app.use('/api/contact-tracing', contactTracingRoutes);
 
 // Hospital Management API Routes
 app.use('/api/hospital', hospitalManagementRoutes);
