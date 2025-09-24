@@ -39,6 +39,10 @@ class _HospitalDoctorAppointmentScreenState
     'total': 0,
   };
 
+  // Filter variables
+  String statusFilter = 'all';
+  DateTime? dateFilter;
+
   @override
   void initState() {
     super.initState();
@@ -181,6 +185,31 @@ class _HospitalDoctorAppointmentScreenState
       _showErrorSnackBar('Failed to load rejected appointments');
     } finally {
       setState(() => isLoadingRejected = false);
+    }
+  }
+
+  // Filter methods
+  void _filterAppointments() {
+    // This method can be used to apply filters if needed
+    // For now, it's a placeholder that can be expanded later
+    setState(() {
+      // Trigger rebuild to apply any filter changes
+    });
+  }
+
+  Future<void> _selectDateFilter() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: dateFilter ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+    );
+
+    if (picked != null && picked != dateFilter) {
+      setState(() {
+        dateFilter = picked;
+        _filterAppointments();
+      });
     }
   }
 
