@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
 class SplashScreen extends StatefulWidget {
   final Widget nextScreen;
-  
-  const SplashScreen({
-    super.key,
-    required this.nextScreen,
-  });
+
+  const SplashScreen({super.key, required this.nextScreen});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -17,7 +15,6 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
-  
   // Animation Controllers
   late AnimationController _logoController;
   late AnimationController _heartbeatController;
@@ -25,7 +22,7 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _shineController;
   late AnimationController _fadeOutController;
   late AnimationController _particleController;
-  
+
   // Animations
   late Animation<double> _logoFadeIn;
   late Animation<double> _logoScale;
@@ -33,11 +30,11 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _glowAnimation;
   late Animation<double> _shinePosition;
   late Animation<double> _fadeOut;
-  
+
   // Loading Progress
   double _loadingProgress = 0.0;
   late Timer _loadingTimer;
-  
+
   // Particle System
   final List<Particle> _particles = [];
   late Timer _particleTimer;
@@ -48,7 +45,7 @@ class _SplashScreenState extends State<SplashScreen>
     _initializeAnimations();
     _startLoading();
     _initializeParticles();
-    
+
     // Set status bar to transparent
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
@@ -64,31 +61,31 @@ class _SplashScreenState extends State<SplashScreen>
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
-    
+
     // Heartbeat Animation Controller
     _heartbeatController = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
-    
+
     // Glow Animation Controller
     _glowController = AnimationController(
       duration: const Duration(milliseconds: 2000),
       vsync: this,
     );
-    
+
     // Shine Animation Controller
     _shineController = AnimationController(
       duration: const Duration(milliseconds: 2000),
       vsync: this,
     );
-    
+
     // Fade Out Animation Controller
     _fadeOutController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    
+
     // Particle Animation Controller
     _particleController = AnimationController(
       duration: const Duration(seconds: 20),
@@ -102,7 +99,7 @@ class _SplashScreenState extends State<SplashScreen>
         curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
       ),
     );
-    
+
     _logoScale = Tween<double>(begin: 0.8, end: 1.0).animate(
       CurvedAnimation(
         parent: _logoController,
@@ -112,39 +109,27 @@ class _SplashScreenState extends State<SplashScreen>
 
     // Heartbeat Animation
     _heartbeatScale = Tween<double>(begin: 1.0, end: 1.15).animate(
-      CurvedAnimation(
-        parent: _heartbeatController,
-        curve: Curves.easeInOut,
-      ),
+      CurvedAnimation(parent: _heartbeatController, curve: Curves.easeInOut),
     );
 
     // Glow Animation
     _glowAnimation = Tween<double>(begin: 0.3, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _glowController,
-        curve: Curves.easeInOut,
-      ),
+      CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
     );
 
     // Shine Animation
     _shinePosition = Tween<double>(begin: -1.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _shineController,
-        curve: Curves.easeInOut,
-      ),
+      CurvedAnimation(parent: _shineController, curve: Curves.easeInOut),
     );
 
     // Fade Out Animation
     _fadeOut = Tween<double>(begin: 1.0, end: 0.0).animate(
-      CurvedAnimation(
-        parent: _fadeOutController,
-        curve: Curves.easeInOut,
-      ),
+      CurvedAnimation(parent: _fadeOutController, curve: Curves.easeInOut),
     );
 
     // Start Animations
     _logoController.forward();
-    
+
     // Start repeating animations with delays
     Future.delayed(const Duration(milliseconds: 1000), () {
       if (mounted) {
@@ -153,7 +138,7 @@ class _SplashScreenState extends State<SplashScreen>
         _particleController.repeat();
       }
     });
-    
+
     Future.delayed(const Duration(milliseconds: 1500), () {
       if (mounted) {
         _startShineAnimation();
@@ -167,16 +152,18 @@ class _SplashScreenState extends State<SplashScreen>
 
   void _initializeParticles() {
     final random = math.Random();
-    
+
     // Create initial particles
     for (int i = 0; i < 20; i++) {
-      _particles.add(Particle(
-        x: random.nextDouble(),
-        y: random.nextDouble(),
-        size: random.nextDouble() * 3 + 1,
-        speed: random.nextDouble() * 0.5 + 0.1,
-        opacity: random.nextDouble() * 0.6 + 0.2,
-      ));
+      _particles.add(
+        Particle(
+          x: random.nextDouble(),
+          y: random.nextDouble(),
+          size: random.nextDouble() * 3 + 1,
+          speed: random.nextDouble() * 0.5 + 0.1,
+          opacity: random.nextDouble() * 0.6 + 0.2,
+        ),
+      );
     }
 
     // Timer to update particles
@@ -194,19 +181,20 @@ class _SplashScreenState extends State<SplashScreen>
   void _startLoading() {
     const totalDuration = Duration(milliseconds: 4000); // 4 seconds total
     const updateInterval = Duration(milliseconds: 50); // Update every 50ms
-    final totalSteps = totalDuration.inMilliseconds / updateInterval.inMilliseconds;
+    final totalSteps =
+        totalDuration.inMilliseconds / updateInterval.inMilliseconds;
     final increment = 100.0 / totalSteps;
-    
+
     _loadingTimer = Timer.periodic(updateInterval, (timer) {
       if (mounted) {
         setState(() {
           _loadingProgress += increment;
-          
+
           // Ensure we don't exceed 100%
           if (_loadingProgress >= 100.0) {
             _loadingProgress = 100.0;
             timer.cancel();
-            
+
             // Start exit transition after a brief pause
             Future.delayed(const Duration(milliseconds: 500), () {
               if (mounted) {
@@ -224,14 +212,13 @@ class _SplashScreenState extends State<SplashScreen>
       if (mounted) {
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => widget.nextScreen,
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                widget.nextScreen,
             transitionDuration: const Duration(milliseconds: 300),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              return FadeTransition(
-                opacity: animation,
-                child: child,
-              );
-            },
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
           ),
         );
       }
@@ -254,7 +241,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
-    
+
     return Scaffold(
       body: AnimatedBuilder(
         animation: Listenable.merge([
@@ -288,7 +275,7 @@ class _SplashScreenState extends State<SplashScreen>
                 children: [
                   // Particle System
                   _buildParticleSystem(screenSize),
-                  
+
                   // Main Content
                   SafeArea(
                     child: Column(
@@ -296,24 +283,17 @@ class _SplashScreenState extends State<SplashScreen>
                         // Logo Section
                         Expanded(
                           flex: 3,
-                          child: Center(
-                            child: _buildLogoSection(),
-                          ),
+                          child: Center(child: _buildLogoSection()),
                         ),
-                        
+
                         // App Name Section
                         Expanded(
                           flex: 2,
-                          child: Center(
-                            child: _buildAppNameSection(),
-                          ),
+                          child: Center(child: _buildAppNameSection()),
                         ),
-                        
+
                         // Progress Section
-                        Expanded(
-                          flex: 2,
-                          child: _buildProgressSection(),
-                        ),
+                        Expanded(flex: 2, child: _buildProgressSection()),
                       ],
                     ),
                   ),
@@ -327,10 +307,7 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Widget _buildParticleSystem(Size screenSize) {
-    return CustomPaint(
-      size: screenSize,
-      painter: ParticlePainter(_particles),
-    );
+    return CustomPaint(size: screenSize, painter: ParticlePainter(_particles));
   }
 
   Widget _buildLogoSection() {
@@ -358,27 +335,22 @@ class _SplashScreenState extends State<SplashScreen>
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(20),
-            child: Image.asset(
-              'assets/applogo.png',
+            child: SvgPicture.asset(
+              'assets/applogo.svg',
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.blue.shade400,
-                        Colors.blue.shade600,
-                      ],
-                    ),
+              placeholderBuilder: (context) => Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  gradient: LinearGradient(
+                    colors: [Colors.blue.shade400, Colors.blue.shade600],
                   ),
-                  child: const Icon(
-                    Icons.health_and_safety,
-                    size: 60,
-                    color: Colors.white,
-                  ),
-                );
-              },
+                ),
+                child: const Icon(
+                  Icons.health_and_safety,
+                  size: 60,
+                  color: Colors.white,
+                ),
+              ),
             ),
           ),
         ),
@@ -412,10 +384,7 @@ class _SplashScreenState extends State<SplashScreen>
                   color: Colors.white,
                   letterSpacing: 2,
                   shadows: [
-                    Shadow(
-                      color: Colors.blue.withOpacity(0.5),
-                      blurRadius: 10,
-                    ),
+                    Shadow(color: Colors.blue.withOpacity(0.5), blurRadius: 10),
                     Shadow(
                       color: Colors.white.withOpacity(0.3),
                       blurRadius: 20,
@@ -423,7 +392,7 @@ class _SplashScreenState extends State<SplashScreen>
                   ],
                 ),
               ),
-              
+
               // Shine Effect
               Positioned.fill(
                 child: ClipRect(
@@ -470,15 +439,12 @@ class _SplashScreenState extends State<SplashScreen>
                 color: Colors.white.withOpacity(0.9),
                 letterSpacing: 1,
                 shadows: [
-                  Shadow(
-                    color: Colors.blue.withOpacity(0.5),
-                    blurRadius: 5,
-                  ),
+                  Shadow(color: Colors.blue.withOpacity(0.5), blurRadius: 5),
                 ],
               ),
             ),
           ),
-          
+
           // Progress Bar Container
           Container(
             height: 6,
@@ -519,7 +485,7 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                     ),
                   ),
-                  
+
                   // Glow Effect on Progress Bar
                   if (_loadingProgress > 0)
                     Positioned(
@@ -587,16 +553,13 @@ class ParticlePainter extends CustomPainter {
 
     for (var particle in particles) {
       paint.color = Colors.white.withOpacity(particle.opacity * 0.6);
-      
-      final center = Offset(
-        particle.x * size.width,
-        particle.y * size.height,
-      );
-      
+
+      final center = Offset(particle.x * size.width, particle.y * size.height);
+
       // Draw particle with glow effect
       paint.maskFilter = MaskFilter.blur(BlurStyle.normal, particle.size * 0.5);
       canvas.drawCircle(center, particle.size, paint);
-      
+
       // Draw core
       paint.maskFilter = null;
       paint.color = Colors.white.withOpacity(particle.opacity);

@@ -218,4 +218,133 @@ class ApiService {
       };
     }
   }
+
+  // Register Regional Officer with UHI generation
+  static Future<Map<String, dynamic>> registerRegionalOfficer({
+    required String firstName,
+    required String lastName,
+    required String email,
+    required String password,
+    required String phone,
+    required String aadhaarNumber,
+    required String dateOfBirth,
+    required String gender,
+    required String officerRank,
+    required String employeeId,
+    required String department,
+    Map<String, dynamic>? jurisdiction,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/register/regional-officer'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'firstName': firstName,
+          'lastName': lastName,
+          'email': email,
+          'password': password,
+          'phone': phone,
+          'aadhaarNumber': aadhaarNumber,
+          'dateOfBirth': dateOfBirth,
+          'gender': gender.toLowerCase(),
+          'officerRank': officerRank,
+          'employeeId': employeeId,
+          'department': department,
+          if (jurisdiction != null) 'jurisdiction': jurisdiction,
+        }),
+      );
+
+      return {
+        'success': response.statusCode == 201,
+        'statusCode': response.statusCode,
+        'data': jsonDecode(response.body),
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'statusCode': 500,
+        'data': {'message': 'Network error: $e'},
+      };
+    }
+  }
+
+  // ======== CONTACT TRACING API METHODS ========
+
+  // Register device for contact tracing
+  static Future<Map<String, dynamic>> registerContactTracingDevice(
+    Map<String, dynamic> deviceData,
+  ) async {
+    try {
+      final response = await _client.post(
+        '/contact-tracing/register-device',
+        body: deviceData,
+      );
+      return _client.parseResponse(response);
+    } catch (e) {
+      print('❌ Error registering device: $e');
+      return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
+
+  // Get infected device IDs for proximity scanning
+  static Future<Map<String, dynamic>> getInfectedDevices() async {
+    try {
+      final response = await _client.get('/contact-tracing/infected-devices');
+      return _client.parseResponse(response);
+    } catch (e) {
+      print('❌ Error fetching infected devices: $e');
+      return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
+
+  // Log proximity encounter with infected device
+  static Future<Map<String, dynamic>> logProximityEncounter(
+    Map<String, dynamic> encounterData,
+  ) async {
+    try {
+      final response = await _client.post(
+        '/contact-tracing/proximity-encounter',
+        body: encounterData,
+      );
+      return _client.parseResponse(response);
+    } catch (e) {
+      print('❌ Error logging proximity encounter: $e');
+      return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
+
+  // Get exposure history for a device
+  static Future<Map<String, dynamic>> getExposureHistory(
+    String deviceId, {
+    int? limit,
+    int? days,
+  }) async {
+    try {
+      String endpoint = '/contact-tracing/exposure-history/$deviceId';
+      if (limit != null || days != null) {
+        final params = <String, String>{};
+        if (limit != null) params['limit'] = limit.toString();
+        if (days != null) params['days'] = days.toString();
+        endpoint +=
+            '?' + params.entries.map((e) => '${e.key}=${e.value}').join('&');
+      }
+
+      final response = await _client.get(endpoint);
+      return _client.parseResponse(response);
+    } catch (e) {
+      print('❌ Error fetching exposure history: $e');
+      return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
+
+  // Contact tracing health check
+  static Future<Map<String, dynamic>> contactTracingHealth() async {
+    try {
+      final response = await _client.get('/contact-tracing/health');
+      return _client.parseResponse(response);
+    } catch (e) {
+      print('❌ Error checking contact tracing health: $e');
+      return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
 }

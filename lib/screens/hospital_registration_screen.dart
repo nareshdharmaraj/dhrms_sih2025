@@ -843,6 +843,38 @@ class _HospitalRegistrationScreenState
 
           SizedBox(height: 16),
 
+          // State Selection
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  initialValue: _selectedState,
+                  decoration: InputDecoration(
+                    labelText: 'State',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.map),
+                  ),
+                  items: ['State 1', 'State 2', 'State 3'].map((state) {
+                    return DropdownMenuItem(value: state, child: Text(state));
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedState = value;
+                    });
+                  },
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please select a state';
+                    }
+                    return null;
+                  },
+                ),
+              ),
+            ],
+          ),
+
+          SizedBox(height: 16),
+
           // Sub-District Selection (conditional - for RHO assignment only)
           if (_requiresSubDistrict) ...[
             Container(
