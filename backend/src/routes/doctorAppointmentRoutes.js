@@ -379,10 +379,17 @@ router.get('/:doctorId/:tab', async (req, res) => {
         appointments.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
         break;
         
+      case 'completed':
+        // Show completed appointments (patients with prescriptions)
+        filterQuery.status = 'completed';
+        appointments = await HospitalAppointment.find(filterQuery)
+          .sort({ updatedAt: -1 }); // Latest completed first
+        break;
+        
       default:
         return res.status(400).json({
           success: false,
-          message: 'Invalid tab. Must be: requests, current, or rejected'
+          message: 'Invalid tab. Must be: requests, current, rejected, or completed'
         });
     }
     

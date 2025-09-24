@@ -49,23 +49,20 @@ const medicineSchema = new mongoose.Schema({
 
 const prescriptionSchema = new mongoose.Schema({
   appointmentId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'HospitalAppointment',
+    type: String, // Changed to match collection schema validation
     required: true,
     unique: true
   },
   doctorId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'HospitalDoctor',
+    type: String, // Changed to match collection schema validation
     required: true
   },
   patientId: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: String, // Changed from ObjectId to String to support UHIDs
     required: true
   },
   hospitalId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Hospital',
+    type: String, // Changed from ObjectId to String to support hospital identifiers  
     required: true
   },
   
@@ -104,11 +101,11 @@ const prescriptionSchema = new mongoose.Schema({
   },
   
   // Consultation Details
-  consultationDate: {
-    type: Date,
-    required: true,
-    default: Date.now
-  },
+  // consultationDate: {
+  //   type: Date,
+  //   required: true,
+  //   default: Date.now
+  // }, // Removed as it's not in collection schema validation
   appointmentNumber: {
     type: String,
     required: true
@@ -148,7 +145,7 @@ const prescriptionSchema = new mongoose.Schema({
   
   // Next Visit
   nextVisitDate: {
-    type: Date,
+    type: String, // Changed to match collection schema validation
     required: false
   },
   nextVisitMandatory: {
@@ -160,9 +157,6 @@ const prescriptionSchema = new mongoose.Schema({
   isConfirmed: {
     type: Boolean,
     default: false
-  },
-  confirmedAt: {
-    type: Date
   },
   
   // Metadata
@@ -197,6 +191,6 @@ prescriptionSchema.index({ appointmentId: 1 });
 prescriptionSchema.index({ doctorId: 1 });
 prescriptionSchema.index({ patientId: 1 });
 prescriptionSchema.index({ hospitalId: 1 });
-prescriptionSchema.index({ consultationDate: -1 });
+// Removed consultationDate index since field was removed
 
 module.exports = mongoose.model('HospitalPrescription', prescriptionSchema);
