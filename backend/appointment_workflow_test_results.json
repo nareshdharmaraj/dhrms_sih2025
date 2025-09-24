@@ -1,0 +1,104 @@
+{
+  "timestamp": "2025-09-22T14:51:32.130Z",
+  "tests": [
+    {
+      "testName": "Server Connectivity",
+      "status": "PASS",
+      "details": {
+        "statusCode": 404,
+        "message": "Server is reachable"
+      },
+      "timestamp": "2025-09-22T14:51:32.161Z"
+    },
+    {
+      "testName": "Patient Appointment Booking - Success Case",
+      "status": "PASS",
+      "details": {
+        "statusCode": 201,
+        "appointmentId": "APT_1758552692232_an8ugitn0"
+      },
+      "timestamp": "2025-09-22T14:51:32.296Z"
+    },
+    {
+      "testName": "Patient Appointment Booking - Validation",
+      "status": "PASS",
+      "details": {
+        "statusCode": 400,
+        "message": "Missing required field: patientId"
+      },
+      "timestamp": "2025-09-22T14:51:32.299Z"
+    },
+    {
+      "testName": "Doctor Appointment Retrieval",
+      "status": "PASS",
+      "details": {
+        "statusCode": 200,
+        "appointmentCount": 1,
+        "firstAppointment": {
+          "_id": "68d16274de9de700f294d739",
+          "appointmentId": "APT_1758552692232_an8ugitn0",
+          "patientId": "507f1f77bcf86cd799439011",
+          "patientName": "John Doe",
+          "patientUhid": "507f1f77bcf86cd799439011",
+          "doctorId": "507f1f77bcf86cd799439012",
+          "doctorName": "Dr. Smith",
+          "hospitalId": "HOSP_TEST_001",
+          "hospitalName": "Apollo Hospital",
+          "appointmentDate": "2024-02-15",
+          "appointmentTime": "10:00 AM",
+          "reason": "Regular checkup",
+          "consultationFee": 500,
+          "status": "pending",
+          "bookedAt": "2025-09-22T14:51:32.233Z",
+          "updatedAt": "2025-09-22T14:51:32.234Z",
+          "__v": 0
+        }
+      },
+      "timestamp": "2025-09-22T14:51:32.340Z"
+    },
+    {
+      "testName": "Appointment Status Update - Approval",
+      "status": "PASS",
+      "details": {
+        "statusCode": 200,
+        "appointmentId": "APT_1758552692232_an8ugitn0",
+        "newStatus": "approved"
+      },
+      "timestamp": "2025-09-22T14:51:32.390Z"
+    },
+    {
+      "testName": "Appointment Status Update - Rejection",
+      "status": "PASS",
+      "details": {
+        "statusCode": 200,
+        "appointmentId": "APT_1758552692232_an8ugitn0",
+        "newStatus": "rejected"
+      },
+      "timestamp": "2025-09-22T14:51:32.436Z"
+    },
+    {
+      "testName": "Appointment Status Update - Invalid Status",
+      "status": "PASS",
+      "details": {
+        "statusCode": 400,
+        "message": "Invalid status. Must be one of: pending, approved, rejected, completed"
+      },
+      "timestamp": "2025-09-22T14:51:32.438Z"
+    },
+    {
+      "testName": "Patient Appointment History",
+      "status": "PASS",
+      "details": {
+        "statusCode": 200,
+        "appointmentCount": 0,
+        "appointments": []
+      },
+      "timestamp": "2025-09-22T14:51:32.481Z"
+    }
+  ],
+  "summary": {
+    "total": 8,
+    "passed": 8,
+    "failed": 0
+  }
+}

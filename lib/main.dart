@@ -18,12 +18,14 @@ import 'screens/hospital_admin_login_screen.dart';
 import 'screens/hospital_admin_dashboard_screen.dart';
 import 'screens/hospital_role_selection_screen.dart';
 import 'screens/hospital_doctor_login_screen.dart';
+import 'screens/hospital_doctor_dashboard_screen.dart';
 import 'screens/hospital_assistant_login_screen.dart';
 import 'screens/regional_login_screen.dart';
 import 'screens/rho_dashboard_screen.dart';
-import 'models/regional_health_officer.dart';
+import 'screens/hospital_assistant_dashboard_screen.dart';
 import 'utils/environment_config.dart';
 import 'widgets/configuration_switcher.dart';
+import 'package:dhrms/models/regional_health_officer.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -88,9 +90,42 @@ class DHRMSApp extends StatelessWidget {
                   as Map<String, dynamic>?;
           print('🛣️ Route userData: $userData');
           print('🛣️ Route userData type: ${userData.runtimeType}');
-          return _wrapWithConfigSwitcher(
-            HospitalStaffDashboard(userData: userData ?? {}),
-          );
+
+          // Check if user is a doctor to show the doctor dashboard
+          final isDoctorLogin =
+              userData != null &&
+              (userData.containsKey('doctorId') ||
+                  userData.containsKey('doctorName') ||
+                  userData.containsKey('specialization') ||
+                  userData['staffRole'] == 'Doctor' ||
+                  userData['designation'] == 'Doctor');
+
+          // Check if user is an assistant to show the assistant dashboard
+          final isAssistantLogin =
+              userData != null &&
+              (userData.containsKey('assistantId') ||
+                  userData.containsKey('assistantName') ||
+                  userData['designation']?.toString().toLowerCase().contains(
+                        'assistant',
+                      ) ==
+                      true);
+
+          if (isDoctorLogin) {
+            print('🏥 Routing to doctor dashboard');
+            return _wrapWithConfigSwitcher(
+              HospitalDoctorDashboardScreen(doctorData: userData),
+            );
+          } else if (isAssistantLogin) {
+            print('🏥 Routing to assistant dashboard');
+            return _wrapWithConfigSwitcher(
+              HospitalAssistantDashboardScreen(assistantData: userData),
+            );
+          } else {
+            print('🏥 Routing to generic staff dashboard');
+            return _wrapWithConfigSwitcher(
+              HospitalStaffDashboard(userData: userData ?? {}),
+            );
+          }
         },
         '/regional-officer-dashboard': (context) {
           final userData =

@@ -1080,20 +1080,20 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
   final _experienceYearsController = TextEditingController();
   final _consultationFeeController = TextEditingController();
   final _passwordController = TextEditingController();
-  
+
   String? _selectedGender;
   DateTime? _selectedDateOfBirth;
-  List<String> _selectedSpecializations = [];
+  final List<String> _selectedSpecializations = [];
   String? _selectedDepartment;
   String? _selectedAvailableTimings;
-  
+
   bool _isLoading = false;
 
   final List<String> _genderOptions = ['Male', 'Female', 'Other'];
-  
+
   final List<String> _specializationOptions = [
     'Cardiology',
-    'Neurology', 
+    'Neurology',
     'Pediatrics',
     'Orthopedics',
     'General Medicine',
@@ -1101,7 +1101,7 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
     'Psychiatry',
     'Gynecology',
     'Surgery',
-    'Radiology'
+    'Radiology',
   ];
 
   final Map<String, String> _departmentMapping = {
@@ -1114,7 +1114,7 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
     'Psychiatry': 'Psychiatry Department',
     'Gynecology': 'Gynecology Department',
     'Surgery': 'Surgery Department',
-    'Radiology': 'Radiology Department'
+    'Radiology': 'Radiology Department',
   };
 
   final List<String> _timingOptions = [
@@ -1123,7 +1123,7 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
     '11:00 AM - 7:00 PM',
     '2:00 PM - 10:00 PM',
     '6:00 PM - 2:00 AM',
-    '24/7 Emergency'
+    '24/7 Emergency',
   ];
 
   @override
@@ -1141,8 +1141,20 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
   String _generateDoctorId(String hospitalId, String doctorName) {
     // Generate Doctor ID = <HospitalID> + first 4 letters of Doctor Name (uppercase)
     final namePrefix = doctorName.replaceAll(' ', '').toUpperCase();
-    final prefix = namePrefix.length >= 4 ? namePrefix.substring(0, 4) : namePrefix.padRight(4, 'X');
+    final prefix = namePrefix.length >= 4
+        ? namePrefix.substring(0, 4)
+        : namePrefix.padRight(4, 'X');
     return '$hospitalId$prefix';
+  }
+
+  int _calculateAge(DateTime birthDate) {
+    final now = DateTime.now();
+    int age = now.year - birthDate.year;
+    if (now.month < birthDate.month ||
+        (now.month == birthDate.month && now.day < birthDate.day)) {
+      age--;
+    }
+    return age;
   }
 
   Future<void> _addDoctor() async {
@@ -1154,19 +1166,26 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
 
     try {
       // Get hospital ID from stored data (you may need to adjust this based on your auth system)
-      final hospitalId = 'H001'; // This should come from your auth/storage system
-      
-      final doctorId = _generateDoctorId(hospitalId, _doctorNameController.text.trim());
-      
+      final hospitalId =
+          'H001'; // This should come from your auth/storage system
+
+      final doctorId = _generateDoctorId(
+        hospitalId,
+        _doctorNameController.text.trim(),
+      );
+
       final doctorData = {
         'doctorId': doctorId,
         'username': doctorId, // Username = Doctor ID
-        'password': _passwordController.text, // Store as plain text as requested
+        'password':
+            _passwordController.text, // Store as plain text as requested
         'doctorName': _doctorNameController.text.trim(),
         'gender': _selectedGender,
         'dateOfBirth': _selectedDateOfBirth?.toIso8601String(),
         'specializations': _selectedSpecializations,
-        'department': _selectedDepartment ?? _departmentMapping[_selectedSpecializations.first],
+        'department':
+            _selectedDepartment ??
+            _departmentMapping[_selectedSpecializations.first],
         'email': _emailController.text.trim(),
         'contactNumber': _contactNumberController.text.trim(),
         'qualification': _qualificationController.text.trim(),
@@ -1177,10 +1196,9 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
       };
 
       await HospitalApiService.createDoctor(doctorData);
-      
+
       // Show success popup with credentials
       _showSuccessDialog(doctorId, _passwordController.text);
-      
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1211,7 +1229,10 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Doctor has been added successfully!', style: TextStyle(fontSize: 16)),
+            Text(
+              'Doctor has been added successfully!',
+              style: TextStyle(fontSize: 16),
+            ),
             SizedBox(height: 16),
             Container(
               padding: EdgeInsets.all(12),
@@ -1223,16 +1244,30 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Login Credentials:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text(
+                    'Login Credentials:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   SizedBox(height: 8),
-                  Text('Username: $username', style: TextStyle(fontFamily: 'monospace')),
-                  Text('Password: $password', style: TextStyle(fontFamily: 'monospace')),
+                  Text(
+                    'Username: $username',
+                    style: TextStyle(fontFamily: 'monospace'),
+                  ),
+                  Text(
+                    'Password: $password',
+                    style: TextStyle(fontFamily: 'monospace'),
+                  ),
                 ],
               ),
             ),
             SizedBox(height: 12),
-            Text('Please save these credentials securely.', 
-                 style: TextStyle(color: Colors.orange[700], fontWeight: FontWeight.w500)),
+            Text(
+              'Please save these credentials securely.',
+              style: TextStyle(
+                color: Colors.orange[700],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ],
         ),
         actions: [
@@ -1242,11 +1277,11 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
               Navigator.pop(context); // Close add doctor dialog
               widget.onDoctorAdded(); // Refresh the dashboard
             },
-            child: Text('OK'),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.green,
               foregroundColor: Colors.white,
             ),
+            child: Text('OK'),
           ),
         ],
       ),
@@ -1282,28 +1317,33 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
                   ),
                   criteria: 'Min 3, max 50 characters',
                 ),
-                
+
                 SizedBox(height: 16),
-                
+
                 // Gender dropdown
                 _buildFieldWithCriteria(
                   child: DropdownButtonFormField<String>(
-                    value: _selectedGender,
+                    initialValue: _selectedGender,
                     decoration: InputDecoration(
                       labelText: 'Gender *',
                       border: OutlineInputBorder(),
                     ),
                     items: _genderOptions.map((gender) {
-                      return DropdownMenuItem(value: gender, child: Text(gender));
+                      return DropdownMenuItem(
+                        value: gender,
+                        child: Text(gender),
+                      );
                     }).toList(),
-                    onChanged: (value) => setState(() => _selectedGender = value),
-                    validator: (value) => value == null ? 'Please select gender' : null,
+                    onChanged: (value) =>
+                        setState(() => _selectedGender = value),
+                    validator: (value) =>
+                        value == null ? 'Please select gender' : null,
                   ),
                   criteria: 'Required selection',
                 ),
-                
+
                 SizedBox(height: 16),
-                
+
                 // Date of Birth
                 _buildFieldWithCriteria(
                   child: InkWell(
@@ -1312,14 +1352,19 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
                         context: context,
                         initialDate: DateTime(1990),
                         firstDate: DateTime(1950),
-                        lastDate: DateTime.now().subtract(Duration(days: 365 * 18)),
+                        lastDate: DateTime.now().subtract(
+                          Duration(days: 365 * 18),
+                        ),
                       );
                       if (date != null) {
                         setState(() => _selectedDateOfBirth = date);
                       }
                     },
                     child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 16,
+                      ),
                       decoration: BoxDecoration(
                         border: Border.all(color: Colors.grey),
                         borderRadius: BorderRadius.circular(4),
@@ -1332,7 +1377,9 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
                                 ? 'Date of Birth *'
                                 : '${_selectedDateOfBirth!.day}/${_selectedDateOfBirth!.month}/${_selectedDateOfBirth!.year}',
                             style: TextStyle(
-                              color: _selectedDateOfBirth == null ? Colors.grey[600] : Colors.black,
+                              color: _selectedDateOfBirth == null
+                                  ? Colors.grey[600]
+                                  : Colors.black,
                             ),
                           ),
                           Icon(Icons.calendar_today),
@@ -1342,39 +1389,51 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
                   ),
                   criteria: 'Must be valid past date (18+ years)',
                 ),
-                
+
                 SizedBox(height: 16),
-                
+
                 // Specializations (multi-select)
                 _buildFieldWithCriteria(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Specializations * (Max 5)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                      Text(
+                        'Specializations * (Max 5)',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                       SizedBox(height: 8),
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
                         children: _specializationOptions.map((spec) {
-                          final isSelected = _selectedSpecializations.contains(spec);
+                          final isSelected = _selectedSpecializations.contains(
+                            spec,
+                          );
                           return GestureDetector(
                             onTap: () {
                               setState(() {
                                 if (isSelected) {
                                   _selectedSpecializations.remove(spec);
-                                } else if (_selectedSpecializations.length < 5) {
+                                } else if (_selectedSpecializations.length <
+                                    5) {
                                   _selectedSpecializations.add(spec);
                                   // Auto-fill department
-                                  if (_selectedDepartment == null) {
-                                    _selectedDepartment = _departmentMapping[spec];
-                                  }
+                                  _selectedDepartment ??= _departmentMapping[spec];
                                 }
                               });
                             },
                             child: Container(
-                              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
                               decoration: BoxDecoration(
-                                color: isSelected ? Colors.blue[100] : Colors.grey[200],
+                                color: isSelected
+                                    ? Colors.blue[100]
+                                    : Colors.grey[200],
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
                                   color: isSelected ? Colors.blue : Colors.grey,
@@ -1383,8 +1442,12 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
                               child: Text(
                                 spec,
                                 style: TextStyle(
-                                  color: isSelected ? Colors.blue[800] : Colors.black,
-                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  color: isSelected
+                                      ? Colors.blue[800]
+                                      : Colors.black,
+                                  fontWeight: isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
                                 ),
                               ),
                             ),
@@ -1394,16 +1457,18 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
                       if (_selectedSpecializations.isEmpty)
                         Padding(
                           padding: EdgeInsets.only(top: 8),
-                          child: Text('Please select at least one specialization', 
-                               style: TextStyle(color: Colors.red, fontSize: 12)),
+                          child: Text(
+                            'Please select at least one specialization',
+                            style: TextStyle(color: Colors.red, fontSize: 12),
+                          ),
                         ),
                     ],
                   ),
                   criteria: 'Select 1-5 specializations',
                 ),
-                
+
                 SizedBox(height: 16),
-                
+
                 // Department (auto-filled)
                 _buildFieldWithCriteria(
                   child: TextFormField(
@@ -1414,13 +1479,15 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
                       fillColor: Colors.grey[100],
                       filled: true,
                     ),
-                    controller: TextEditingController(text: _selectedDepartment ?? ''),
+                    controller: TextEditingController(
+                      text: _selectedDepartment ?? '',
+                    ),
                   ),
                   criteria: 'Auto-filled based on specialization',
                 ),
-                
+
                 SizedBox(height: 16),
-                
+
                 // Contact Number
                 _buildFieldWithCriteria(
                   child: CustomTextField(
@@ -1431,7 +1498,8 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
                       if (value == null || value.isEmpty) {
                         return 'Please enter contact number';
                       }
-                      if (value.length != 10 || !RegExp(r'^[0-9]+$').hasMatch(value)) {
+                      if (value.length != 10 ||
+                          !RegExp(r'^[0-9]+$').hasMatch(value)) {
                         return 'Enter exactly 10 digits';
                       }
                       return null;
@@ -1439,9 +1507,9 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
                   ),
                   criteria: 'Exactly 10 digits',
                 ),
-                
+
                 SizedBox(height: 16),
-                
+
                 // Email
                 _buildFieldWithCriteria(
                   child: CustomTextField(
@@ -1452,7 +1520,9 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
                       if (value == null || value.isEmpty) {
                         return 'Please enter email';
                       }
-                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                      if (!RegExp(
+                        r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                      ).hasMatch(value)) {
                         return 'Enter valid email format';
                       }
                       return null;
@@ -1460,9 +1530,9 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
                   ),
                   criteria: 'Valid email format required',
                 ),
-                
+
                 SizedBox(height: 16),
-                
+
                 // Qualification
                 _buildFieldWithCriteria(
                   child: CustomTextField(
@@ -1480,9 +1550,9 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
                   ),
                   criteria: 'Min 2, max 30 characters',
                 ),
-                
+
                 SizedBox(height: 16),
-                
+
                 // Experience
                 _buildFieldWithCriteria(
                   child: CustomTextField(
@@ -1497,8 +1567,10 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
                         }
                         // Check if experience is reasonable compared to age
                         if (_selectedDateOfBirth != null) {
-                          final age = DateTime.now().year - _selectedDateOfBirth!.year;
-                          if (years > (age - 22)) { // Assuming minimum 22 years to complete medical education
+                          final age =
+                              DateTime.now().year - _selectedDateOfBirth!.year;
+                          if (years > (age - 22)) {
+                            // Assuming minimum 22 years to complete medical education
                             return 'Experience cannot exceed ${age - 22} years';
                           }
                         }
@@ -1508,27 +1580,31 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
                   ),
                   criteria: 'Optional, max 50 years, should be less than age',
                 ),
-                
+
                 SizedBox(height: 16),
-                
+
                 // Available Timings
                 _buildFieldWithCriteria(
                   child: DropdownButtonFormField<String>(
-                    value: _selectedAvailableTimings,
+                    initialValue: _selectedAvailableTimings,
                     decoration: InputDecoration(
                       labelText: 'Available Timings',
                       border: OutlineInputBorder(),
                     ),
                     items: _timingOptions.map((timing) {
-                      return DropdownMenuItem(value: timing, child: Text(timing));
+                      return DropdownMenuItem(
+                        value: timing,
+                        child: Text(timing),
+                      );
                     }).toList(),
-                    onChanged: (value) => setState(() => _selectedAvailableTimings = value),
+                    onChanged: (value) =>
+                        setState(() => _selectedAvailableTimings = value),
                   ),
                   criteria: 'Select from available options',
                 ),
-                
+
                 SizedBox(height: 16),
-                
+
                 // Consultation Fee
                 _buildFieldWithCriteria(
                   child: CustomTextField(
@@ -1547,9 +1623,9 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
                   ),
                   criteria: 'Optional, max 5 digits',
                 ),
-                
+
                 SizedBox(height: 16),
-                
+
                 // Password
                 _buildFieldWithCriteria(
                   child: CustomTextField(
@@ -1579,20 +1655,27 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
           child: Text('Cancel'),
         ),
         ElevatedButton(
-          onPressed: _isLoading ? null : _canSubmit() ? _addDoctor : null,
-          child: _isLoading
-              ? CircularProgressIndicator(strokeWidth: 2)
-              : Text('Add Doctor'),
+          onPressed: _isLoading
+              ? null
+              : _canSubmit()
+              ? _addDoctor
+              : null,
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.blue[700],
             foregroundColor: Colors.white,
           ),
+          child: _isLoading
+              ? CircularProgressIndicator(strokeWidth: 2)
+              : Text('Add Doctor'),
         ),
       ],
     );
   }
 
-  Widget _buildFieldWithCriteria({required Widget child, required String criteria}) {
+  Widget _buildFieldWithCriteria({
+    required Widget child,
+    required String criteria,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1612,13 +1695,13 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
 
   bool _canSubmit() {
     return _doctorNameController.text.trim().isNotEmpty &&
-           _selectedGender != null &&
-           _selectedDateOfBirth != null &&
-           _selectedSpecializations.isNotEmpty &&
-           _contactNumberController.text.trim().isNotEmpty &&
-           _emailController.text.trim().isNotEmpty &&
-           _qualificationController.text.trim().isNotEmpty &&
-           _passwordController.text.trim().isNotEmpty;
+        _selectedGender != null &&
+        _selectedDateOfBirth != null &&
+        _selectedSpecializations.isNotEmpty &&
+        _contactNumberController.text.trim().isNotEmpty &&
+        _emailController.text.trim().isNotEmpty &&
+        _qualificationController.text.trim().isNotEmpty &&
+        _passwordController.text.trim().isNotEmpty;
   }
 }
 
@@ -1727,11 +1810,15 @@ class _AddAssistantDialogState extends State<AddAssistantDialog> {
                 controller: _usernameController,
                 labelText: 'Username',
                 validator: (value) {
+                controller: _usernameController,
+                labelText: 'Username',
+                validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter username';
                   }
                   return null;
-                },
+                }
+return null;,
               ),
               SizedBox(height: 16),
               CustomTextField(
@@ -1814,7 +1901,7 @@ class _AddAssistantDialogState extends State<AddAssistantDialog> {
               ),
               SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: _selectedDoctorId,
+                initialValue: _selectedDoctorId,
                 decoration: InputDecoration(
                   labelText: 'Assign to Doctor (Optional)',
                   border: OutlineInputBorder(),

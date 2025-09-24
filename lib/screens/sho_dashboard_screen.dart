@@ -32,7 +32,7 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen>
   @override
   void initState() {
     super.initState();
-    
+
     // Initialize animation controllers
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 800),
@@ -47,12 +47,13 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen>
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
     );
-    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
-      CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic),
-    );
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+          CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic),
+        );
 
     _loadDashboardData();
-    
+
     // Start animations
     _fadeController.forward();
     _slideController.forward();
@@ -73,7 +74,7 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen>
     try {
       // Load real dashboard data from SHO service
       final result = await ShoService.getDashboardData();
-      
+
       if (result['success']) {
         final apiData = result['data'];
         setState(() {
@@ -82,9 +83,11 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen>
             'activeRHOs': apiData['healthMetrics']?['activePatients'] ?? 0,
             'totalRegions': _getRegionCountForState(widget.sho.assignedState),
             'totalStaff': apiData['stateInfo']?['totalStaff'] ?? 0,
-            'pendingApprovals': (apiData['notifications'] as List?)?.length ?? 0,
-            'recentActivity': (apiData['recentActivities'] as List?)?.isNotEmpty == true 
-                ? apiData['recentActivities'] 
+            'pendingApprovals':
+                (apiData['notifications'] as List?)?.length ?? 0,
+            'recentActivity':
+                (apiData['recentActivities'] as List?)?.isNotEmpty == true
+                ? apiData['recentActivities']
                 : _generateFallbackActivities(),
           };
           _isLoading = false;
@@ -109,10 +112,10 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen>
   Map<String, dynamic> _generateStateBasedData() {
     // Generate realistic data based on the SHO's assigned state
     final state = widget.sho.assignedState;
-    
+
     // State-specific realistic numbers
     Map<String, dynamic> stateData = {};
-    
+
     switch (state) {
       case 'Tamil Nadu':
         stateData = {
@@ -150,13 +153,22 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen>
           'pendingApprovals': 3,
         };
     }
-    
+
     return {
       ...stateData,
       'recentActivity': [
-        {'action': 'New RHO registered in ${_getRandomDistrict(state)}', 'time': '2 hours ago'},
-        {'action': 'Staff limit updated in ${_getRandomDistrict(state)}', 'time': '5 hours ago'},
-        {'action': 'Region coverage expanded in ${_getRandomDistrict(state)}', 'time': '1 day ago'},
+        {
+          'action': 'New RHO registered in ${_getRandomDistrict(state)}',
+          'time': '2 hours ago',
+        },
+        {
+          'action': 'Staff limit updated in ${_getRandomDistrict(state)}',
+          'time': '5 hours ago',
+        },
+        {
+          'action': 'Region coverage expanded in ${_getRandomDistrict(state)}',
+          'time': '1 day ago',
+        },
       ],
     };
   }
@@ -164,13 +176,31 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen>
   String _getRandomDistrict(String state) {
     switch (state) {
       case 'Tamil Nadu':
-        final districts = ['Chennai', 'Coimbatore', 'Madurai', 'Salem', 'Tiruchirappalli'];
+        final districts = [
+          'Chennai',
+          'Coimbatore',
+          'Madurai',
+          'Salem',
+          'Tiruchirappalli',
+        ];
         return districts[DateTime.now().millisecond % districts.length];
       case 'Kerala':
-        final districts = ['Thiruvananthapuram', 'Kochi', 'Kozhikode', 'Thrissur', 'Kollam'];
+        final districts = [
+          'Thiruvananthapuram',
+          'Kochi',
+          'Kozhikode',
+          'Thrissur',
+          'Kollam',
+        ];
         return districts[DateTime.now().millisecond % districts.length];
       case 'Andhra Pradesh':
-        final districts = ['Visakhapatnam', 'Vijayawada', 'Guntur', 'Nellore', 'Kurnool'];
+        final districts = [
+          'Visakhapatnam',
+          'Vijayawada',
+          'Guntur',
+          'Nellore',
+          'Kurnool',
+        ];
         return districts[DateTime.now().millisecond % districts.length];
       default:
         return 'Unknown District';
@@ -193,9 +223,18 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen>
   List<Map<String, String>> _generateFallbackActivities() {
     final state = widget.sho.assignedState;
     return [
-      {'action': 'New RHO registered in ${_getRandomDistrict(state)}', 'time': '2 hours ago'},
-      {'action': 'Staff limit updated in ${_getRandomDistrict(state)}', 'time': '5 hours ago'},
-      {'action': 'Region coverage expanded in ${_getRandomDistrict(state)}', 'time': '1 day ago'},
+      {
+        'action': 'New RHO registered in ${_getRandomDistrict(state)}',
+        'time': '2 hours ago',
+      },
+      {
+        'action': 'Staff limit updated in ${_getRandomDistrict(state)}',
+        'time': '5 hours ago',
+      },
+      {
+        'action': 'Region coverage expanded in ${_getRandomDistrict(state)}',
+        'time': '1 day ago',
+      },
     ];
   }
 
@@ -255,10 +294,7 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen>
             icon: Icon(Icons.people),
             label: 'RHO Management',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.group),
-            label: 'Staff',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Staff'),
           BottomNavigationBarItem(
             icon: Icon(Icons.transfer_within_a_station),
             label: 'Migrants',
@@ -429,7 +465,6 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen>
     );
   }
 
-
   Widget _buildQuickActions() {
     return FadeTransition(
       opacity: _fadeAnimation,
@@ -504,8 +539,6 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen>
     );
   }
 
-
-
   Widget _buildRecentActivity() {
     return SlideTransition(
       position: _slideAnimation,
@@ -521,20 +554,22 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen>
             ),
           ),
           const SizedBox(height: 12),
-          ...((_dashboardData['recentActivity'] as List?) ?? []).asMap().entries.map(
-            (entry) {
-              final index = entry.key;
-              final activity = entry.value;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: ShoActivityCard(
-                  action: activity['action']?.toString() ?? 'Unknown activity',
-                  time: activity['time']?.toString() ?? 'Unknown time',
-                  index: index,
-                ),
-              );
-            },
-          ),
+          ...((_dashboardData['recentActivity'] as List?) ?? [])
+              .asMap()
+              .entries
+              .map((entry) {
+                final index = entry.key;
+                final activity = entry.value;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: ShoActivityCard(
+                    action:
+                        activity['action']?.toString() ?? 'Unknown activity',
+                    time: activity['time']?.toString() ?? 'Unknown time',
+                    index: index,
+                  ),
+                );
+              }),
         ],
       ),
     );
@@ -622,7 +657,7 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen>
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                
+
                 if (snapshot.hasError) {
                   return Center(
                     child: Column(
@@ -642,7 +677,7 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen>
 
                 final staffData = snapshot.data ?? {};
                 final rhosData = staffData['rhos'] as List? ?? [];
-                
+
                 return ListView(
                   children: [
                     _buildStaffSummaryCards(staffData),
@@ -680,7 +715,7 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen>
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                
+
                 if (snapshot.hasError) {
                   return Center(
                     child: Column(
@@ -699,7 +734,7 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen>
                 }
 
                 final migrantData = snapshot.data ?? {};
-                
+
                 return ListView(
                   children: [
                     _buildMigrantSummaryCards(migrantData),
@@ -754,10 +789,7 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen>
             padding: EdgeInsets.all(16.0),
             child: Text(
               'Regional Health Officers',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ),
           ListView.builder(
@@ -772,7 +804,9 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen>
                   child: Icon(Icons.person, color: Colors.white),
                 ),
                 title: Text(rho['name']?.toString() ?? 'Unknown RHO'),
-                subtitle: Text('District: ${rho['district'] ?? 'N/A'} | Staff: ${rho['staffCount'] ?? 0}'),
+                subtitle: Text(
+                  'District: ${rho['district'] ?? 'N/A'} | Staff: ${rho['staffCount'] ?? 0}',
+                ),
                 trailing: PopupMenuButton(
                   itemBuilder: (context) => [
                     const PopupMenuItem(
@@ -853,7 +887,7 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen>
 
   Widget _buildMigrantBreakdown(Map<String, dynamic> migrantData) {
     final sourceStates = migrantData['sourceStates'] as List? ?? [];
-    
+
     return Card(
       elevation: 2,
       child: Padding(
@@ -863,35 +897,37 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen>
           children: [
             const Text(
               'Source State Breakdown',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
-            ...sourceStates.map<Widget>((state) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(state['state']?.toString() ?? 'Unknown'),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      '${state['count'] ?? 0}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
+            ...sourceStates.map<Widget>(
+              (state) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(state['state']?.toString() ?? 'Unknown'),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${state['count'] ?? 0}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            )),
+            ),
           ],
         ),
       ),
@@ -900,7 +936,7 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen>
 
   Widget _buildRecentMigrantActivity(Map<String, dynamic> migrantData) {
     final recentActivity = migrantData['recentActivity'] as List? ?? [];
-    
+
     return Card(
       elevation: 2,
       child: Padding(
@@ -910,10 +946,7 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen>
           children: [
             const Text(
               'Recent Migrant Activity',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             ListView.builder(
@@ -924,8 +957,12 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen>
                 final activity = recentActivity[index];
                 return ListTile(
                   leading: const Icon(Icons.history, color: AppColors.primary),
-                  title: Text(activity['action']?.toString() ?? 'Unknown activity'),
-                  subtitle: Text(activity['date']?.toString() ?? 'Unknown date'),
+                  title: Text(
+                    activity['action']?.toString() ?? 'Unknown activity',
+                  ),
+                  subtitle: Text(
+                    activity['date']?.toString() ?? 'Unknown date',
+                  ),
                   dense: true,
                 );
               },
@@ -947,7 +984,7 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen>
           'Authorization': 'Bearer ${ShoService.getAuthToken()}',
         },
       );
-      
+
       final data = json.decode(response.body);
       if (response.statusCode == 200 && data['success'] == true) {
         return data['data'];
@@ -968,7 +1005,7 @@ class _ShoDashboardScreenState extends State<ShoDashboardScreen>
           'Authorization': 'Bearer ${ShoService.getAuthToken()}',
         },
       );
-      
+
       final data = json.decode(response.body);
       if (response.statusCode == 200 && data['success'] == true) {
         return data['data'];

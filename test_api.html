@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test</title>
+</head>
+<body>
+    <h1>DHRMS API Test</h1>
+    <div id="results"></div>
+    
+    <script>
+        async function testAPI() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<p>Testing APIs...</p>';
+            
+            try {
+                // Test hospitals endpoint
+                console.log('🏥 Testing hospitals endpoint...');
+                const hospitalsResponse = await fetch('http://localhost:3000/api/hospitals', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                console.log('📡 Hospitals Response Status:', hospitalsResponse.status);
+                
+                if (hospitalsResponse.ok) {
+                    const hospitals = await hospitalsResponse.json();
+                    console.log('✅ Found hospitals:', hospitals.length);
+                    results.innerHTML += `<p>✅ Found ${hospitals.length} hospitals</p>`;
+                    
+                    if (hospitals.length > 0) {
+                        const firstHospital = hospitals[0];
+                        const hospitalId = firstHospital.hospitalId;
+                        results.innerHTML += `<p>🏥 First hospital: ${firstHospital.hospitalName} (ID: ${hospitalId})</p>`;
+                        
+                        // Test doctors endpoint
+                        console.log('👨‍⚕️ Testing doctors endpoint for hospital:', hospitalId);
+                        const doctorsResponse = await fetch(`http://localhost:3000/api/doctors/hospital/${hospitalId}`, {
+                            method: 'GET',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        
+                        console.log('📡 Doctors Response Status:', doctorsResponse.status);
+                        
+                        if (doctorsResponse.ok) {
+                            const doctors = await doctorsResponse.json();
+                            console.log('✅ Found doctors:', doctors.length);
+                            results.innerHTML += `<p>✅ Found ${doctors.length} doctors for hospital ${hospitalId}</p>`;
+                            
+                            if (doctors.length > 0) {
+                                const firstDoctor = doctors[0];
+                                results.innerHTML += `<p>👨‍⚕️ First doctor: ${firstDoctor.doctorName} - ${firstDoctor.specialization} (Fee: $${firstDoctor.consultationFee})</p>`;
+                                results.innerHTML += `<p>🔑 Doctor keys: ${Object.keys(firstDoctor).join(', ')}</p>`;
+                            }
+                        } else {
+                            const errorText = await doctorsResponse.text();
+                            console.error('❌ Failed to load doctors:', doctorsResponse.status, errorText);
+                            results.innerHTML += `<p>❌ Failed to load doctors: ${doctorsResponse.status}</p>`;
+                        }
+                    }
+                } else {
+                    const errorText = await hospitalsResponse.text();
+                    console.error('❌ Failed to load hospitals:', hospitalsResponse.status, errorText);
+                    results.innerHTML += `<p>❌ Failed to load hospitals: ${hospitalsResponse.status}</p>`;
+                }
+                
+            } catch (error) {
+                console.error('💥 Error:', error);
+                results.innerHTML += `<p>💥 Error: ${error.message}</p>`;
+            }
+        }
+        
+        // Run test when page loads
+        window.addEventListener('load', testAPI);
+    </script>
+</body>
+</html>

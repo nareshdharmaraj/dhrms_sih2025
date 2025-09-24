@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const MedicalRecord = require('../models/MedicalRecord');
-const Appointment = require('../models/Appointment');
+const HospitalAppointment = require('../models/HospitalAppointment');
 const HealthStatistics = require('../models/HealthStatistics');
 
 // Get medical records for a specific patient
@@ -31,8 +31,7 @@ router.get('/medical-records/staff/:staffId', async (req, res) => {
 // Get appointments for a specific patient
 router.get('/appointments/patient/:patientId', async (req, res) => {
   try {
-    const appointments = await Appointment.find({ patientId: req.params.patientId })
-      .populate('hospitalStaffId', 'fullName staffRole department')
+    const appointments = await HospitalAppointment.find({ patientId: req.params.patientId })
       .sort({ appointmentDate: 1 });
     res.json(appointments);
   } catch (error) {
@@ -43,8 +42,7 @@ router.get('/appointments/patient/:patientId', async (req, res) => {
 // Get appointments for a specific staff member
 router.get('/appointments/staff/:staffId', async (req, res) => {
   try {
-    const appointments = await Appointment.find({ hospitalStaffId: req.params.staffId })
-      .populate('patientId', 'fullName bloodGroup phone')
+    const appointments = await HospitalAppointment.find({ hospitalStaffId: req.params.staffId })
       .sort({ appointmentDate: 1 });
     res.json(appointments);
   } catch (error) {
@@ -100,39 +98,7 @@ router.post('/medical-records', async (req, res) => {
   }
 });
 
-// Create a new appointment
-router.post('/appointments', async (req, res) => {
-  try {
-    const appointment = new Appointment(req.body);
-    await appointment.save();
-    const populatedAppointment = await Appointment.findById(appointment._id)
-      .populate('patientId', 'fullName')
-      .populate('hospitalStaffId', 'fullName');
-    res.status(201).json(populatedAppointment);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-// Update appointment status
-router.patch('/appointments/:id/status', async (req, res) => {
-  try {
-    const { status } = req.body;
-    const appointment = await Appointment.findByIdAndUpdate(
-      req.params.id,
-      { status, updatedAt: new Date() },
-      { new: true }
-    ).populate('patientId', 'fullName')
-     .populate('hospitalStaffId', 'fullName');
-    
-    if (!appointment) {
-      return res.status(404).json({ error: 'Appointment not found' });
-    }
-    
-    res.json(appointment);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
+// Note: Appointment creation and status updates moved to appointmentRoutes.js
+// to avoid conflicts and use the HospitalAppointment model instead of generic Appointment model
 
 module.exports = router;

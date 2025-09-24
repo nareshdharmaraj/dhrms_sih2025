@@ -10,12 +10,12 @@ import 'advanced_sos_screen.dart';
 import 'settings_screen.dart';
 import 'health_alerts_screen.dart';
 import 'medications_screen.dart';
-import 'hospitals_screen.dart';
 import 'telemedicine_screen.dart';
 import 'vitals_monitor_screen.dart';
 import 'insurance_services_screen.dart';
 import 'proximity_alerts_screen.dart';
 import 'health_gamification_screen.dart';
+import 'patient_appointment_booking_screen.dart';
 
 class PatientDashboardScreen extends StatefulWidget {
   final String? uhid;
@@ -959,22 +959,6 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
                   ),
                 ),
                 _buildQuickActionButton(
-                  icon: Icons.local_hospital,
-                  title: 'Nearby Hospitals',
-                  color: Colors.blue.shade600,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => HospitalsScreen(
-                          patientData:
-                              _patientDataFromArgs ?? widget.patientData,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                _buildQuickActionButton(
                   icon: Icons.warning,
                   title: 'Health Alerts',
                   color: Colors.orange.shade600,
@@ -1221,8 +1205,7 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
                               contact['relationship'],
                               contact['phone'],
                             ),
-                          )
-                          ,
+                          ),
                     ],
                   ],
                 ),
@@ -1363,159 +1346,252 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
   Widget _buildServicesTab() {
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [Colors.teal.shade50, Colors.white]),
+        gradient: LinearGradient(
+          colors: [Colors.teal.shade50, Colors.white],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
       ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Healthcare Services',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey.shade800,
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              crossAxisSpacing: 15,
-              mainAxisSpacing: 15,
-              childAspectRatio: 0.9,
-              children: [
-                _buildServiceCard(
-                  icon: Icons.sos,
-                  title: 'Emergency SOS',
-                  subtitle: 'Immediate help',
-                  color: Colors.red.shade600,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const AdvancedSOSScreen(),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Compact Header with enhanced styling
+              Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.teal.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
                     ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.teal.shade400, Colors.teal.shade600],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.teal.withOpacity(0.3),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.medical_services,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Healthcare Services',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          Text(
+                            'All services at your fingertips',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.teal.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.teal.shade200),
+                      ),
+                      child: Text(
+                        '8 Services',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.teal.shade700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Compact Grid - All services visible without scrolling
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: GridView.count(
+                    physics: const NeverScrollableScrollPhysics(),
+                    shrinkWrap: true,
+                    crossAxisCount: 3, // 3 columns for optimal space usage
+                    crossAxisSpacing: 6,
+                    mainAxisSpacing: 6,
+                    childAspectRatio: 0.9, // Perfect ratio for compact cards
+                    children: [
+                      _buildCompactServiceCard(
+                        icon: Icons.sos,
+                        title: 'Emergency',
+                        subtitle: 'SOS',
+                        color: Colors.red.shade600,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const AdvancedSOSScreen(),
+                          ),
+                        ),
+                      ),
+                      _buildCompactServiceCard(
+                        icon: Icons.calendar_today,
+                        title: 'Appointments',
+                        subtitle: 'Book',
+                        color: Colors.indigo.shade600,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  PatientAppointmentBookingScreen(
+                                    patientData:
+                                        _patientDataFromArgs ??
+                                        widget.patientData ??
+                                        {},
+                                  ),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildCompactServiceCard(
+                        icon: Icons.video_call,
+                        title: 'Telemedicine',
+                        subtitle: 'Video',
+                        color: Colors.green.shade600,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => TelemedicineScreen(
+                                patientData:
+                                    _patientDataFromArgs ?? widget.patientData,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildCompactServiceCard(
+                        icon: Icons.monitor_heart,
+                        title: 'Vitals',
+                        subtitle: 'Monitor',
+                        color: Colors.purple.shade600,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => VitalsMonitorScreen(
+                                patientData:
+                                    _patientDataFromArgs ?? widget.patientData,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildCompactServiceCard(
+                        icon: Icons.smart_toy,
+                        title: 'AI HealthBot',
+                        subtitle: 'Assistant',
+                        color: Colors.orange.shade600,
+                        onTap: () {
+                          Navigator.pushNamed(context, '/ai-health-chatbot');
+                        },
+                      ),
+                      _buildCompactServiceCard(
+                        icon: Icons.shield,
+                        title: 'Insurance',
+                        subtitle: 'Policies',
+                        color: Colors.teal.shade600,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => InsuranceServicesScreen(
+                                patientData:
+                                    _patientDataFromArgs ?? widget.patientData,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildCompactServiceCard(
+                        icon: Icons.warning,
+                        title: 'Proximity',
+                        subtitle: 'Alerts',
+                        color: Colors.amber.shade600,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ProximityAlertsScreen(
+                                patientData:
+                                    _patientDataFromArgs ?? widget.patientData,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildCompactServiceCard(
+                        icon: Icons.games,
+                        title: 'Gamification',
+                        subtitle: 'Rewards',
+                        color: Colors.pink.shade600,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => HealthGamificationScreen(
+                                patientData:
+                                    _patientDataFromArgs ?? widget.patientData,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ),
-                _buildServiceCard(
-                  icon: Icons.local_hospital,
-                  title: 'Hospital',
-                  subtitle: 'Find nearby hospitals',
-                  color: Colors.blue.shade600,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => HospitalsScreen(
-                          patientData:
-                              _patientDataFromArgs ?? widget.patientData,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                _buildServiceCard(
-                  icon: Icons.video_call,
-                  title: 'Telemedicine',
-                  subtitle: 'Video consultations',
-                  color: Colors.green.shade600,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => TelemedicineScreen(
-                          patientData:
-                              _patientDataFromArgs ?? widget.patientData,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                _buildServiceCard(
-                  icon: Icons.monitor_heart,
-                  title: 'Vitals Monitor',
-                  subtitle: 'Track vital signs',
-                  color: Colors.purple.shade600,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => VitalsMonitorScreen(
-                          patientData:
-                              _patientDataFromArgs ?? widget.patientData,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                _buildServiceCard(
-                  icon: Icons.smart_toy,
-                  title: 'AI HealthBot',
-                  subtitle: 'Health assistant',
-                  color: Colors.orange.shade600,
-                  onTap: () {
-                    Navigator.pushNamed(context, '/ai-health-chatbot');
-                  },
-                ),
-                _buildServiceCard(
-                  icon: Icons.shield,
-                  title: 'Insurance Services',
-                  subtitle: 'Manage policies',
-                  color: Colors.teal.shade600,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => InsuranceServicesScreen(
-                          patientData:
-                              _patientDataFromArgs ?? widget.patientData,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                _buildServiceCard(
-                  icon: Icons.warning,
-                  title: 'Proximity Alerts',
-                  subtitle: 'Health warnings',
-                  color: Colors.amber.shade600,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ProximityAlertsScreen(
-                          patientData:
-                              _patientDataFromArgs ?? widget.patientData,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                _buildServiceCard(
-                  icon: Icons.games,
-                  title: 'Health Gamification',
-                  subtitle: 'Wellness rewards',
-                  color: Colors.pink.shade600,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => HealthGamificationScreen(
-                          patientData:
-                              _patientDataFromArgs ?? widget.patientData,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 100), // Space for floating button
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1824,62 +1900,89 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
     );
   }
 
-  // Helper method to build service cards for services tab
-  Widget _buildServiceCard({
+  // Compact service card for fitting all services on screen
+  Widget _buildCompactServiceCard({
     required IconData icon,
     required String title,
     required String subtitle,
     required Color color,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.2)),
-          boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                shape: BoxShape.circle,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        splashColor: color.withOpacity(0.1),
+        highlightColor: color.withOpacity(0.05),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color.withOpacity(0.15)),
+            boxShadow: [
+              BoxShadow(
+                color: color.withOpacity(0.08),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
               ),
-              child: Icon(icon, color: color, size: 32),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey.shade800,
+            ],
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Icon with gradient background
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [color.withOpacity(0.8), color],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withOpacity(0.25),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Icon(icon, color: Colors.white, size: 22),
               ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+              const SizedBox(height: 6),
+
+              // Title
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 1),
+
+              // Subtitle with color accent
+              Text(
+                subtitle,
+                style: TextStyle(
+                  fontSize: 9,
+                  color: color.withOpacity(0.8),
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -2347,21 +2450,19 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
               ),
               const SizedBox(height: 12),
               if (healthTips.isNotEmpty) ...[
-                ...healthTips
-                    .map(
-                      (tip) => Padding(
-                        padding: const EdgeInsets.only(bottom: 4.0),
-                        child: Text(
-                          '• $tip',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.teal.shade700,
-                            height: 1.5,
-                          ),
-                        ),
+                ...healthTips.map(
+                  (tip) => Padding(
+                    padding: const EdgeInsets.only(bottom: 4.0),
+                    child: Text(
+                      '• $tip',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.teal.shade700,
+                        height: 1.5,
                       ),
-                    )
-                    ,
+                    ),
+                  ),
+                ),
               ] else ...[
                 Text(
                   'No health tips available at the moment.',

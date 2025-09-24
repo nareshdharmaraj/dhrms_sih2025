@@ -3,7 +3,7 @@ const Patient = require('./models/Patient');
 const HospitalStaff = require('./models/HospitalStaff');
 const RegionalOfficer = require('./models/RegionalOfficer');
 const MedicalRecord = require('./models/MedicalRecord');
-const Appointment = require('./models/Appointment');
+const HospitalAppointment = require('./models/HospitalAppointment');
 const HealthStatistics = require('./models/HealthStatistics');
 
 async function populateDatabase() {
@@ -20,7 +20,7 @@ async function populateDatabase() {
     await HospitalStaff.deleteMany({});
     await RegionalOfficer.deleteMany({});
     await MedicalRecord.deleteMany({});
-    await Appointment.deleteMany({});
+    await HospitalAppointment.deleteMany({});
     await HealthStatistics.deleteMany({});
     
     console.log('Cleared existing data');
@@ -478,75 +478,79 @@ async function populateDatabase() {
       }
     ]);
 
-    // Create Appointments
-    const appointments = await Appointment.insertMany([
+    // Create Hospital Appointments
+    const appointments = await HospitalAppointment.insertMany([
       {
-        patientId: patients[0]._id,
-        hospitalStaffId: hospitalStaff[0]._id,
-        appointmentDate: new Date('2024-04-15'),
-        appointmentTime: '10:00',
-        duration: 30,
-        type: 'follow_up',
-        status: 'scheduled',
+        appointmentId: 'APT_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+        patientId: patients[0]._id.toString(),
+        patientName: patients[0].fullName,
+        patientUhid: patients[0].uhid,
+        patientGender: patients[0].gender,
+        patientAge: 45,
+        patientState: 'Dubai',
+        hospitalStaffId: hospitalStaff[0]._id.toString(),
+        doctorName: hospitalStaff[0].fullName,
+        hospitalId: 'HSP001',
+        hospitalName: 'Dubai Hospital',
+        appointmentDate: '15/04/2024',
+        appointmentTime: '10:00 AM',
         reason: 'Diabetes follow-up appointment',
-        notes: 'Regular diabetes monitoring and medication review',
-        priority: 'normal',
-        location: {
-          hospitalName: 'Dubai Hospital',
-          department: 'Cardiology',
-          roomNumber: 'C-101'
-        }
+        consultationFee: 150,
+        status: 'approved'
       },
       {
-        patientId: patients[1]._id,
-        hospitalStaffId: hospitalStaff[1]._id,
-        appointmentDate: new Date('2024-02-10'),
-        appointmentTime: '14:30',
-        duration: 45,
-        type: 'check_up',
-        status: 'completed',
+        appointmentId: 'APT_' + (Date.now() + 1) + '_' + Math.random().toString(36).substr(2, 9),
+        patientId: patients[1]._id.toString(),
+        patientName: patients[1].fullName,
+        patientUhid: patients[1].uhid,
+        patientGender: patients[1].gender,
+        patientAge: 38,
+        patientState: 'Dubai',
+        hospitalStaffId: hospitalStaff[1]._id.toString(),
+        doctorName: hospitalStaff[1].fullName,
+        hospitalId: 'HSP001',
+        hospitalName: 'Dubai Hospital',
+        appointmentDate: '10/02/2024',
+        appointmentTime: '2:30 PM',
         reason: 'Annual health screening',
-        notes: 'Routine annual checkup completed successfully',
-        priority: 'low',
-        location: {
-          hospitalName: 'Dubai Hospital',
-          department: 'Emergency',
-          roomNumber: 'ER-205'
-        }
+        consultationFee: 200,
+        status: 'completed'
       },
       {
-        patientId: patients[2]._id,
-        hospitalStaffId: hospitalStaff[3]._id,
-        appointmentDate: new Date('2024-05-30'),
-        appointmentTime: '11:00',
-        duration: 30,
-        type: 'follow_up',
-        status: 'scheduled',
+        appointmentId: 'APT_' + (Date.now() + 2) + '_' + Math.random().toString(36).substr(2, 9),
+        patientId: patients[2]._id.toString(),
+        patientName: patients[2].fullName,
+        patientUhid: patients[2].uhid,
+        patientGender: patients[2].gender,
+        patientAge: 52,
+        patientState: 'Dubai',
+        hospitalStaffId: hospitalStaff[3]._id.toString(),
+        doctorName: hospitalStaff[3].fullName,
+        hospitalId: 'HSP002',
+        hospitalName: 'American Hospital Dubai',
+        appointmentDate: '30/05/2024',
+        appointmentTime: '11:00 AM',
         reason: 'Blood pressure and cholesterol monitoring',
-        notes: 'Monitor hypertension treatment progress',
-        priority: 'high',
-        location: {
-          hospitalName: 'American Hospital Dubai',
-          department: 'Internal Medicine',
-          roomNumber: 'IM-302'
-        }
+        consultationFee: 180,
+        status: 'approved'
       },
       {
-        patientId: patients[3]._id,
-        hospitalStaffId: hospitalStaff[0]._id,
-        appointmentDate: new Date('2024-03-20'),
-        appointmentTime: '09:00',
-        duration: 45,
-        type: 'consultation',
-        status: 'confirmed',
+        appointmentId: 'APT_' + (Date.now() + 3) + '_' + Math.random().toString(36).substr(2, 9),
+        patientId: patients[3]._id.toString(),
+        patientName: patients[3].fullName,
+        patientUhid: patients[3].uhid,
+        patientGender: patients[3].gender,
+        patientAge: 29,
+        patientState: 'Dubai',
+        hospitalStaffId: hospitalStaff[0]._id.toString(),
+        doctorName: hospitalStaff[0].fullName,
+        hospitalId: 'HSP001',
+        hospitalName: 'Dubai Hospital',
+        appointmentDate: '20/03/2024',
+        appointmentTime: '9:00 AM',
         reason: 'Asthma management consultation',
-        notes: 'Review asthma control and adjust treatment if needed',
-        priority: 'normal',
-        location: {
-          hospitalName: 'Dubai Hospital',
-          department: 'Cardiology',
-          roomNumber: 'C-105'
-        }
+        consultationFee: 160,
+        status: 'approved'
       }
     ]);
 

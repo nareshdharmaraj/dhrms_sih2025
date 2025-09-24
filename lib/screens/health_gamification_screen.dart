@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class HealthGamificationScreen extends StatefulWidget {
   final Map<String, dynamic>? patientData;
@@ -25,12 +27,13 @@ class _HealthGamificationScreenState extends State<HealthGamificationScreen>
 
   int _totalPoints = 0;
   final int _currentLevel = 1;
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
-    _loadSampleData();
+    _loadGameData();
   }
 
   @override
@@ -39,96 +42,77 @@ class _HealthGamificationScreenState extends State<HealthGamificationScreen>
     super.dispose();
   }
 
-  void _loadSampleData() {
-    // Sample challenges
-    _challenges.addAll([
-      {
-        'id': '1',
-        'title': 'Daily Walker',
-        'description': 'Walk 10,000 steps today',
-        'type': 'daily',
-        'points': 50,
-        'progress': 7500,
-        'target': 10000,
-        'isCompleted': false,
-        'icon': Icons.directions_walk,
-        'color': Colors.green,
-      },
-      {
-        'id': '2',
-        'title': 'Hydration Hero',
-        'description': 'Drink 8 glasses of water',
-        'type': 'daily',
-        'points': 30,
-        'progress': 6,
-        'target': 8,
-        'isCompleted': false,
-        'icon': Icons.local_drink,
-        'color': Colors.blue,
-      },
-      {
-        'id': '3',
-        'title': 'Meditation Master',
-        'description': 'Meditate for 10 minutes',
-        'type': 'daily',
-        'points': 40,
-        'progress': 0,
-        'target': 10,
-        'isCompleted': false,
-        'icon': Icons.self_improvement,
-        'color': Colors.purple,
-      },
-      {
-        'id': '4',
-        'title': 'Weekly Warrior',
-        'description': 'Complete 5 workouts this week',
-        'type': 'weekly',
-        'points': 200,
-        'progress': 3,
-        'target': 5,
-        'isCompleted': false,
-        'icon': Icons.fitness_center,
-        'color': Colors.orange,
-      },
-    ]);
+  Future<void> _loadGameData() async {
+    setState(() {
+      _isLoading = true;
+    });
 
-    // Sample achievements
-    _achievements.addAll([
-      {
-        'id': '1',
-        'title': 'First Steps',
-        'description': 'Completed your first challenge',
-        'points': 100,
-        'isUnlocked': true,
-        'unlockedDate': '2024-01-15',
-        'icon': Icons.star,
-        'color': Colors.amber,
-      },
-      {
-        'id': '2',
-        'title': 'Streak Master',
-        'description': 'Maintained a 7-day streak',
-        'points': 250,
-        'isUnlocked': false,
-        'icon': Icons.local_fire_department,
-        'color': Colors.red,
-      },
-      {
-        'id': '3',
-        'title': 'Point Collector',
-        'description': 'Earned 1000 total points',
-        'points': 500,
-        'isUnlocked': false,
-        'icon': Icons.emoji_events,
-        'color': Colors.amber,
-      },
-    ]);
+    try {
+      const baseUrl = 'https://dhrms-sih2025.onrender.com/api';
 
-    _totalPoints = 450;
-    _streaks['steps'] = 3;
-    _streaks['water'] = 5;
-    _streaks['meditation'] = 1;
-    _streaks['sleep'] = 2;
+      // Load challenges
+      final challengesResponse = await http.get(
+        Uri.parse('$baseUrl/gamification/challenges'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (challengesResponse.statusCode == 200) {
+        final challengesData = json.decode(challengesResponse.body);
+        setState(() {
+          _challenges.clear();
+          _challenges.addAll(
+            List<Map<String, dynamic>>.from(challengesData['challenges'] ?? []),
+          );
+        });
+      } else {
+        print('Failed to load challenges: ${challengesResponse.statusCode}');
+      }
+
+      // Load achievements
+      final achievementsResponse = await http.get(
+        Uri.parse('$baseUrl/gamification/achievements'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (achievementsResponse.statusCode == 200) {
+        final achievementsData = json.decode(achievementsResponse.body);
+        setState(() {
+          _achievements.clear();
+          _achievements.addAll(
+            List<Map<String, dynamic>>.from(
+              achievementsData['achievements'] ?? [],
+            ),
+          );
+        });
+      } else {
+        print(
+          'Failed to load achievements: ${achievementsResponse.statusCode}',
+        );
+      }
+
+      // Load user progress
+      final progressResponse = await http.get(
+        Uri.parse('$baseUrl/gamification/progress'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (progressResponse.statusCode == 200) {
+        final progressData = json.decode(progressResponse.body);
+        setState(() {
+          _totalPoints = progressData['totalPoints'] ?? 0;
+          final streaks = progressData['streaks'] ?? {};
+          _streaks.addAll(Map<String, int>.from(streaks));
+        });
+      } else {
+        print('Failed to load progress: ${progressResponse.statusCode}');
+      }
+    } catch (e) {
+      print('Error loading game data: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -160,14 +144,17 @@ class _HealthGamificationScreenState extends State<HealthGamificationScreen>
             colors: [Colors.purple.shade50, Colors.white],
           ),
         ),
-        child: TabBarView(
-          controller: _tabController,
-          children: [
-            _buildOverviewTab(),
-            _buildChallengesTab(),
-            _buildAchievementsTab(),
-            _buildLeaderboardTab(),
-          ],
+        child: RefreshIndicator(
+          onRefresh: _loadGameData,
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              _buildOverviewTab(),
+              _buildChallengesTab(),
+              _buildAchievementsTab(),
+              _buildLeaderboardTab(),
+            ],
+          ),
         ),
       ),
     );
@@ -548,6 +535,40 @@ class _HealthGamificationScreenState extends State<HealthGamificationScreen>
   }
 
   Widget _buildChallengesTab() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_challenges.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.assignment_outlined,
+              size: 64,
+              color: Colors.purple.shade300,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No Challenges Available',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey.shade700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Pull down to refresh and check for new challenges',
+              style: TextStyle(color: Colors.grey.shade600),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -716,6 +737,36 @@ class _HealthGamificationScreenState extends State<HealthGamificationScreen>
   }
 
   Widget _buildAchievementsTab() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_achievements.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.stars_outlined, size: 64, color: Colors.purple.shade300),
+            const SizedBox(height: 16),
+            Text(
+              'No Achievements Yet',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey.shade700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Complete challenges to unlock achievements',
+              style: TextStyle(color: Colors.grey.shade600),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(

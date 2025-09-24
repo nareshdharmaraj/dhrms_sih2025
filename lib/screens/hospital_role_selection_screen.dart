@@ -108,7 +108,8 @@ class HospitalRoleSelectionScreen extends StatelessWidget {
       UserRole(
         title: 'Doctor',
         subtitle: 'Medical professional',
-        description: 'Access patient records, manage appointments and treatments',
+        description:
+            'Access patient records, manage appointments and treatments',
         icon: Icons.local_hospital,
         color: const Color(0xFF2196F3),
         route: '/doctor',
@@ -192,7 +193,10 @@ class HospitalRoleSelectionScreen extends StatelessWidget {
                 child: RoleCardWidget(
                   role: hospitalRoles[index],
                   isTablet: isTablet,
-                  onTap: () => _handleHospitalRoleSelection(context, hospitalRoles[index]),
+                  onTap: () => _handleHospitalRoleSelection(
+                    context,
+                    hospitalRoles[index],
+                  ),
                 ),
               );
             },

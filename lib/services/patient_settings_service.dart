@@ -12,9 +12,10 @@ import 'package:crypto/crypto.dart';
 class PatientSettingsService {
   static const String _baseUrl = 'http://192.168.1.100:3000/api';
   static const String _keyPrefix = 'patient_settings_';
-  
+
   // Singleton pattern
-  static final PatientSettingsService _instance = PatientSettingsService._internal();
+  static final PatientSettingsService _instance =
+      PatientSettingsService._internal();
   factory PatientSettingsService() => _instance;
   PatientSettingsService._internal();
 
@@ -27,7 +28,7 @@ class PatientSettingsService {
   }
 
   // ==================== PROFILE MANAGEMENT ====================
-  
+
   /// Get patient profile from database
   Future<Map<String, dynamic>?> getPatientProfile(String patientId) async {
     try {
@@ -61,7 +62,10 @@ class PatientSettingsService {
   }
 
   /// Update patient profile
-  Future<bool> updatePatientProfile(String patientId, Map<String, dynamic> profileData) async {
+  Future<bool> updatePatientProfile(
+    String patientId,
+    Map<String, dynamic> profileData,
+  ) async {
     try {
       // Validate required fields
       if (!_validateProfileData(profileData)) {
@@ -76,7 +80,10 @@ class PatientSettingsService {
 
       if (response.statusCode == 200) {
         // Update cached profile
-        await _prefs.setString('${_keyPrefix}profile', json.encode(profileData));
+        await _prefs.setString(
+          '${_keyPrefix}profile',
+          json.encode(profileData),
+        );
         return true;
       } else {
         throw Exception('Failed to update profile: ${response.statusCode}');
@@ -90,11 +97,13 @@ class PatientSettingsService {
   bool _validateProfileData(Map<String, dynamic> data) {
     final requiredFields = ['fullName', 'email', 'phone', 'dateOfBirth'];
     for (String field in requiredFields) {
-      if (!data.containsKey(field) || data[field] == null || data[field].toString().isEmpty) {
+      if (!data.containsKey(field) ||
+          data[field] == null ||
+          data[field].toString().isEmpty) {
         return false;
       }
     }
-    
+
     // Validate email format
     final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
     if (!emailRegex.hasMatch(data['email'])) {
@@ -103,7 +112,9 @@ class PatientSettingsService {
 
     // Validate phone number (Indian format)
     final phoneRegex = RegExp(r'^[+]?[91]?[6-9]\d{9}$');
-    if (!phoneRegex.hasMatch(data['phone'].toString().replaceAll(RegExp(r'[\s-]'), ''))) {
+    if (!phoneRegex.hasMatch(
+      data['phone'].toString().replaceAll(RegExp(r'[\s-]'), ''),
+    )) {
       return false;
     }
 
@@ -113,7 +124,11 @@ class PatientSettingsService {
   // ==================== PASSWORD MANAGEMENT ====================
 
   /// Change patient password
-  Future<bool> changePassword(String patientId, String currentPassword, String newPassword) async {
+  Future<bool> changePassword(
+    String patientId,
+    String currentPassword,
+    String newPassword,
+  ) async {
     try {
       // Validate password strength
       if (!_isPasswordStrong(newPassword)) {
@@ -148,10 +163,10 @@ class PatientSettingsService {
   bool _isPasswordStrong(String password) {
     // Password requirements: min 8 chars, at least 1 uppercase, 1 lowercase, 1 number, 1 special char
     return password.length >= 8 &&
-           password.contains(RegExp(r'[A-Z]')) &&
-           password.contains(RegExp(r'[a-z]')) &&
-           password.contains(RegExp(r'[0-9]')) &&
-           password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'));
+        password.contains(RegExp(r'[A-Z]')) &&
+        password.contains(RegExp(r'[a-z]')) &&
+        password.contains(RegExp(r'[0-9]')) &&
+        password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'));
   }
 
   String _hashPassword(String password) {
@@ -191,7 +206,10 @@ class PatientSettingsService {
   }
 
   /// Update privacy settings
-  Future<bool> updatePrivacySettings(String patientId, Map<String, bool> settings) async {
+  Future<bool> updatePrivacySettings(
+    String patientId,
+    Map<String, bool> settings,
+  ) async {
     try {
       final response = await http.put(
         Uri.parse('$_baseUrl/patients/$patientId/privacy-settings'),
@@ -237,7 +255,10 @@ class PatientSettingsService {
         final data = json.decode(response.body);
         Map<String, bool> settings = Map<String, bool>.from(data);
         // Cache settings
-        await _prefs.setString('${_keyPrefix}notifications', json.encode(settings));
+        await _prefs.setString(
+          '${_keyPrefix}notifications',
+          json.encode(settings),
+        );
         return settings;
       } else {
         throw Exception('Failed to load notification settings');
@@ -254,7 +275,10 @@ class PatientSettingsService {
   }
 
   /// Update notification settings
-  Future<bool> updateNotificationSettings(String patientId, Map<String, bool> settings) async {
+  Future<bool> updateNotificationSettings(
+    String patientId,
+    Map<String, bool> settings,
+  ) async {
     try {
       final response = await http.put(
         Uri.parse('$_baseUrl/patients/$patientId/notification-settings'),
@@ -264,7 +288,10 @@ class PatientSettingsService {
 
       if (response.statusCode == 200) {
         // Cache settings
-        await _prefs.setString('${_keyPrefix}notifications', json.encode(settings));
+        await _prefs.setString(
+          '${_keyPrefix}notifications',
+          json.encode(settings),
+        );
         return true;
       } else {
         throw Exception('Failed to update notification settings');
@@ -291,7 +318,9 @@ class PatientSettingsService {
   // ==================== HEALTH REMINDERS ====================
 
   /// Get health reminders
-  Future<List<Map<String, dynamic>>> getHealthReminders(String patientId) async {
+  Future<List<Map<String, dynamic>>> getHealthReminders(
+    String patientId,
+  ) async {
     try {
       final response = await http.get(
         Uri.parse('$_baseUrl/patients/$patientId/health-reminders'),
@@ -300,7 +329,9 @@ class PatientSettingsService {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        List<Map<String, dynamic>> reminders = List<Map<String, dynamic>>.from(data);
+        List<Map<String, dynamic>> reminders = List<Map<String, dynamic>>.from(
+          data,
+        );
         return reminders;
       } else {
         throw Exception('Failed to load health reminders');
@@ -312,7 +343,10 @@ class PatientSettingsService {
   }
 
   /// Add health reminder
-  Future<bool> addHealthReminder(String patientId, Map<String, dynamic> reminder) async {
+  Future<bool> addHealthReminder(
+    String patientId,
+    Map<String, dynamic> reminder,
+  ) async {
     try {
       final response = await http.post(
         Uri.parse('$_baseUrl/patients/$patientId/health-reminders'),
@@ -328,7 +362,11 @@ class PatientSettingsService {
   }
 
   /// Update health reminder
-  Future<bool> updateHealthReminder(String patientId, String reminderId, Map<String, dynamic> reminder) async {
+  Future<bool> updateHealthReminder(
+    String patientId,
+    String reminderId,
+    Map<String, dynamic> reminder,
+  ) async {
     try {
       final response = await http.put(
         Uri.parse('$_baseUrl/patients/$patientId/health-reminders/$reminderId'),
@@ -514,7 +552,7 @@ class PatientSettingsService {
   Future<bool> requestLocationPermission() async {
     try {
       LocationPermission permission = await Geolocator.checkPermission();
-      
+
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
@@ -523,9 +561,10 @@ class PatientSettingsService {
         return false;
       }
 
-      final isEnabled = permission == LocationPermission.whileInUse || 
-                       permission == LocationPermission.always;
-      
+      final isEnabled =
+          permission == LocationPermission.whileInUse ||
+          permission == LocationPermission.always;
+
       await _prefs.setBool('${_keyPrefix}location_enabled', isEnabled);
       return isEnabled;
     } catch (e) {
@@ -607,7 +646,7 @@ class PatientSettingsService {
   Future<Map<String, String>> getAppInfo() async {
     try {
       final DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
-      
+
       Map<String, String> info = {
         'appName': 'DHRMS',
         'packageName': 'com.dhrms.healthcare',
@@ -636,11 +675,7 @@ class PatientSettingsService {
       return info;
     } catch (e) {
       if (kDebugMode) print('Error getting app info: $e');
-      return {
-        'appName': 'DHRMS',
-        'version': '1.0.0',
-        'platform': 'Unknown',
-      };
+      return {'appName': 'DHRMS', 'version': '1.0.0', 'platform': 'Unknown'};
     }
   }
 
@@ -670,7 +705,11 @@ class PatientSettingsService {
   }
 
   /// Send support email
-  Future<bool> sendSupportEmail(String email, {String? subject, String? body}) async {
+  Future<bool> sendSupportEmail(
+    String email, {
+    String? subject,
+    String? body,
+  }) async {
     try {
       final Uri launchUri = Uri(
         scheme: 'mailto',
@@ -689,7 +728,10 @@ class PatientSettingsService {
 
   String? _encodeQueryParameters(Map<String, String> params) {
     return params.entries
-        .map((entry) => '${Uri.encodeComponent(entry.key)}=${Uri.encodeComponent(entry.value)}')
+        .map(
+          (entry) =>
+              '${Uri.encodeComponent(entry.key)}=${Uri.encodeComponent(entry.value)}',
+        )
         .join('&');
   }
 
@@ -944,7 +986,7 @@ By using DHRMS, you acknowledge that you have read, understood, and agree to be 
   Future<bool> deleteUserAccount(String patientId, String password) async {
     try {
       final passwordHash = _hashPassword(password);
-      
+
       final response = await http.delete(
         Uri.parse('$_baseUrl/patients/$patientId/delete-account'),
         headers: await _getHeaders(),

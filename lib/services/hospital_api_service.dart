@@ -1,3 +1,4 @@
+import 'dart:convert';
 import '../services/api_client.dart';
 
 /// Hospital-specific API service that uses the centralized ApiClient
@@ -231,6 +232,93 @@ class HospitalApiService {
       );
     } catch (e) {
       throw Exception('Failed to load appointments: $e');
+    }
+  }
+
+  // Doctor-specific appointment methods
+  static Future<List<Map<String, dynamic>>> getDoctorAppointments(
+    String doctorId,
+  ) async {
+    try {
+      print('🔍 Fetching appointments for doctor ID: $doctorId');
+      print('🔍 Using API endpoint: /appointments/staff/$doctorId');
+      final response = await _client.get('/appointments/staff/$doctorId');
+
+      // Parse JSON directly since the API returns an array
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        print(
+          '✅ Successfully fetched appointments, status: ${response.statusCode}',
+        );
+        final jsonData = jsonDecode(response.body);
+
+        // The API returns appointments directly as an array
+        if (jsonData is List) {
+          print('📋 Found ${jsonData.length} appointments in response');
+          final result = <Map<String, dynamic>>[];
+          for (final item in jsonData) {
+            if (item is Map) {
+              result.add(Map<String, dynamic>.from(item));
+            }
+          }
+          return result;
+        }
+
+        // Handle wrapped response
+        if (jsonData is Map<String, dynamic>) {
+          if (jsonData.containsKey('data') && jsonData['data'] is List) {
+            final list = jsonData['data'] as List;
+            final result = <Map<String, dynamic>>[];
+            for (final item in list) {
+              if (item is Map) {
+                result.add(Map<String, dynamic>.from(item));
+              }
+            }
+            return result;
+          } else if (jsonData.containsKey('appointments') &&
+              jsonData['appointments'] is List) {
+            final list = jsonData['appointments'] as List;
+            final result = <Map<String, dynamic>>[];
+            for (final item in list) {
+              if (item is Map) {
+                result.add(Map<String, dynamic>.from(item));
+              }
+            }
+            return result;
+          }
+        }
+      } else {
+        print('❌ Request failed with status ${response.statusCode}');
+        print('❌ Response body: ${response.body}');
+        throw Exception('Request failed with status ${response.statusCode}');
+      }
+
+      // If none of the above, return empty list
+      print('⚠️ Unexpected response format, returning empty list');
+      return <Map<String, dynamic>>[];
+    } catch (e) {
+      print('❌ Exception in getDoctorAppointments: $e');
+      throw Exception('Failed to load doctor appointments: $e');
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateDoctorAppointmentStatus(
+    String appointmentId,
+    String status, {
+    String? notes,
+  }) async {
+    try {
+      final body = {'status': status};
+      if (notes != null && notes.isNotEmpty) {
+        body['notes'] = notes;
+      }
+
+      final response = await _client.put(
+        '/appointments/$appointmentId/status',
+        body: body,
+      );
+      return _client.parseResponse(response);
+    } catch (e) {
+      throw Exception('Failed to update appointment status: $e');
     }
   }
 

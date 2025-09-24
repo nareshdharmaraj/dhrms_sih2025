@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Appointment Booking</title>
+</head>
+<body>
+    <h1>Test Appointment Booking</h1>
+    <button onclick="testBooking()">Test Appointment Booking</button>
+    <div id="result"></div>
+
+    <script>
+        async function testBooking() {
+            const appointmentData = {
+                patientId: 'TEST-001',
+                patientName: 'Test Patient',
+                doctorId: 'DOC-001',
+                doctorName: 'Dr. Test Doctor',
+                hospitalId: 'HOSP-001',
+                hospitalName: 'Apollo Main Hospital',
+                appointmentDate: '22/09/2025',
+                appointmentTime: '10:00 AM',
+                reason: 'Test booking',
+                consultationFee: 500
+            };
+
+            try {
+                console.log('Testing appointment booking...');
+                const response = await fetch('http://localhost:3000/api/appointments', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(appointmentData)
+                });
+
+                const result = await response.json();
+                console.log('Response:', result);
+                document.getElementById('result').innerHTML = '<pre>' + JSON.stringify(result, null, 2) + '</pre>';
+
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('result').innerHTML = 'Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -26,10 +26,7 @@ class WhoActionButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: color.withOpacity(0.1),
-            width: 1,
-          ),
+          border: Border.all(color: color.withOpacity(0.1), width: 1),
           boxShadow: [
             BoxShadow(
               color: color.withOpacity(0.1),
@@ -49,10 +46,7 @@ class WhoActionButton extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    color.withOpacity(0.8),
-                    color,
-                  ],
+                  colors: [color.withOpacity(0.8), color],
                 ),
                 borderRadius: BorderRadius.circular(18),
                 boxShadow: [
@@ -63,11 +57,7 @@ class WhoActionButton extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Icon(
-                icon,
-                color: Colors.white,
-                size: 28,
-              ),
+              child: Icon(icon, color: Colors.white, size: 28),
             ),
             const SizedBox(height: 16),
             Text(
@@ -97,11 +87,7 @@ class WhoActionButton extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.arrow_forward_rounded,
-                    color: color,
-                    size: 16,
-                  ),
+                  Icon(Icons.arrow_forward_rounded, color: color, size: 16),
                   const SizedBox(width: 4),
                   Text(
                     'Access',
@@ -152,10 +138,7 @@ class WhoStatCard extends StatelessWidget {
             offset: const Offset(0, 8),
           ),
         ],
-        border: Border.all(
-          color: color.withOpacity(0.1),
-          width: 1,
-        ),
+        border: Border.all(color: color.withOpacity(0.1), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -167,10 +150,7 @@ class WhoStatCard extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  color.withOpacity(0.8),
-                  color,
-                ],
+                colors: [color.withOpacity(0.8), color],
               ),
               borderRadius: BorderRadius.circular(15),
               boxShadow: [
@@ -181,11 +161,7 @@ class WhoStatCard extends StatelessWidget {
                 ),
               ],
             ),
-            child: Icon(
-              icon,
-              color: Colors.white,
-              size: 24,
-            ),
+            child: Icon(icon, color: Colors.white, size: 24),
           ),
           const SizedBox(height: 16),
           Text(

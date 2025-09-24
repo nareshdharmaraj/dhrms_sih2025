@@ -47,15 +47,6 @@ class _HospitalsScreenState extends State<HospitalsScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _addSampleHospitals,
-        backgroundColor: Colors.blue.shade600,
-        icon: const Icon(Icons.refresh, color: Colors.white),
-        label: const Text(
-          'Load Sample Data',
-          style: TextStyle(color: Colors.white),
-        ),
-      ),
     );
   }
 
@@ -118,15 +109,9 @@ class _HospitalsScreenState extends State<HospitalsScreen> {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
-          ElevatedButton.icon(
-            onPressed: _addSampleHospitals,
-            icon: const Icon(Icons.location_searching),
-            label: const Text('Find Hospitals'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue.shade600,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            ),
+          Text(
+            'Tap the filter icon above to refine your search',
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
           ),
         ],
       ),
@@ -409,63 +394,5 @@ class _HospitalsScreenState extends State<HospitalsScreen> {
         action: SnackBarAction(label: 'OK', onPressed: () {}),
       ),
     );
-  }
-
-  void _addSampleHospitals() {
-    setState(() {
-      _hospitals.clear();
-      _hospitals.addAll([
-        {
-          'name': 'City General Hospital',
-          'address': '123 Main Street, Downtown',
-          'type': 'General',
-          'phone': '+1 (555) 123-4567',
-          'distance': 2.3,
-          'rating': 4.2,
-          'isOpen': true,
-          'specialties': ['Emergency Care', 'Surgery', 'Cardiology'],
-        },
-        {
-          'name': 'Emergency Medical Center',
-          'address': '456 Health Avenue, Central',
-          'type': 'Emergency',
-          'phone': '+1 (555) 987-6543',
-          'distance': 1.8,
-          'rating': 4.5,
-          'isOpen': true,
-          'specialties': ['Emergency Care', 'Trauma', 'Intensive Care'],
-        },
-        {
-          'name': 'Specialized Heart Institute',
-          'address': '789 Cardiac Lane, Medical District',
-          'type': 'Specialist',
-          'phone': '+1 (555) 456-7890',
-          'distance': 3.1,
-          'rating': 4.7,
-          'isOpen': false,
-          'specialties': ['Cardiology', 'Cardiac Surgery', 'Rehabilitation'],
-        },
-        {
-          'name': 'Premium Private Hospital',
-          'address': '321 Luxury Health Blvd, Uptown',
-          'type': 'Private',
-          'phone': '+1 (555) 654-3210',
-          'distance': 4.5,
-          'rating': 4.8,
-          'isOpen': true,
-          'specialties': ['General Medicine', 'Cosmetic Surgery', 'VIP Care'],
-        },
-        {
-          'name': 'Community Health Center',
-          'address': '654 Community Road, Suburbs',
-          'type': 'General',
-          'phone': '+1 (555) 789-0123',
-          'distance': 5.2,
-          'rating': 3.9,
-          'isOpen': true,
-          'specialties': ['Primary Care', 'Pediatrics', 'Women\'s Health'],
-        },
-      ]);
-    });
   }
 }
