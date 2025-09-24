@@ -20,7 +20,8 @@ const {
   updateRegionalOfficer,
   deactivateRegionalOfficer,
   getAllHospitals,
-  exportData
+  exportData,
+  getComprehensiveAnalytics
 } = require('../controllers/whoController');
 
 const {
@@ -99,6 +100,12 @@ router.get('/states/statistics',
   checkWhoPermission('view_state_stats'),
   auditLog('WHO_VIEW_STATE_STATS'),
   getAllStatesStatistics
+);
+
+router.get('/analytics/comprehensive', 
+  checkWhoPermission('view_analytics'),
+  auditLog('WHO_VIEW_COMPREHENSIVE_ANALYTICS'),
+  getComprehensiveAnalytics
 );
 
 // Regional Officers Management

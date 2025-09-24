@@ -460,7 +460,7 @@ class _ProximityAlertsScreenState extends State<ProximityAlertsScreen> {
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
-                  value: selectedType,
+                  initialValue: selectedType,
                   decoration: const InputDecoration(
                     labelText: 'Location Type',
                     border: OutlineInputBorder(),

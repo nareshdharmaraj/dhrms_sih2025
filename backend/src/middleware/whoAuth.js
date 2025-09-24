@@ -117,6 +117,7 @@ const checkWhoPermission = (requiredPermission) => {
     const permissionMap = {
       'view_dashboard': 'canAccessAnalytics',
       'view_state_stats': 'canAccessAnalytics', 
+      'view_analytics': 'canAccessAnalytics', // NEW: Comprehensive analytics access
       'view_officers': 'canManageRegionalOfficers',
       'manage_officers': 'canManageRegionalOfficers',
       'manage_state_officers': 'canManageStateOfficers', // NEW: SHO management

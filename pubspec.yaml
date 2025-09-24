@@ -84,7 +84,7 @@ dependencies:
   
   # Charts and data visualization
   fl_chart: ^0.65.0
-  syncfusion_flutter_charts: ^24.1.46
+  # syncfusion_flutter_charts: ^24.1.46  # Temporarily disabled due to compatibility issues
   
   # Maps and location
   geolocator: ^10.1.0

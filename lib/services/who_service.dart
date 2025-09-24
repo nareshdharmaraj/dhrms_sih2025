@@ -5,7 +5,7 @@ import '../utils/environment_config.dart';
 
 class WhoService {
   static String? _authToken;
-  
+
   static Future<String> getApiBaseUrl() async {
     return EnvironmentConfig.getApiBaseUrl();
   }
@@ -34,13 +34,10 @@ class WhoService {
     try {
       final apiBaseUrl = await getApiBaseUrl();
       print('🔍 WHO Service - API Base URL: $apiBaseUrl');
-      
-      final requestBody = {
-        'adminId': adminId,
-        'password': password,
-      };
+
+      final requestBody = {'adminId': adminId, 'password': password};
       print('🔍 WHO Service - Request body: $requestBody');
-      
+
       final response = await http.post(
         Uri.parse('$apiBaseUrl/who/login'),
         headers: {'Content-Type': 'application/json'},
@@ -52,13 +49,13 @@ class WhoService {
 
       final data = json.decode(response.body);
       print('🔍 WHO Service - Parsed data: $data');
-      
+
       if (response.statusCode == 200 && data['success']) {
         // Store the auth token for future requests
         if (data['token'] != null) {
           setAuthToken(data['token']);
         }
-        
+
         final result = {
           'success': true,
           'admin': data['admin'], // Return raw admin data
@@ -90,19 +87,23 @@ class WhoService {
   static Future<Map<String, dynamic>> getDashboardStatistics() async {
     try {
       final apiBaseUrl = await getApiBaseUrl();
-      print('🔍 WHO Service - Getting dashboard stats from: $apiBaseUrl/who/dashboard/stats');
+      print(
+        '🔍 WHO Service - Getting dashboard stats from: $apiBaseUrl/who/dashboard/stats',
+      );
       print('🔍 WHO Service - Auth token available: ${_authToken != null}');
-      
+
       final response = await http.get(
         Uri.parse('$apiBaseUrl/who/dashboard/stats'),
         headers: _getAuthHeaders(),
       );
 
-      print('🔍 WHO Service - Dashboard response status: ${response.statusCode}');
+      print(
+        '🔍 WHO Service - Dashboard response status: ${response.statusCode}',
+      );
       print('🔍 WHO Service - Dashboard response body: ${response.body}');
 
       final data = json.decode(response.body);
-      
+
       if (response.statusCode == 200 && data['success']) {
         return {
           'success': true,
@@ -119,10 +120,7 @@ class WhoService {
       }
     } catch (e) {
       print('Dashboard statistics error: $e');
-      return {
-        'success': false,
-        'message': 'Network error: ${e.toString()}',
-      };
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
 
@@ -136,7 +134,7 @@ class WhoService {
       );
 
       final data = json.decode(response.body);
-      
+
       if (response.statusCode == 200 && data['success']) {
         return {
           'success': true,
@@ -152,10 +150,7 @@ class WhoService {
       }
     } catch (e) {
       print('State statistics error: $e');
-      return {
-        'success': false,
-        'message': 'Network error: ${e.toString()}',
-      };
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
 
@@ -163,17 +158,14 @@ class WhoService {
   static Future<Map<String, dynamic>> getAllHospitals({String? state}) async {
     try {
       final apiBaseUrl = await getApiBaseUrl();
-      final uri = state != null 
+      final uri = state != null
           ? Uri.parse('$apiBaseUrl/who/hospitals?state=$state')
           : Uri.parse('$apiBaseUrl/who/hospitals');
-          
-      final response = await http.get(
-        uri,
-        headers: _getAuthHeaders(),
-      );
+
+      final response = await http.get(uri, headers: _getAuthHeaders());
 
       final data = json.decode(response.body);
-      
+
       if (response.statusCode == 200 && data['success']) {
         return {
           'success': true,
@@ -189,33 +181,26 @@ class WhoService {
       }
     } catch (e) {
       print('Hospitals fetch error: $e');
-      return {
-        'success': false,
-        'message': 'Network error: ${e.toString()}',
-      };
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
 
   // Regional Officer Management
-  static Future<Map<String, dynamic>> getAllRegionalOfficers({String? state}) async {
+  static Future<Map<String, dynamic>> getAllRegionalOfficers({
+    String? state,
+  }) async {
     try {
       final apiBaseUrl = await getApiBaseUrl();
-      final uri = state != null 
+      final uri = state != null
           ? Uri.parse('$apiBaseUrl/who/regional-officers?state=$state')
           : Uri.parse('$apiBaseUrl/who/regional-officers');
-          
-      final response = await http.get(
-        uri,
-        headers: _getAuthHeaders(),
-      );
+
+      final response = await http.get(uri, headers: _getAuthHeaders());
 
       final data = json.decode(response.body);
-      
+
       if (response.statusCode == 200 && data['success']) {
-        return {
-          'success': true,
-          'officers': data['officers'],
-        };
+        return {'success': true, 'officers': data['officers']};
       } else {
         return {
           'success': false,
@@ -224,10 +209,7 @@ class WhoService {
       }
     } catch (e) {
       print('Regional officers fetch error: $e');
-      return {
-        'success': false,
-        'message': 'Network error: ${e.toString()}',
-      };
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
 
@@ -258,7 +240,7 @@ class WhoService {
       );
 
       final data = json.decode(response.body);
-      
+
       if (response.statusCode == 201 && data['success']) {
         return {
           'success': true,
@@ -273,10 +255,7 @@ class WhoService {
       }
     } catch (e) {
       print('Add regional officer error: $e');
-      return {
-        'success': false,
-        'message': 'Network error: ${e.toString()}',
-      };
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
 
@@ -294,7 +273,7 @@ class WhoService {
       );
 
       final data = json.decode(response.body);
-      
+
       if (response.statusCode == 200 && data['success']) {
         return {
           'success': true,
@@ -309,15 +288,14 @@ class WhoService {
       }
     } catch (e) {
       print('Update regional officer error: $e');
-      return {
-        'success': false,
-        'message': 'Network error: ${e.toString()}',
-      };
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
 
   // Deactivate Regional Officer
-  static Future<Map<String, dynamic>> deactivateRegionalOfficer(String officerId) async {
+  static Future<Map<String, dynamic>> deactivateRegionalOfficer(
+    String officerId,
+  ) async {
     try {
       final apiBaseUrl = await getApiBaseUrl();
       final response = await http.patch(
@@ -326,11 +304,12 @@ class WhoService {
       );
 
       final data = json.decode(response.body);
-      
+
       if (response.statusCode == 200 && data['success']) {
         return {
           'success': true,
-          'message': data['message'] ?? 'Regional officer deactivated successfully',
+          'message':
+              data['message'] ?? 'Regional officer deactivated successfully',
         };
       } else {
         return {
@@ -340,10 +319,7 @@ class WhoService {
       }
     } catch (e) {
       print('Deactivate regional officer error: $e');
-      return {
-        'success': false,
-        'message': 'Network error: ${e.toString()}',
-      };
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
 
@@ -360,7 +336,7 @@ class WhoService {
       );
 
       final data = json.decode(response.body);
-      
+
       if (response.statusCode == 200 && data['success']) {
         return {
           'success': true,
@@ -375,15 +351,14 @@ class WhoService {
       }
     } catch (e) {
       print('Export data error: $e');
-      return {
-        'success': false,
-        'message': 'Network error: ${e.toString()}',
-      };
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
 
   // Get Hospital Details
-  static Future<Map<String, dynamic>> getHospitalDetails(String hospitalId) async {
+  static Future<Map<String, dynamic>> getHospitalDetails(
+    String hospitalId,
+  ) async {
     try {
       final apiBaseUrl = await getApiBaseUrl();
       final response = await http.get(
@@ -392,7 +367,7 @@ class WhoService {
       );
 
       final data = json.decode(response.body);
-      
+
       if (response.statusCode == 200 && data['success']) {
         return {
           'success': true,
@@ -407,10 +382,44 @@ class WhoService {
       }
     } catch (e) {
       print('Hospital details error: $e');
-      return {
-        'success': false,
-        'message': 'Network error: ${e.toString()}',
-      };
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
+    }
+  }
+
+  // Get Comprehensive Analytics
+  static Future<Map<String, dynamic>> getComprehensiveAnalytics() async {
+    try {
+      final apiBaseUrl = await getApiBaseUrl();
+      print(
+        '🔍 WHO Service - Getting comprehensive analytics from: $apiBaseUrl/who/analytics/comprehensive',
+      );
+
+      final response = await http.get(
+        Uri.parse('$apiBaseUrl/who/analytics/comprehensive'),
+        headers: _getAuthHeaders(),
+      );
+
+      print(
+        '🔍 WHO Service - Comprehensive analytics response status: ${response.statusCode}',
+      );
+      print(
+        '🔍 WHO Service - Comprehensive analytics response body: ${response.body}',
+      );
+
+      final data = json.decode(response.body);
+
+      if (response.statusCode == 200 && data['success']) {
+        return {'success': true, 'analytics': data['analytics']};
+      } else {
+        return {
+          'success': false,
+          'message':
+              data['message'] ?? 'Failed to fetch comprehensive analytics',
+        };
+      }
+    } catch (e) {
+      print('Comprehensive analytics error: $e');
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
 }

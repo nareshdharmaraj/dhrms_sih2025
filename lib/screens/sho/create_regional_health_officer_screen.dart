@@ -488,7 +488,7 @@ class _CreateRegionalHealthOfficerScreenState extends State<CreateRegionalHealth
     }
     
     return DropdownButtonFormField<String>(
-      value: _selectedDistrict,
+      initialValue: _selectedDistrict,
       decoration: InputDecoration(
         labelText: 'Assigned District',
         prefixIcon: const Icon(Icons.location_city, color: AppColors.primary),

@@ -647,7 +647,7 @@ class _RegionalHealthOfficerScreenState extends State<RegionalHealthOfficerScree
                             const SizedBox(width: 16),
                             Expanded(
                               child: DropdownButtonFormField<String>(
-                                value: selectedFilter,
+                                initialValue: selectedFilter,
                                 decoration: const InputDecoration(
                                   border: OutlineInputBorder(),
                                 ),

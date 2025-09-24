@@ -149,7 +149,7 @@ class _WhoRegionalOfficersScreenState extends State<WhoRegionalOfficersScreen> {
           
           // State Filter
           DropdownButtonFormField<String>(
-            value: selectedState,
+            initialValue: selectedState,
             decoration: InputDecoration(
               labelText: 'Filter by State',
               border: OutlineInputBorder(
@@ -701,7 +701,7 @@ class _AddRegionalOfficerDialogState extends State<_AddRegionalOfficerDialog> {
               ),
               SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: selectedState,
+                initialValue: selectedState,
                 decoration: InputDecoration(
                   labelText: 'State',
                   border: OutlineInputBorder(),
@@ -901,7 +901,7 @@ class _EditRegionalOfficerDialogState extends State<_EditRegionalOfficerDialog> 
               ),
               SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: selectedState,
+                initialValue: selectedState,
                 decoration: InputDecoration(
                   labelText: 'State',
                   border: OutlineInputBorder(),

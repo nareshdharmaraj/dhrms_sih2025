@@ -185,7 +185,7 @@ class _HospitalAssistantLoginScreenState
                               child: Center(child: CircularProgressIndicator()),
                             )
                           : DropdownButtonFormField<Map<String, dynamic>>(
-                              value: _selectedHospital,
+                              initialValue: _selectedHospital,
                               decoration: const InputDecoration(
                                 labelText: 'Select Hospital',
                                 border: InputBorder.none,
