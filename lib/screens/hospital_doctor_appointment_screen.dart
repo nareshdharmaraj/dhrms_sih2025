@@ -1817,11 +1817,7 @@ class _HospitalDoctorAppointmentScreenState
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          Icons.check_circle,
-                          size: 12,
-                          color: Colors.white,
-                        ),
+                        Icon(Icons.check_circle, size: 12, color: Colors.white),
                         SizedBox(width: 4),
                         Text(
                           'COMPLETED',
@@ -2622,10 +2618,7 @@ class _HospitalDoctorAppointmentScreenState
                   ),
                   child: const Text(
                     'Close',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),

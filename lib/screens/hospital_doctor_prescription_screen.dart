@@ -218,7 +218,9 @@ class _HospitalDoctorPrescriptionScreenState
 
         // Navigate back to doctor appointments page (pop back through consultation -> appointments)
         Navigator.of(context).pop(); // From prescription screen
-        Navigator.of(context).pop(); // From consultation screen back to appointments
+        Navigator.of(
+          context,
+        ).pop(); // From consultation screen back to appointments
       } else {
         print('❌ Failed to save prescription. Status: ${response.statusCode}');
         print('❌ Error response: ${response.body}');
