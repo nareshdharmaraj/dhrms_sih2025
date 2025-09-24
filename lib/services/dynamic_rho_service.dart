@@ -57,12 +57,26 @@ class DynamicRHOService {
   static Future<List<RegionalHealthOfficer>> getRHOsForLocation({
     required String stateName,
     required String districtName,
+    String? subDistrictName,
   }) async {
     // Use direct API call with filters for better performance
     try {
-      print('🔍 Fetching RHOs for specific location: $stateName, $districtName');
+      print('🔍 Fetching RHOs for specific location: $stateName, $districtName${subDistrictName != null ? ', $subDistrictName' : ''}');
+      
+      // Build query parameters
+      final queryParams = {
+        'state': stateName,
+        'district': districtName,
+      };
+      
+      // Add sub-district parameter if provided
+      if (subDistrictName != null && subDistrictName.isNotEmpty) {
+        queryParams['subDistrict'] = subDistrictName;
+      }
+      
+      final uri = Uri.parse('$_baseUrl/public').replace(queryParameters: queryParams);
       final response = await http.get(
-        Uri.parse('$_baseUrl/public?state=${Uri.encodeComponent(stateName)}&district=${Uri.encodeComponent(districtName)}'),
+        uri,
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -104,6 +118,7 @@ class DynamicRHOService {
     final availableRHOs = await getRHOsForLocation(
       stateName: stateName,
       districtName: districtName,
+      subDistrictName: subDistrictName,
     );
 
     if (availableRHOs.isEmpty) {
@@ -147,6 +162,7 @@ class DynamicRHOService {
     final availableRHOs = await getRHOsForLocation(
       stateName: stateName,
       districtName: districtName,
+      subDistrictName: subDistrictName,
     );
 
     final assignedRHO = await getAssignedRHOForLocation(

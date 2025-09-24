@@ -439,7 +439,7 @@ class _WhoComprehensiveAnalyticsScreenState
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
-            Container(
+            SizedBox(
               height: 300,
               child: CustomPaint(
                 painter: HierarchyTreePainter(),
@@ -641,7 +641,7 @@ class _WhoComprehensiveAnalyticsScreenState
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 20),
-                  Container(
+                  SizedBox(
                     height: 300,
                     child: stateAnalytics.isEmpty
                         ? Center(
@@ -965,7 +965,7 @@ class _WhoComprehensiveAnalyticsScreenState
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 20),
-                  Container(
+                  SizedBox(
                     height: 250,
                     child: hospitalDistribution.isEmpty
                         ? Center(
@@ -1053,7 +1053,7 @@ class _WhoComprehensiveAnalyticsScreenState
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 20),
-                  Container(
+                  SizedBox(
                     height: 250,
                     child: staffDistribution.isEmpty
                         ? Center(
@@ -1198,7 +1198,7 @@ class _WhoComprehensiveAnalyticsScreenState
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 20),
-                  Container(
+                  SizedBox(
                     height: 300,
                     child: LineChart(
                       LineChartData(
@@ -1399,7 +1399,7 @@ class _WhoComprehensiveAnalyticsScreenState
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 20),
-                  Container(
+                  SizedBox(
                     height: 300,
                     child: healthTrends.isEmpty
                         ? Center(

@@ -189,7 +189,7 @@ class _DiseaseSelectionModalState extends State<DiseaseSelectionModal> {
                 ),
               ),
               const SizedBox(height: 8),
-              Container(
+              SizedBox(
                 height: 60,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,

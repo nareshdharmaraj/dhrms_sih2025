@@ -57,7 +57,7 @@ dependencies:
   flutter_reactive_ble: ^5.3.1
   
   # Notifications and messaging
-  # firebase_messaging: ^14.7.10  # Disabled for web compatibility
+  # firebase_messaging: ^14.7.10  # Temporarily disabled for web compatibility - use conditional imports
   flutter_local_notifications: ^17.2.3
   
   # Authentication and security

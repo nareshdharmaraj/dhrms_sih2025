@@ -7,9 +7,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'ble_contact_tracing_service.dart';
 
 // Conditional import for Firebase Messaging - only on mobile platforms
-import 'package:firebase_messaging/firebase_messaging.dart'
-    if (dart.library.html) 'ble_notification_service_web_stub.dart'
-    as firebase_messaging;
+// import 'package:firebase_messaging/firebase_messaging.dart'
+//     if (dart.library.html) 'ble_notification_service_web_stub.dart'
+//     as firebase_messaging;
+import 'ble_notification_service_web_stub.dart' as firebase_messaging;
 
 /// BLE notification service for proximity alerts
 /// Handles both local notifications and Firebase Cloud Messaging (mobile only)

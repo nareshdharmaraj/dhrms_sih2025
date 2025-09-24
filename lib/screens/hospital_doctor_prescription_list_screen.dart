@@ -670,7 +670,7 @@ class PrescriptionViewScreen extends StatelessWidget {
             padding: EdgeInsets.only(left: 16, bottom: 8),
             child: _buildMedicineEntry(index + 1, medicine),
           );
-        }).toList(),
+        }),
       ],
     );
   }

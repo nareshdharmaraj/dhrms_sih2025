@@ -1,7 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../utils/app_constants.dart';
+
+// Safe logging function to prevent UTF-8 encoding issues
+void safePrint(String message) {
+  try {
+    if (kDebugMode) {
+      debugPrint(message);
+    }
+  } catch (e) {
+    debugPrint('Logging error: $e');
+  }
+}
 
 class PatientAppointmentBookingScreen extends StatefulWidget {
   final Map<String, dynamic> patientData;
@@ -2388,7 +2400,7 @@ class _PatientAppointmentBookingScreenState
         onTap: () {
           final hospitalId = hospital['hospitalId'] ?? hospital['_id'];
           print(
-            '🏥 Hospital selected: ${hospital['hospitalName'] ?? hospital['name']}',
+            'Hospital selected: ${hospital['hospitalName'] ?? hospital['name']}',
           );
           print('🆔 Hospital ID: $hospitalId');
           print('📊 Hospital data keys: ${hospital.keys.toList()}');
@@ -3563,22 +3575,58 @@ class _PatientAppointmentBookingScreenState
   // Load Hospitals
   Future<void> _loadHospitals() async {
     try {
+      final apiUrl = '${AppConstants.baseUrl}/hospitals';
+      debugPrint('Loading hospitals from URL: $apiUrl');
+      debugPrint('Current environment mode: ${AppConstants.baseUrl}');
+      
       final response = await http.get(
-        Uri.parse('${AppConstants.baseUrl}/hospitals'),
+        Uri.parse(apiUrl),
         headers: {'Content-Type': 'application/json'},
       );
 
+      debugPrint('Hospital API Response Status: ${response.statusCode}');
+      debugPrint('Hospital API Response Headers: ${response.headers}');
+      debugPrint('Hospital API Response Body: ${response.body}');
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        debugPrint('Parsed Hospital API Response: $data');
+        debugPrint('Data type: ${data.runtimeType}');
+        
+        List<dynamic> hospitalList;
+        
+        // Handle different response formats
+        if (data is List) {
+          // Direct array format: [{...}, {...}, {...}]
+          safePrint('Response format: Direct array of hospitals');
+          hospitalList = data;
+        } else if (data is Map && data['success'] == true && data['data'] is List) {
+          // Wrapped format: {success: true, data: [...]}
+          debugPrint('Response format: Wrapped object with success/data fields');
+          hospitalList = data['data'];
+        } else if (data is Map && data['data'] is List) {
+          // Just data field: {data: [...]}
+          debugPrint('Response format: Object with data field only');
+          hospitalList = data['data'];
+        } else {
+          debugPrint('Invalid hospital data structure');
+          debugPrint('Expected: List or object with success/data fields');
+          debugPrint('Received type: ${data.runtimeType}');
+          throw Exception('Invalid hospital data structure');
+        }
+        
         setState(() {
-          hospitals = data;
+          hospitals = hospitalList;
           isLoadingHospitals = false;
         });
+        debugPrint('Successfully loaded ${hospitals.length} hospitals');
       } else {
-        throw Exception('Failed to load hospitals');
+        debugPrint('HTTP Error ${response.statusCode}: ${response.body}');
+        throw Exception('Failed to load hospitals: HTTP ${response.statusCode}');
       }
     } catch (e) {
-      print('Error loading hospitals: $e');
+      debugPrint('Error loading hospitals: $e');
+      debugPrint('Stack trace: ${StackTrace.current}');
       setState(() => isLoadingHospitals = false);
     }
   }

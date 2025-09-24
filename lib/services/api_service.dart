@@ -326,7 +326,7 @@ class ApiService {
         if (limit != null) params['limit'] = limit.toString();
         if (days != null) params['days'] = days.toString();
         endpoint +=
-            '?' + params.entries.map((e) => '${e.key}=${e.value}').join('&');
+            '?${params.entries.map((e) => '${e.key}=${e.value}').join('&')}';
       }
 
       final response = await _client.get(endpoint);

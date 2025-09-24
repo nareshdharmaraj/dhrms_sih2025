@@ -1060,8 +1060,8 @@ class _EmbeddedDoctorAppointmentWidgetState
                 Navigator.pop(context, controller.text.trim());
               }
             },
-            child: Text('Reject'),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: Text('Reject'),
           ),
         ],
       ),

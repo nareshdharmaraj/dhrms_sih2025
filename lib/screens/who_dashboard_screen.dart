@@ -1223,7 +1223,7 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen>
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Healthcare System Hierarchy'),
-        content: Container(
+        content: SizedBox(
           width: double.maxFinite,
           height: 400,
           child: Column(

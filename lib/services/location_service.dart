@@ -96,6 +96,7 @@ class LocationService {
       final availableRHOs = await DynamicRHOService.getRHOsForLocation(
         stateName: stateName,
         districtName: districtName,
+        subDistrictName: subDistrictName,
       );
       
       print('🔍 LocationService.getDynamicRHOAssignment results:');

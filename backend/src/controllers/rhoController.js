@@ -1625,11 +1625,11 @@ const getAreaCoverageDetails = async (req, res) => {
 // Public endpoint for hospital registration - Get active RHOs without authentication
 const getPublicRHOs = async (req, res) => {
   try {
-    const { state, district } = req.query;
+    const { state, district, subDistrict } = req.query;
     console.log('🔍 Fetching public RHO data for hospital registration...');
     
     if (state && district) {
-      console.log(`🎯 Filtering RHOs for specific location: ${state}, ${district}`);
+      console.log(`🎯 Filtering RHOs for specific location: ${state}, ${district}${subDistrict ? `, ${subDistrict}` : ''}`);
     }
     
     // Build query filter
@@ -1643,6 +1643,14 @@ const getPublicRHOs = async (req, res) => {
     // Add district filter if provided
     if (district) {
       queryFilter.assignedDistrict = new RegExp(`^${district}$`, 'i'); // Case-insensitive exact match
+    }
+
+    // Add sub-district filter if provided - check if the RHO covers this specific sub-district
+    if (subDistrict) {
+      // For sub-district filtering, we need to check the coverage.subDistricts array
+      queryFilter['coverage.subDistricts'] = {
+        $elemMatch: { $regex: new RegExp(`^${subDistrict}$`, 'i') }
+      };
     }
     
     // Get filtered active RHOs 

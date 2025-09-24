@@ -22,7 +22,7 @@ class ProximityAlertService {
   StreamSubscription<DiscoveredDevice>? _scanSubscription;
 
   List<String> _infectedDeviceIds = [];
-  Map<String, ProximityData> _nearbyInfectedDevices = {};
+  final Map<String, ProximityData> _nearbyInfectedDevices = {};
   bool _isScanning = false;
   bool _isAlertActive = false;
   String? _currentDeviceId;

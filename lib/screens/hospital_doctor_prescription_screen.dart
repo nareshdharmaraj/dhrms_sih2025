@@ -67,8 +67,7 @@ class _HospitalDoctorPrescriptionScreenState
               onPrimary: Colors.white,
               surface: Colors.white,
               onSurface: Colors.black,
-            ),
-            dialogBackgroundColor: Colors.white,
+            ), dialogTheme: DialogThemeData(backgroundColor: Colors.white),
           ),
           child: child!,
         );
@@ -680,7 +679,7 @@ class _HospitalDoctorPrescriptionScreenState
             padding: EdgeInsets.only(left: 16, bottom: 8),
             child: _buildMedicineEntry(index + 1, medicine),
           );
-        }).toList(),
+        }),
       ],
     );
   }
@@ -846,7 +845,6 @@ class _HospitalDoctorPrescriptionScreenState
                   _nextVisitController.clear();
                 });
               },
-              child: Text('Not Mandatory'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: _isNextVisitMandatory
                     ? Colors.grey.shade300
@@ -858,6 +856,7 @@ class _HospitalDoctorPrescriptionScreenState
                   borderRadius: BorderRadius.circular(6),
                 ),
               ),
+              child: Text('Not Mandatory'),
             ),
           ],
         ),

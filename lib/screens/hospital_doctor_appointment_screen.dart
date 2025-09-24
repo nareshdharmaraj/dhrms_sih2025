@@ -45,18 +45,23 @@ class _HospitalDoctorAppointmentScreenState
   // Filter variables
   String statusFilter = 'all';
   DateTime? dateFilter;
+  String searchQuery = '';
+  String sortBy = 'date';
+  late TextEditingController _searchController;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
     _tabController.addListener(_onTabChanged);
+    _searchController = TextEditingController();
     _loadAllData();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -557,202 +562,6 @@ class _HospitalDoctorAppointmentScreenState
             Icons.done_all,
           ),
         ],
-      ),
-    );
-  }
-
-<<<<<<< HEAD
-  // Search and Filters Widget
-  Widget _buildSearchAndFilters() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
-      ),
-      child: Column(
-        children: [
-          // Search Bar
-          TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
-              hintText: 'Search by patient name, UHID, or reason...',
-              prefixIcon: const Icon(Icons.search),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              filled: true,
-              fillColor: Colors.white,
-            ),
-            onChanged: (value) {
-              setState(() {
-                searchQuery = value;
-              });
-              _filterAppointments();
-            },
-          ),
-          const SizedBox(height: 12),
-
-          // Filter Row
-          Row(
-            children: [
-              // Status Filter
-              Expanded(
-                flex: 2,
-                child: DropdownButtonFormField<String>(
-                  initialValue: statusFilter,
-                  decoration: InputDecoration(
-                    labelText: 'Status',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none,
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                  ),
-                  items: ['All', 'pending', 'approved', 'rejected', 'completed']
-                      .map(
-                        (status) => DropdownMenuItem<String>(
-                          value: status,
-                          child: Text(
-                            status == 'All'
-                                ? 'All Status'
-                                : status.toUpperCase(),
-                            style: const TextStyle(fontSize: 14),
-                          ),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (String? newValue) {
-                    if (newValue != null) {
-                      setState(() {
-                        statusFilter = newValue;
-                      });
-                      _filterAppointments();
-                    }
-                  },
-                ),
-              ),
-              const SizedBox(width: 8),
-
-              // Date Filter
-              Expanded(
-                flex: 2,
-                child: InkWell(
-                  onTap: _selectDateFilter,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 14,
-                    ),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey.shade300),
-                      borderRadius: BorderRadius.circular(8),
-                      color: Colors.white,
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.calendar_today,
-                          size: 16,
-                          color: Colors.grey.shade600,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            dateFilter == null
-                                ? 'Select Date'
-                                : '${dateFilter!.day}/${dateFilter!.month}/${dateFilter!.year}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: dateFilter == null
-                                  ? Colors.grey.shade600
-                                  : Colors.black,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-
-              // Clear Date Filter
-              if (dateFilter != null) ...[
-                const SizedBox(width: 8),
-                IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: () {
-                    setState(() {
-                      dateFilter = null;
-                    });
-                    _filterAppointments();
-                  },
-                  style: IconButton.styleFrom(
-                    backgroundColor: Colors.red.shade50,
-                    foregroundColor: Colors.red.shade700,
-                  ),
-                ),
-              ],
-            ],
-          ),
-
-          const SizedBox(height: 12),
-
-          // Sort Options
-          Row(
-            children: [
-              Text(
-                'Sort by: ',
-                style: TextStyle(
-                  fontWeight: FontWeight.w500,
-                  color: Colors.grey.shade700,
-                ),
-              ),
-              const SizedBox(width: 8),
-              _buildSortChip('Date', 'date'),
-              const SizedBox(width: 8),
-              _buildSortChip('Patient', 'patient'),
-              const SizedBox(width: 8),
-              _buildSortChip('Status', 'status'),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSortChip(String label, String value) {
-    bool isSelected = sortBy == value;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          sortBy = value;
-        });
-        _filterAppointments();
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.blue.shade100 : Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? Colors.blue : Colors.grey.shade300,
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-            color: isSelected ? Colors.blue.shade700 : Colors.grey.shade700,
-          ),
-        ),
       ),
     );
   }
@@ -2575,8 +2384,8 @@ class _HospitalDoctorAppointmentScreenState
                 Navigator.pop(context, controller.text.trim());
               }
             },
-            child: Text('Reject'),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: Text('Reject'),
           ),
         ],
       ),
@@ -2636,8 +2445,8 @@ class _HospitalDoctorAppointmentScreenState
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('Complete'),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+            child: Text('Complete'),
           ),
         ],
       ),

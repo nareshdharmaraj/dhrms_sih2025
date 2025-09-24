@@ -20,7 +20,7 @@ class HospitalDoctorConsultationScreen extends StatefulWidget {
 class _HospitalDoctorConsultationScreenState
     extends State<HospitalDoctorConsultationScreen> {
   final _formKey = GlobalKey<FormState>();
-  List<Map<String, dynamic>> _medicines = [];
+  final List<Map<String, dynamic>> _medicines = [];
 
   // Disease selection variables
   List<Map<String, dynamic>> _selectedDiseases = [];
@@ -686,7 +686,7 @@ class _MedicineEntryScreenState extends State<MedicineEntryScreen> {
   final _frequencyController = TextEditingController();
   final _additionalNotesController = TextEditingController();
 
-  List<String> _selectedTiming = [];
+  final List<String> _selectedTiming = [];
   String _beforeAfterFood = 'after';
   int _totalCount = 0;
 

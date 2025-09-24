@@ -120,6 +120,17 @@ class _HospitalRegistrationScreenState
       if (mounted) {
         setState(() {
           _availableStates = states;
+          
+          // Clear selected state if it's not in the loaded list
+          if (_selectedState != null && !states.contains(_selectedState)) {
+            _selectedState = null;
+            _selectedDistrict = null;
+            _selectedSubDistrict = null;
+            _availableDistricts = [];
+            _availableSubDistricts = [];
+            _requiresSubDistrict = false;
+            _rhoPreview = null;
+          }
         });
       }
     } catch (e) {
@@ -158,16 +169,16 @@ class _HospitalRegistrationScreenState
         setState(() {
           _availableDistricts = districts;
           _isLoadingDistricts = false;
+          
+          // Clear selected district if it's not in the new list
+          if (_selectedDistrict != null && !districts.contains(_selectedDistrict)) {
+            _selectedDistrict = null;
+          }
         });
         print('✅ State updated with ${_availableDistricts.length} districts');
         print('🔍 Debug state: _selectedState=$_selectedState, _availableDistricts.isEmpty=${_availableDistricts.isEmpty}');
         print('🔍 Dropdown enabled: ${_selectedState != null && _availableDistricts.isNotEmpty}');
         print('🔍 Districts after setState: $_availableDistricts');
-        
-        // Force a rebuild to ensure dropdown updates
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          print('🔍 Post-frame callback: Districts should now be visible in dropdown');
-        });
       }
     } catch (e) {
       print('❌ Error loading districts for $stateName: $e');
@@ -202,6 +213,11 @@ class _HospitalRegistrationScreenState
           _availableSubDistricts = subDistricts;
           _requiresSubDistrict = requiresSubDistrict;
           _isLoadingSubDistricts = false;
+          
+          // Clear selected sub-district if it's not in the new list
+          if (_selectedSubDistrict != null && !subDistricts.contains(_selectedSubDistrict)) {
+            _selectedSubDistrict = null;
+          }
         });
 
         // If sub-district is not required, automatically preview RHO assignment
@@ -680,7 +696,7 @@ class _HospitalRegistrationScreenState
 
           // State Selection
           DropdownButtonFormField<String>(
-            initialValue: _selectedState,
+            value: _selectedState,
             decoration: InputDecoration(
               labelText: 'State *',
               border: OutlineInputBorder(),
@@ -693,10 +709,15 @@ class _HospitalRegistrationScreenState
                     ) 
                   : null,
             ),
-            items: _availableStates.map((state) {
-              return DropdownMenuItem(value: state, child: Text(state));
-            }).toList(),
-            onChanged: (value) {
+            items: _availableStates.isEmpty 
+              ? <DropdownMenuItem<String>>[]
+              : _availableStates.map((state) {
+                  return DropdownMenuItem<String>(
+                    value: state,
+                    child: Text(state),
+                  );
+                }).toList(),
+            onChanged: _availableStates.isNotEmpty ? (value) {
               if (value != null) {
                 print('🔍 State selected: $value');
                 print('🔍 Previous state: $_selectedState');
@@ -711,7 +732,7 @@ class _HospitalRegistrationScreenState
                 print('🔍 State updated in setState, now calling _loadDistricts($value)');
                 _loadDistricts(value);
               }
-            },
+            } : null,
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please select a state';
@@ -747,7 +768,7 @@ class _HospitalRegistrationScreenState
 
           // District Selection
           DropdownButtonFormField<String>(
-            initialValue: _selectedDistrict,
+            value: _selectedDistrict,
             decoration: InputDecoration(
               labelText: 'District *',
               border: OutlineInputBorder(),
@@ -765,16 +786,14 @@ class _HospitalRegistrationScreenState
                     ? 'Please select a state first'
                     : '${_availableDistricts.length} districts available',
             ),
-            items: () {
-              print('🔍 Building dropdown items. _availableDistricts.length: ${_availableDistricts.length}');
-              print('🔍 Available districts: $_availableDistricts');
-              final items = _availableDistricts.map((district) {
-                print('🔍 Creating dropdown item for: $district');
-                return DropdownMenuItem(value: district, child: Text(district));
-              }).toList();
-              print('🔍 Created ${items.length} dropdown items');
-              return items;
-            }(),
+            items: _availableDistricts.isEmpty 
+              ? <DropdownMenuItem<String>>[]
+              : _availableDistricts.map((district) {
+                  return DropdownMenuItem<String>(
+                    value: district,
+                    child: Text(district),
+                  );
+                }).toList(),
             onChanged: (_selectedState != null && _availableDistricts.isNotEmpty && !_isLoadingDistricts) ? (value) {
               if (value != null) {
                 print('🔍 District selected: $value');
@@ -843,38 +862,6 @@ class _HospitalRegistrationScreenState
 
           SizedBox(height: 16),
 
-          // State Selection
-          Row(
-            children: [
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  initialValue: _selectedState,
-                  decoration: InputDecoration(
-                    labelText: 'State',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.map),
-                  ),
-                  items: ['State 1', 'State 2', 'State 3'].map((state) {
-                    return DropdownMenuItem(value: state, child: Text(state));
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedState = value;
-                    });
-                  },
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please select a state';
-                    }
-                    return null;
-                  },
-                ),
-              ),
-            ],
-          ),
-
-          SizedBox(height: 16),
-
           // Sub-District Selection (conditional - for RHO assignment only)
           if (_requiresSubDistrict) ...[
             Container(
@@ -907,7 +894,7 @@ class _HospitalRegistrationScreenState
                   ),
                   SizedBox(height: 12),
                   DropdownButtonFormField<String>(
-                    initialValue: _selectedSubDistrict,
+                    value: _selectedSubDistrict,
                     decoration: InputDecoration(
                       labelText: 'Sub-District (Administrative Area) *',
                       border: OutlineInputBorder(),
@@ -920,9 +907,14 @@ class _HospitalRegistrationScreenState
                             ) 
                           : null,
                     ),
-                    items: _availableSubDistricts.map((subDistrict) {
-                      return DropdownMenuItem(value: subDistrict, child: Text(subDistrict));
-                    }).toList(),
+                    items: _availableSubDistricts.isEmpty 
+                      ? <DropdownMenuItem<String>>[]
+                      : _availableSubDistricts.map((subDistrict) {
+                          return DropdownMenuItem<String>(
+                            value: subDistrict,
+                            child: Text(subDistrict),
+                          );
+                        }).toList(),
                     onChanged: _selectedDistrict == null ? null : (value) {
                       setState(() {
                         _selectedSubDistrict = value;
@@ -1033,15 +1025,20 @@ class _HospitalRegistrationScreenState
           SizedBox(height: 16),
 
           DropdownButtonFormField<String>(
-            initialValue: _selectedHospitalType,
+            value: _selectedHospitalType,
             decoration: InputDecoration(
               labelText: 'Hospital Type',
               border: OutlineInputBorder(),
               prefixIcon: Icon(Icons.business),
             ),
-            items: _hospitalTypes.map((type) {
-              return DropdownMenuItem(value: type, child: Text(type));
-            }).toList(),
+            items: _hospitalTypes.isEmpty 
+              ? <DropdownMenuItem<String>>[]
+              : _hospitalTypes.map((type) {
+                  return DropdownMenuItem<String>(
+                    value: type,
+                    child: Text(type),
+                  );
+                }).toList(),
             onChanged: (value) {
               setState(() {
                 _selectedHospitalType = value!;
