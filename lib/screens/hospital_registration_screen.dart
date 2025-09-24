@@ -352,7 +352,7 @@ class _HospitalRegistrationScreenState
             children: [
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: _selectedState,
+                  initialValue: _selectedState,
                   decoration: InputDecoration(
                     labelText: 'State',
                     border: OutlineInputBorder(),
@@ -469,7 +469,7 @@ class _HospitalRegistrationScreenState
           SizedBox(height: 16),
 
           DropdownButtonFormField<String>(
-            value: _selectedHospitalType,
+            initialValue: _selectedHospitalType,
             decoration: InputDecoration(
               labelText: 'Hospital Type',
               border: OutlineInputBorder(),

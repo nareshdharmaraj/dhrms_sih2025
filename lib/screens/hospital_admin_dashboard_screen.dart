@@ -1083,7 +1083,7 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
 
   String? _selectedGender;
   DateTime? _selectedDateOfBirth;
-  List<String> _selectedSpecializations = [];
+  final List<String> _selectedSpecializations = [];
   String? _selectedDepartment;
   String? _selectedAvailableTimings;
 
@@ -1277,11 +1277,11 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
               Navigator.pop(context); // Close add doctor dialog
               widget.onDoctorAdded(); // Refresh the dashboard
             },
-            child: Text('OK'),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.green,
               foregroundColor: Colors.white,
             ),
+            child: Text('OK'),
           ),
         ],
       ),
@@ -1323,7 +1323,7 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
                 // Gender dropdown
                 _buildFieldWithCriteria(
                   child: DropdownButtonFormField<String>(
-                    value: _selectedGender,
+                    initialValue: _selectedGender,
                     decoration: InputDecoration(
                       labelText: 'Gender *',
                       border: OutlineInputBorder(),
@@ -1421,10 +1421,8 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
                                     5) {
                                   _selectedSpecializations.add(spec);
                                   // Auto-fill department
-                                  if (_selectedDepartment == null) {
-                                    _selectedDepartment =
-                                        _departmentMapping[spec];
-                                  }
+                                  _selectedDepartment ??=
+                                      _departmentMapping[spec];
                                 }
                               });
                             },
@@ -1589,7 +1587,7 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
                 // Available Timings
                 _buildFieldWithCriteria(
                   child: DropdownButtonFormField<String>(
-                    value: _selectedAvailableTimings,
+                    initialValue: _selectedAvailableTimings,
                     decoration: InputDecoration(
                       labelText: 'Available Timings',
                       border: OutlineInputBorder(),
@@ -1663,13 +1661,13 @@ class _AddDoctorDialogState extends State<AddDoctorDialog> {
               : _canSubmit()
               ? _addDoctor
               : null,
-          child: _isLoading
-              ? CircularProgressIndicator(strokeWidth: 2)
-              : Text('Add Doctor'),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.blue[700],
             foregroundColor: Colors.white,
           ),
+          child: _isLoading
+              ? CircularProgressIndicator(strokeWidth: 2)
+              : Text('Add Doctor'),
         ),
       ],
     );
@@ -1729,11 +1727,63 @@ class _AddAssistantDialogState extends State<AddAssistantDialog> {
   final _assistantNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _contactNumberController = TextEditingController();
-  final _departmentController = TextEditingController();
   final _qualificationController = TextEditingController();
   final _experienceYearsController = TextEditingController();
   String? _selectedDoctorId;
+  String? _selectedDesignation;
   bool _isLoading = false;
+
+  // Valid designations from backend - must match HospitalAssistant model enum
+  final List<String> _designationOptions = [
+    'Nursing Assistant',
+    'Medical Assistant',
+    'Administrative Assistant',
+    'Lab Technician',
+    'Pharmacy Assistant',
+    'Reception Assistant',
+    'OT Assistant',
+    'Ward Assistant',
+    'Emergency Assistant',
+  ];
+
+  // Valid departments from backend model
+  final List<String> _departmentOptions = [
+    'General Medicine',
+    'Cardiology',
+    'Neurology',
+    'Orthopedics',
+    'Pediatrics',
+    'Gynecology',
+    'Dermatology',
+    'Psychiatry',
+    'ENT',
+    'Ophthalmology',
+    'Emergency Medicine',
+    'Anesthesia',
+    'Radiology',
+    'Pathology',
+    'Surgery',
+    'Urology',
+    'Oncology',
+    'Nephrology',
+    'Gastroenterology',
+    'Pulmonology',
+    'Endocrinology',
+    'Rheumatology',
+    'Hematology',
+    'Infectious Disease',
+    'Administration',
+    'Pharmacy',
+    'Laboratory',
+    'Nursing',
+    'Reception',
+    'OPD',
+    'IPD',
+    'ICU',
+    'OT',
+  ];
+
+  String? _selectedDepartment;
 
   @override
   void dispose() {
@@ -1742,7 +1792,6 @@ class _AddAssistantDialogState extends State<AddAssistantDialog> {
     _assistantNameController.dispose();
     _emailController.dispose();
     _contactNumberController.dispose();
-    _departmentController.dispose();
     _qualificationController.dispose();
     _experienceYearsController.dispose();
     super.dispose();
@@ -1762,10 +1811,13 @@ class _AddAssistantDialogState extends State<AddAssistantDialog> {
         'assistantName': _assistantNameController.text.trim(),
         'email': _emailController.text.trim(),
         'contactNumber': _contactNumberController.text.trim(),
-        'department': _departmentController.text.trim(),
-        'qualification': _qualificationController.text.trim(),
+        'designation': _selectedDesignation, // Required field from backend
+        'department':
+            _selectedDepartment, // This maps to assignedDepartment in model
+        'qualification': {'degree': _qualificationController.text.trim()},
         'experienceYears': int.tryParse(_experienceYearsController.text) ?? 0,
-        if (_selectedDoctorId != null) 'assignedDoctor': _selectedDoctorId,
+        if (_selectedDoctorId != null)
+          'assignedDoctorId': _selectedDoctorId, // Correct field name
       };
 
       await HospitalApiService.createAssistant(assistantData);
@@ -1805,7 +1857,40 @@ class _AddAssistantDialogState extends State<AddAssistantDialog> {
                   if (value == null || value.isEmpty) {
                     return 'Please enter assistant name';
                   }
+                  // Backend validation: only letters, spaces, and dots
+                  if (!RegExp(r'^[a-zA-Z\s\.]+$').hasMatch(value)) {
+                    return 'Name can only contain letters, spaces, and dots';
+                  }
+                  if (value.length < 2 || value.length > 100) {
+                    return 'Name must be between 2 and 100 characters';
+                  }
                   return null;
+                },
+              ),
+              SizedBox(height: 16),
+              // Designation Dropdown (Required)
+              DropdownButtonFormField<String>(
+                initialValue: _selectedDesignation,
+                decoration: InputDecoration(
+                  labelText: 'Designation *',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please select designation';
+                  }
+                  return null;
+                },
+                items: _designationOptions.map((designation) {
+                  return DropdownMenuItem<String>(
+                    value: designation,
+                    child: Text(designation),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedDesignation = value;
+                  });
                 },
               ),
               SizedBox(height: 16),
@@ -1862,14 +1947,29 @@ class _AddAssistantDialogState extends State<AddAssistantDialog> {
                 },
               ),
               SizedBox(height: 16),
-              CustomTextField(
-                controller: _departmentController,
-                labelText: 'Department',
+              // Department Dropdown (Required)
+              DropdownButtonFormField<String>(
+                initialValue: _selectedDepartment,
+                decoration: InputDecoration(
+                  labelText: 'Department *',
+                  border: OutlineInputBorder(),
+                ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter department';
+                    return 'Please select department';
                   }
                   return null;
+                },
+                items: _departmentOptions.map((department) {
+                  return DropdownMenuItem<String>(
+                    value: department,
+                    child: Text(department),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedDepartment = value;
+                  });
                 },
               ),
               SizedBox(height: 16),
@@ -1900,7 +2000,7 @@ class _AddAssistantDialogState extends State<AddAssistantDialog> {
               ),
               SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: _selectedDoctorId,
+                initialValue: _selectedDoctorId,
                 decoration: InputDecoration(
                   labelText: 'Assign to Doctor (Optional)',
                   border: OutlineInputBorder(),

@@ -4,6 +4,7 @@ import '../services/who_service.dart';
 import '../widgets/who_buttons.dart';
 import 'who_hospital_management_screen.dart';
 import 'sho_management_screen.dart';
+import 'who_comprehensive_analytics_screen.dart';
 
 class WhoDashboardScreen extends StatefulWidget {
   final WhoAdmin whoAdmin;
@@ -1208,6 +1209,190 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen>
     ).showSnackBar(SnackBar(content: Text('State analytics coming soon...')));
   }
 
+  void _navigateToComprehensiveAnalytics() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            WhoComprehensiveAnalyticsScreen(whoAdmin: widget.whoAdmin),
+      ),
+    );
+  }
+
+  void _showHierarchyView() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Healthcare System Hierarchy'),
+        content: Container(
+          width: double.maxFinite,
+          height: 400,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Current System Structure:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              _buildHierarchyItem(
+                'WHO',
+                'World Health Organization',
+                '1 Admin',
+                Colors.purple,
+                0,
+              ),
+              _buildHierarchyItem(
+                'SHO',
+                'State Health Officers',
+                '28',
+                Colors.indigo,
+                1,
+              ),
+              _buildHierarchyItem(
+                'RHO',
+                'Regional Health Officers',
+                '${dashboardStats['totalRegionalOfficers'] ?? 156}',
+                Colors.blue,
+                2,
+              ),
+              _buildHierarchyItem(
+                'Hospitals',
+                'Healthcare Facilities',
+                '${dashboardStats['totalHospitals'] ?? 2847}',
+                Colors.green,
+                3,
+              ),
+              _buildHierarchyItem(
+                'Doctors',
+                'Medical Professionals',
+                '15420',
+                Colors.teal,
+                4,
+              ),
+              _buildHierarchyItem(
+                'Assistants',
+                'Healthcare Assistants',
+                '8965',
+                Colors.orange,
+                4,
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.info, color: Colors.blue),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Click "Comprehensive Analytics" for detailed hierarchical data visualization with interactive charts.',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _navigateToComprehensiveAnalytics();
+            },
+            child: const Text('View Full Analytics'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHierarchyItem(
+    String title,
+    String subtitle,
+    String count,
+    Color color,
+    int level,
+  ) {
+    return Padding(
+      padding: EdgeInsets.only(left: level * 16.0, bottom: 8),
+      child: Row(
+        children: [
+          Container(width: 4, height: 40, color: color),
+          const SizedBox(width: 12),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(_getHierarchyIcon(title), color: color, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(fontWeight: FontWeight.bold, color: color),
+                ),
+                Text(
+                  subtitle,
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              count,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  IconData _getHierarchyIcon(String title) {
+    switch (title) {
+      case 'WHO':
+        return Icons.public;
+      case 'SHO':
+        return Icons.person_4;
+      case 'RHO':
+        return Icons.people;
+      case 'Hospitals':
+        return Icons.local_hospital;
+      case 'Doctors':
+        return Icons.medical_services;
+      case 'Assistants':
+        return Icons.support_agent;
+      default:
+        return Icons.circle;
+    }
+  }
+
   void _showExportDialog() {
     showDialog(
       context: context,
@@ -1505,6 +1690,16 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen>
               children: [
                 Expanded(
                   child: WhoActionButton(
+                    title: 'Comprehensive Analytics',
+                    subtitle: 'Advanced multi-level analytics dashboard',
+                    icon: Icons.dashboard_rounded,
+                    color: Colors.indigo,
+                    onTap: () => _navigateToComprehensiveAnalytics(),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: WhoActionButton(
                     title: 'State Analytics',
                     subtitle: 'Detailed state-wise analytics and insights',
                     icon: Icons.analytics_rounded,
@@ -1512,11 +1707,25 @@ class _WhoDashboardScreenState extends State<WhoDashboardScreen>
                     onTap: () => _navigateToStateAnalytics(),
                   ),
                 ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: WhoActionButton(
+                    title: 'Hierarchy View',
+                    subtitle: 'SHO → RHO → Hospital → Staff hierarchy',
+                    icon: Icons.account_tree,
+                    color: Colors.purple,
+                    onTap: () => _showHierarchyView(),
+                  ),
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: WhoActionButton(
-                    title: 'Export Data',
-                    subtitle: 'Export statistics and generate reports',
+                    title: 'Export Reports',
+                    subtitle: 'Generate and export detailed reports',
                     icon: Icons.download_rounded,
                     color: Colors.orange,
                     onTap: () => _showExportDialog(),

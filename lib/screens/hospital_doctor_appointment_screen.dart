@@ -341,6 +341,82 @@ class _HospitalDoctorAppointmentScreenState
                     fontWeight: FontWeight.w500,
                   ),
                 ),
+                SizedBox(height: 12),
+
+                // Filter Row
+                Row(
+                  children: [
+                    // Status Filter
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        initialValue: statusFilter,
+                        decoration: InputDecoration(
+                          labelText: 'Status',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey.shade50,
+                        ),
+                        items:
+                            [
+                                  'All',
+                                  'pending',
+                                  'approved',
+                                  'rejected',
+                                  'completed',
+                                ]
+                                .map(
+                                  (status) => DropdownMenuItem<String>(
+                                    value: status,
+                                    child: Text(
+                                      status == 'All'
+                                          ? 'All Status'
+                                          : status.toUpperCase(),
+                                    ),
+                                  ),
+                                )
+                                .toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            statusFilter = value!;
+                            _filterAppointments();
+                          });
+                        },
+                      ),
+                    ),
+                    SizedBox(width: 12),
+
+                    // Date Filter
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: _selectDateFilter,
+                        icon: Icon(Icons.calendar_today),
+                        label: Text(
+                          dateFilter == null
+                              ? 'All Dates'
+                              : '${dateFilter!.day}/${dateFilter!.month}',
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+
+                    // Clear Date Filter
+                    if (dateFilter != null)
+                      IconButton(
+                        onPressed: () {
+                          setState(() {
+                            dateFilter = null;
+                            _filterAppointments();
+                          });
+                        },
+                        icon: Icon(Icons.clear),
+                      ),
+                  ],
+                ),
               ],
             ),
           ),

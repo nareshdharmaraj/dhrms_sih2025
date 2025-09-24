@@ -1359,8 +1359,8 @@ class _HospitalDoctorDashboardScreenState
               // Navigate back to login
               Navigator.of(context).popUntil((route) => route.isFirst);
             },
-            child: Text('Logout'),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: Text('Logout'),
           ),
         ],
       ),

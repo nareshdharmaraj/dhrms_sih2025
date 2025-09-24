@@ -110,4 +110,9 @@ router.get('/admin/assistants', authenticateHospitalAdmin, getAllAssistants);
 // @access  Private (Hospital Admin)
 router.patch('/admin/assistant/:assistantId/status', authenticateHospitalAdmin, updateAssistantStatus);
 
+// @route   PUT /api/hospital/admin/assistant/:assistantId/status  
+// @desc    Update assistant status (active/inactive) - Alternative method
+// @access  Private (Hospital Admin)
+router.put('/admin/assistant/:assistantId/status', authenticateHospitalAdmin, updateAssistantStatus);
+
 module.exports = router;

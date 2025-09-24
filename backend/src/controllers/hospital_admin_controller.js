@@ -501,6 +501,8 @@ const createAssistant = async (req, res) => {
       contactNumber,
       designation,
       department,
+      qualification,
+      experienceYears,
       assignedDoctorId,
       dutySchedule,
       emergencyContact
@@ -523,11 +525,21 @@ const createAssistant = async (req, res) => {
 
     // Validate assigned doctor if provided
     if (assignedDoctorId) {
-      const doctor = await HospitalDoctor.findOne({
+      // Try to find doctor by doctorId first, then by MongoDB _id
+      let doctor = await HospitalDoctor.findOne({
         doctorId: assignedDoctorId,
         hospitalId,
         isActive: true
       });
+
+      // If not found by doctorId, try by MongoDB _id
+      if (!doctor) {
+        doctor = await HospitalDoctor.findOne({
+          _id: assignedDoctorId,
+          hospitalId,
+          isActive: true
+        });
+      }
 
       if (!doctor) {
         return res.status(404).json({
@@ -537,8 +549,69 @@ const createAssistant = async (req, res) => {
       }
     }
 
+    // Prepare assigned doctor data if doctor is selected
+    let assignedDoctorData = {};
+    if (assignedDoctorId) {
+      // Find the doctor again to get the details for assignment
+      let doctor = await HospitalDoctor.findOne({
+        doctorId: assignedDoctorId,
+        hospitalId,
+        isActive: true
+      });
+
+      if (!doctor) {
+        doctor = await HospitalDoctor.findOne({
+          _id: assignedDoctorId,
+          hospitalId,
+          isActive: true
+        });
+      }
+
+      if (doctor) {
+        assignedDoctorData = {
+          assignedDoctor: {
+            doctorId: doctor.doctorId,
+            doctorName: doctor.doctorName || doctor.name
+          }
+        };
+      }
+    }
+
+    // Generate unique assistantId
+    const assistantCount = await HospitalAssistant.countDocuments({ hospitalId });
+    const assistantId = `${hospitalId}_AST_${(assistantCount + 1).toString().padStart(3, '0')}`;
+
+    // Handle qualification structure - support both object and string formats
+    let qualificationData;
+    if (typeof qualification === 'object' && qualification !== null) {
+      // If qualification is already an object, use it directly
+      qualificationData = {
+        degree: qualification.degree || '',
+        university: qualification.university || '',
+        yearOfPassing: qualification.yearOfPassing || null,
+        additionalCertifications: qualification.additionalCertifications || []
+      };
+    } else {
+      // If qualification is a string, convert to object structure
+      qualificationData = {
+        degree: qualification || '',
+        university: '',
+        yearOfPassing: null,
+        additionalCertifications: []
+      };
+    }
+
+    // Validate required qualification.degree field
+    if (!qualificationData.degree || qualificationData.degree.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        message: 'Qualification degree is required'
+      });
+    }
+
     // Create assistant
     const assistant = new HospitalAssistant({
+      assistantId,
       hospitalId,
       assistantName,
       username,
@@ -546,8 +619,9 @@ const createAssistant = async (req, res) => {
       email,
       contactNumber,
       designation,
-      department,
-      assignedDoctorId,
+      qualification: qualificationData,
+      assignedDepartment: department, // Map to correct field name
+      ...assignedDoctorData, // Spread assigned doctor data if exists
       dutySchedule: dutySchedule || {},
       emergencyContact,
       joiningDate: new Date()
@@ -564,8 +638,8 @@ const createAssistant = async (req, res) => {
         username: assistant.username,
         email: assistant.email,
         designation: assistant.designation,
-        department: assistant.department,
-        assignedDoctorId: assistant.assignedDoctorId
+        assignedDepartment: assistant.assignedDepartment,
+        assignedDoctor: assistant.assignedDoctor || null
       }
     });
 
