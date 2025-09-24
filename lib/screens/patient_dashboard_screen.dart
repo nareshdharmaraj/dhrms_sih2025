@@ -13,7 +13,7 @@ import 'medications_screen.dart';
 import 'telemedicine_screen.dart';
 import 'vitals_monitor_screen.dart';
 import 'insurance_services_screen.dart';
-import 'proximity_alerts_screen.dart';
+import 'proximity_alert_screen.dart';
 import 'health_gamification_screen.dart';
 import 'patient_appointment_booking_screen.dart';
 
@@ -1561,10 +1561,7 @@ class _PatientDashboardScreenState extends State<PatientDashboardScreen>
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => ProximityAlertsScreen(
-                                patientData:
-                                    _patientDataFromArgs ?? widget.patientData,
-                              ),
+                              builder: (context) => const ProximityAlertScreen(),
                             ),
                           );
                         },
