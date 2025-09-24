@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -358,27 +359,25 @@ class _SplashScreenState extends State<SplashScreen>
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(20),
-            child: Image.asset(
-              'assets/applogo.png',
+            child: SvgPicture.asset(
+              'assets/applogo.svg',
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.blue.shade400,
-                        Colors.blue.shade600,
-                      ],
-                    ),
+              placeholderBuilder: (context) => Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.blue.shade400,
+                      Colors.blue.shade600,
+                    ],
                   ),
-                  child: const Icon(
-                    Icons.health_and_safety,
-                    size: 60,
-                    color: Colors.white,
-                  ),
-                );
-              },
+                ),
+                child: const Icon(
+                  Icons.health_and_safety,
+                  size: 60,
+                  color: Colors.white,
+                ),
+              ),
             ),
           ),
         ),
