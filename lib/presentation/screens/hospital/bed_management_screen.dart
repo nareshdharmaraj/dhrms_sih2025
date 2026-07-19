@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_styles.dart';
+import '../../../screens/patient_registration_screen.dart';
 
 class BedManagementScreen extends StatefulWidget {
   const BedManagementScreen({super.key});

@@ -102,7 +102,7 @@ class _HomeTab extends StatelessWidget {
                   Text(
                     'Health ID: RAJESH2345',
                     style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.white.withOpacity(0.9),
+                      color: AppColors.white.withValues(alpha: 0.9),
                     ),
                   ),
                   const SizedBox(height: AppDimensions.marginMedium),
@@ -299,7 +299,7 @@ class _HealthTab extends StatelessWidget {
                     Text(
                       'Good Health',
                       style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.white.withOpacity(0.9),
+                        color: AppColors.white.withValues(alpha: 0.9),
                       ),
                     ),
                   ],
@@ -407,9 +407,75 @@ class _HealthTab extends StatelessWidget {
                 ),
               ),
             ),
+            const SizedBox(height: AppDimensions.marginLarge),
+
+            // Prescriptions
+            Text(
+              'My Prescriptions',
+              style: AppTextStyles.headline6.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: AppDimensions.marginMedium),
+
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(AppDimensions.paddingMedium),
+                child: Column(
+                  children: [
+                    _PrescriptionItem(
+                      medicineName: 'Paracetamol 500mg',
+                      dosage: '1 tablet twice daily',
+                      duration: '5 days',
+                      prescribedBy: 'Dr. Rajesh Kumar',
+                      prescribedOn: '2024-01-20',
+                      status: 'Active',
+                    ),
+                    const Divider(),
+                    _PrescriptionItem(
+                      medicineName: 'Amoxicillin 250mg',
+                      dosage: '1 capsule three times daily',
+                      duration: '7 days',
+                      prescribedBy: 'Dr. Priya Sharma',
+                      prescribedOn: '2024-01-18',
+                      status: 'Completed',
+                    ),
+                    const Divider(),
+                    _PrescriptionItem(
+                      medicineName: 'Omeprazole 20mg',
+                      dosage: '1 tablet before breakfast',
+                      duration: '30 days',
+                      prescribedBy: 'Dr. Suresh Menon',
+                      prescribedOn: '2024-01-15',
+                      status: 'Active',
+                    ),
+                    const SizedBox(height: AppDimensions.marginMedium),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () => _showAllPrescriptions(context),
+                        icon: const Icon(Icons.medication),
+                        label: const Text('View All Prescriptions'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primaryBlue,
+                          side: const BorderSide(color: AppColors.primaryBlue),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
+    );
+  }
+
+  void _showAllPrescriptions(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const _AllPrescriptionsScreen()),
     );
   }
 }
@@ -663,7 +729,9 @@ class _ProfileTab extends StatelessWidget {
                   children: [
                     CircleAvatar(
                       radius: 50,
-                      backgroundColor: AppColors.primaryBlue.withOpacity(0.1),
+                      backgroundColor: AppColors.primaryBlue.withValues(
+                        alpha: 0.1,
+                      ),
                       child: const Icon(
                         Icons.person,
                         size: 50,
@@ -690,7 +758,7 @@ class _ProfileTab extends StatelessWidget {
                         vertical: AppDimensions.paddingSmall,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.success.withOpacity(0.1),
+                        color: AppColors.success.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(
                           AppDimensions.radiusLarge,
                         ),
@@ -838,7 +906,7 @@ class _QuickActionCard extends StatelessWidget {
                 width: 50,
                 height: 50,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(
                     AppDimensions.radiusMedium,
                   ),
@@ -889,7 +957,7 @@ class _HealthRecordCard extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppColors.primaryBlue.withOpacity(0.1),
+                color: AppColors.primaryBlue.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
               ),
               child: const Icon(
@@ -1099,7 +1167,7 @@ class _ServiceCard extends StatelessWidget {
                 width: 50,
                 height: 50,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(
                     AppDimensions.radiusMedium,
                   ),
@@ -1159,7 +1227,7 @@ class _ServiceListTile extends StatelessWidget {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
           ),
           child: Icon(icon, color: color, size: 20),
@@ -1242,5 +1310,323 @@ class _ProfileItem extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _PrescriptionItem extends StatelessWidget {
+  final String medicineName;
+  final String dosage;
+  final String duration;
+  final String prescribedBy;
+  final String prescribedOn;
+  final String status;
+
+  const _PrescriptionItem({
+    required this.medicineName,
+    required this.dosage,
+    required this.duration,
+    required this.prescribedBy,
+    required this.prescribedOn,
+    required this.status,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppDimensions.marginSmall),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: status == 'Active'
+                  ? AppColors.primaryGreen.withValues(alpha: 0.1)
+                  : AppColors.grey400.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Icon(
+              Icons.medication,
+              color: status == 'Active'
+                  ? AppColors.primaryGreen
+                  : AppColors.grey400,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: AppDimensions.marginMedium),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  medicineName,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '$dosage • $duration',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.grey600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Prescribed by $prescribedBy on $prescribedOn',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.grey500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: status == 'Active'
+                  ? AppColors.primaryGreen.withValues(alpha: 0.1)
+                  : AppColors.grey400.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              status,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: status == 'Active'
+                    ? AppColors.primaryGreen
+                    : AppColors.grey400,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AllPrescriptionsScreen extends StatelessWidget {
+  const _AllPrescriptionsScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.grey100,
+      appBar: AppBar(
+        title: const Text('My Prescriptions'),
+        backgroundColor: AppColors.primaryBlue,
+        foregroundColor: AppColors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              // Implement search functionality
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.filter_list),
+            onPressed: () {
+              // Implement filter functionality
+            },
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppDimensions.paddingMedium),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Stats Card
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(AppDimensions.paddingMedium),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Active Prescriptions',
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: AppColors.grey600,
+                            ),
+                          ),
+                          Text(
+                            '3',
+                            style: AppTextStyles.headline4.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primaryGreen,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Completed',
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: AppColors.grey600,
+                            ),
+                          ),
+                          Text(
+                            '12',
+                            style: AppTextStyles.headline4.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.grey400,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Total Medicines',
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: AppColors.grey600,
+                            ),
+                          ),
+                          Text(
+                            '15',
+                            style: AppTextStyles.headline4.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primaryBlue,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: AppDimensions.marginLarge),
+
+            // Active Prescriptions
+            Text(
+              'Active Prescriptions',
+              style: AppTextStyles.headline6.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: AppDimensions.marginMedium),
+
+            ..._getActivePrescriptions().map(
+              (prescription) => Card(
+                margin: const EdgeInsets.only(
+                  bottom: AppDimensions.marginMedium,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(AppDimensions.paddingMedium),
+                  child: _PrescriptionItem(
+                    medicineName: prescription['medicineName']!,
+                    dosage: prescription['dosage']!,
+                    duration: prescription['duration']!,
+                    prescribedBy: prescription['prescribedBy']!,
+                    prescribedOn: prescription['prescribedOn']!,
+                    status: prescription['status']!,
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: AppDimensions.marginLarge),
+
+            // Completed Prescriptions
+            Text(
+              'Completed Prescriptions',
+              style: AppTextStyles.headline6.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: AppDimensions.marginMedium),
+
+            ..._getCompletedPrescriptions().map(
+              (prescription) => Card(
+                margin: const EdgeInsets.only(
+                  bottom: AppDimensions.marginMedium,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(AppDimensions.paddingMedium),
+                  child: _PrescriptionItem(
+                    medicineName: prescription['medicineName']!,
+                    dosage: prescription['dosage']!,
+                    duration: prescription['duration']!,
+                    prescribedBy: prescription['prescribedBy']!,
+                    prescribedOn: prescription['prescribedOn']!,
+                    status: prescription['status']!,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Map<String, String>> _getActivePrescriptions() {
+    return [
+      {
+        'medicineName': 'Paracetamol 500mg',
+        'dosage': '1 tablet twice daily',
+        'duration': '5 days',
+        'prescribedBy': 'Dr. Rajesh Kumar',
+        'prescribedOn': '2024-01-20',
+        'status': 'Active',
+      },
+      {
+        'medicineName': 'Omeprazole 20mg',
+        'dosage': '1 tablet before breakfast',
+        'duration': '30 days',
+        'prescribedBy': 'Dr. Suresh Menon',
+        'prescribedOn': '2024-01-15',
+        'status': 'Active',
+      },
+      {
+        'medicineName': 'Vitamin D3 1000IU',
+        'dosage': '1 tablet daily',
+        'duration': '90 days',
+        'prescribedBy': 'Dr. Neha Singh',
+        'prescribedOn': '2024-01-10',
+        'status': 'Active',
+      },
+    ];
+  }
+
+  List<Map<String, String>> _getCompletedPrescriptions() {
+    return [
+      {
+        'medicineName': 'Amoxicillin 250mg',
+        'dosage': '1 capsule three times daily',
+        'duration': '7 days',
+        'prescribedBy': 'Dr. Priya Sharma',
+        'prescribedOn': '2024-01-18',
+        'status': 'Completed',
+      },
+      {
+        'medicineName': 'Ibuprofen 400mg',
+        'dosage': '1 tablet when needed',
+        'duration': '3 days',
+        'prescribedBy': 'Dr. Amit Patel',
+        'prescribedOn': '2024-01-12',
+        'status': 'Completed',
+      },
+      {
+        'medicineName': 'Cough Syrup',
+        'dosage': '10ml three times daily',
+        'duration': '5 days',
+        'prescribedBy': 'Dr. Rajesh Kumar',
+        'prescribedOn': '2024-01-08',
+        'status': 'Completed',
+      },
+    ];
   }
 }

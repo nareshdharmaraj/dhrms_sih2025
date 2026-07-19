@@ -1,13 +1,16 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import '../../data/models/user_model.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/services/api_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   UserModel? _currentUser;
   bool _isLoggedIn = false;
   String _selectedRole = '';
   bool _isLoading = false;
+  final ApiService _apiService = ApiService();
 
   // Getters
   UserModel? get currentUser => _currentUser;
@@ -15,58 +18,9 @@ class AuthProvider extends ChangeNotifier {
   String get selectedRole => _selectedRole;
   bool get isLoading => _isLoading;
 
-  // Mock credentials for demonstration
-  final List<UserModel> _mockUsers = [
-    UserModel(
-      id: 'user_001',
-      role: AppConstants.roleNormalUser,
-      username: 'migrant001',
-      password: 'password123',
-      profile: const UserProfile(
-        name: 'Rajesh Kumar',
-        aadhaarLast4: '2345',
-        uniqueHealthId: 'RAJESH2345',
-        phone: '+91-9876543210',
-        address: 'Construction Site, Kochi, Kerala',
-        employer: 'ABC Construction Pvt Ltd',
-        emergencyContact: '+91-9876543211',
-        bloodGroup: 'B+',
-        dateOfBirth: '1985-05-15',
-        occupation: 'Construction Worker',
-      ),
-    ),
-    UserModel(
-      id: 'hospital_001',
-      role: AppConstants.roleHospital,
-      username: 'medical.officer',
-      password: 'hospital@123',
-      profile: const UserProfile(
-        name: 'Dr. Sarah Joseph',
-        hospitalName: 'Kochi General Hospital',
-        hospitalId: 'KGH001',
-        licenseNumber: 'KER-DOC-12345',
-        department: 'General Medicine',
-        phone: '+91-484-2345678',
-        email: 'sarah.joseph@kochigeneral.in',
-        specialization: 'Internal Medicine',
-      ),
-    ),
-    UserModel(
-      id: 'regional_001',
-      role: AppConstants.roleRegionalOfficer,
-      username: 'regional.admin',
-      password: 'regional@123',
-      profile: const UserProfile(
-        name: 'K. R. Nair',
-        designation: 'Regional Health Officer',
-        region: 'Ernakulam District',
-        employeeId: 'RHO-ERN-001',
-        phone: '+91-484-1234567',
-        email: 'kr.nair@health.kerala.gov.in',
-        officeAddress: 'District Health Office, Ernakulam',
-      ),
-    ),
-  ];
+  // User authentication state (simplified - no JWT)
+  String? _userId;
+  String? get userId => _userId;
 
   // Initialize auth state from stored preferences
   Future<void> initializeAuth() async {
@@ -78,13 +32,22 @@ class AuthProvider extends ChangeNotifier {
 
       _isLoggedIn = prefs.getBool(AppConstants.keyIsLoggedIn) ?? false;
       _selectedRole = prefs.getString(AppConstants.keyUserRole) ?? '';
+      _userId = prefs.getString('user_id');
 
-      if (_isLoggedIn) {
+      if (_isLoggedIn && _userId != null) {
+        // Try to restore user session
         final userId = prefs.getString(AppConstants.keyUserId);
         if (userId != null) {
-          _currentUser = _mockUsers.firstWhere(
-            (user) => user.id == userId,
-            orElse: () => _mockUsers.first,
+          // For now, create a basic user model until we implement user profile API
+          _currentUser = UserModel(
+            id: userId,
+            role: _selectedRole,
+            username: prefs.getString('username') ?? '',
+            password: '', // Don't store password
+            profile: const UserProfile(
+              name: 'User', // Will be loaded from API
+              phone: '', // Will be loaded from API
+            ),
           );
         }
       }
@@ -92,6 +55,7 @@ class AuthProvider extends ChangeNotifier {
       debugPrint('Error initializing auth: $e');
       _isLoggedIn = false;
       _currentUser = null;
+      _userId = null;
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -104,42 +68,108 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Login with username and password
-  Future<bool> login(String username, String password, String role) async {
-    _isLoading = true;
-    notifyListeners();
-
+  // TEMPORARY: Bypass login for development - login with role only
+  Future<bool> loginWithRoleOnly(String role) async {
     try {
-      // Simulate API call delay
-      await Future.delayed(const Duration(seconds: 1));
+      _isLoading = true;
+      notifyListeners();
 
-      // Find user with matching credentials
-      final user = _mockUsers.firstWhere(
-        (user) =>
-            user.username == username &&
-            user.password == password &&
-            user.role == role,
-        orElse: () => throw Exception('Invalid credentials'),
+      // Validate input role
+      if (role.isEmpty) {
+        throw Exception('Role cannot be empty');
+      }
+
+      // Create a mock user for the selected role
+      _userId = 'mock_user_${role}_${DateTime.now().millisecondsSinceEpoch}';
+      
+      // Create mock user data based on role
+      UserProfile mockProfile;
+      switch (role) {
+        case AppConstants.roleHospital:
+          mockProfile = const UserProfile(
+            name: 'Dr. Sarah Wilson',
+            phone: '+91 9876543210',
+            email: 'sarah.wilson@hospital.com',
+            hospitalName: 'Kerala General Hospital',
+            department: 'Emergency Medicine',
+            specialization: 'Emergency Medicine',
+            licenseNumber: 'MED12345',
+          );
+          break;
+        case AppConstants.roleRegionalOfficer:
+          mockProfile = const UserProfile(
+            name: 'Officer Rajesh Kumar',
+            phone: '+91 9876543211',
+            email: 'rajesh.kumar@health.kerala.gov.in',
+            region: 'Kochi District',
+            designation: 'Regional Health Officer',
+          );
+          break;
+        case AppConstants.roleNormalUser:
+        default: // Normal User/Migrant Worker
+          mockProfile = const UserProfile(
+            name: 'John Doe',
+            phone: '+91 9876543212',
+            email: 'john.doe@worker.com',
+            aadhaarLast4: '1234',
+            uniqueHealthId: 'UHI123456789',
+            bloodGroup: 'O+',
+            address: 'Worker Colony, Kochi, Kerala',
+          );
+      }
+
+      // Create user model with null safety
+      _currentUser = UserModel(
+        id: _userId ?? 'unknown_id',
+        role: role,
+        username: 'demo_user',
+        password: '',
+        profile: mockProfile,
       );
 
-      // Save login state
+      // Save login state with null checks
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(AppConstants.keyIsLoggedIn, true);
       await prefs.setString(AppConstants.keyUserRole, role);
-      await prefs.setString(AppConstants.keyUserId, user.id);
+      
+      if (_currentUser?.id != null) {
+        await prefs.setString(AppConstants.keyUserId, _currentUser!.id);
+      }
+      if (_userId != null) {
+        await prefs.setString('user_id', _userId!);
+      }
+      await prefs.setString('username', 'demo_user');
 
-      _currentUser = user;
       _isLoggedIn = true;
       _selectedRole = role;
 
-      _isLoading = false;
-      notifyListeners();
       return true;
     } catch (e) {
+      debugPrint('Mock login error: $e');
+      return false;
+    } finally {
       _isLoading = false;
       notifyListeners();
-      debugPrint('Login error: $e');
-      return false;
+    }
+  }
+
+  // Original login method (disabled for now)
+  Future<bool> login(String username, String password, String role) async {
+    // For now, redirect to role-only login
+    return loginWithRoleOnly(role);
+  }
+
+  // Map frontend roles to backend roles
+  String _mapFrontendRoleToBackend(String frontendRole) {
+    switch (frontendRole) {
+      case AppConstants.roleNormalUser:
+        return 'user';
+      case AppConstants.roleHospital:
+        return 'hospital';
+      case AppConstants.roleRegionalOfficer:
+        return 'regional';
+      default:
+        return frontendRole;
     }
   }
 
@@ -153,10 +183,13 @@ class AuthProvider extends ChangeNotifier {
       await prefs.remove(AppConstants.keyIsLoggedIn);
       await prefs.remove(AppConstants.keyUserRole);
       await prefs.remove(AppConstants.keyUserId);
+      await prefs.remove('user_id');
+      await prefs.remove('username');
 
       _currentUser = null;
       _isLoggedIn = false;
       _selectedRole = '';
+      _userId = null;
     } catch (e) {
       debugPrint('Logout error: $e');
     } finally {
@@ -173,7 +206,7 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Simulate API call
+      // TODO: Implement API call to update user profile
       await Future.delayed(const Duration(seconds: 1));
 
       _currentUser = _currentUser!.copyWith(profile: updatedProfile);
@@ -189,21 +222,108 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // Get available users for a role (for demo purposes)
-  List<UserModel> getUsersForRole(String role) {
-    return _mockUsers.where((user) => user.role == role).toList();
+  // Register new user
+  Future<bool> register(
+    String username,
+    String password,
+    String email,
+    String role,
+    String firstName,
+    String lastName,
+    String phone,
+    Map<String, dynamic> additionalData,
+  ) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      String backendRole = _mapFrontendRoleToBackend(role);
+      
+      final response = await ApiService.register(
+        username,
+        password,
+        email,
+        backendRole,
+        firstName,
+        lastName,
+        phone,
+        additionalData,
+      );
+
+      if (response['success'] == true) {
+        _userId = response['userId'];
+        final userData = response['user'];
+
+        // Create user model from API response
+        _currentUser = UserModel(
+          id: userData['id'] ?? userData['_id'],
+          role: role,
+          username: username,
+          password: '', // Don't store password
+          profile: UserProfile(
+            name: userData['name'] ?? '$firstName $lastName',
+            phone: userData['phone'] ?? phone,
+            email: userData['email'] ?? email,
+            // Add other fields based on role
+            hospitalName: role == AppConstants.roleHospital
+                ? userData['hospitalName']
+                : null,
+            department: role == AppConstants.roleHospital
+                ? userData['department']
+                : null,
+            specialization: userData['specialization'],
+            licenseNumber: userData['licenseNumber'],
+            region: role == AppConstants.roleRegionalOfficer
+                ? userData['region']
+                : null,
+            designation: role == AppConstants.roleRegionalOfficer
+                ? userData['designation']
+                : null,
+            aadhaarLast4: userData['aadhaarLast4'],
+            uniqueHealthId: userData['uniqueHealthId'],
+            bloodGroup: userData['bloodGroup'],
+            address: userData['address'],
+          ),
+        );
+
+        // Save login state
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('user_id', _userId!);
+        await prefs.setString('user_data', json.encode({
+          'id': _currentUser!.id,
+          'role': _currentUser!.role,
+          'username': _currentUser!.username,
+          'profile': _currentUser!.profile.toJson(),
+        }));
+
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      } else {
+        throw Exception(response['message'] ?? 'Registration failed');
+      }
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      debugPrint('Registration error: $e');
+      return false;
+    }
   }
 
   // Validate login credentials without logging in
-  bool validateCredentials(String username, String password, String role) {
+  Future<bool> validateCredentials(
+    String username,
+    String password,
+    String role,
+  ) async {
     try {
-      _mockUsers.firstWhere(
-        (user) =>
-            user.username == username &&
-            user.password == password &&
-            user.role == role,
+      String backendRole = _mapFrontendRoleToBackend(role);
+      final response = await _apiService.authenticate(
+        username,
+        password,
+        backendRole,
       );
-      return true;
+      return response['success'] == true;
     } catch (e) {
       return false;
     }

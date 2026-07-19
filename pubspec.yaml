@@ -35,6 +35,10 @@ dependencies:
   
   # QR Code
   qr_flutter: ^4.1.0
+  qr_code_scanner: ^1.0.1
+  
+  # Permissions
+  permission_handler: ^11.3.1
   
   # Location and Maps
   geolocator: ^12.0.0

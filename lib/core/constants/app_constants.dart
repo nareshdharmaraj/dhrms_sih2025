@@ -7,6 +7,7 @@ class AppConstants {
 
   // User Roles
   static const String roleNormalUser = 'normal_user';
+  static const String roleDoctor = 'doctor';
   static const String roleHospital = 'hospital';
   static const String roleRegionalOfficer = 'regional_officer';
 
